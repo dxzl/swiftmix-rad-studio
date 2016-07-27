@@ -40,21 +40,23 @@ void __fastcall TExportModeForm::FormShow(TObject *Sender)
   FileLabel->Caption = FTitle; // ANSI only!
 
   Ext = ExtractFileExt(FFile).LowerCase();
-  // "Windows Media Playlist (*.wpl)|*.wpl|"
-  // "M3U8 (*.m3u8)|*.m3u8|"
-  // "M3U (*.m3u)|*.m3u|"
-  // "ASX (*.asx)|*.asx|"
-  // "XSPF (*.xspf)|*.xspf|"
-  // "Windows (*.wax)|*.wax|"
-  // "Winamp (*.pls)|*.pls|"
-  // "Text (*.txt)|*.txt|"
-  // "All Files (*.*)|*.*";
-  SaveAsUtf8CheckBox->Enabled = (Ext == ".m3u8" || Ext == ".m3u") ? false : true;
-  SaveAsUtf8CheckBox->Checked = (Ext == ".m3u8" || Ext == ".asx" ||
-         Ext == ".wpl" || Ext == ".wax" || Ext == ".xspf") ? true : false;
 
-  UncPathCheckBox->Enabled = (Ext == ".xspf" || Ext == ".wpl") ? false : true;
-  UncPathCheckBox->Checked = false;
+  //  "All Files (*.*)|*.*|" + // 1
+  //  "Windows Media (wpl)|*.wpl|" +
+  //  "MPEG UTF-8 (m3u8)|*.m3u8|" +
+  //  "MPEG ANSI (m3u)|*.m3u|" +
+  //  "Adv Stream XML (asx)|*.asx|" +
+  //  "XML Shareable (xspf)|*.xspf|" +
+  //  "Win Audio XML (wax)|*.wax|" +
+  //  "Windows XML (wmx)|*.wmx|" +
+  //  "Winamp (pls)|*.pls|" +
+  //  "Text (txt)|*.txt"; // 11
+  SaveAsUtf8CheckBox->Enabled = true;
+  SaveAsUtf8CheckBox->Checked = (Ext == ".m3u" || Ext == ".pls" ||
+      Ext == ".txt") ? false : true;
+
+  UncPathCheckBox->Enabled = (Ext == ".xspf") ? false : true; // xspf no choice allowed
+  UncPathCheckBox->Checked = (Ext == ".xspf") ? true : false;
 }
 //---------------------------------------------------------------------------
 void __fastcall TExportModeForm::FormClose(TObject *Sender, TCloseAction &Action)

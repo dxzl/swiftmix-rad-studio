@@ -787,6 +787,8 @@ void __fastcall TMainForm::AddFilesToStringList(TStringList* slFiles)
 bool __fastcall TMainForm::IsAudioFile(String sFile)
 // should work ok on UTF-8 strings
 {
+  if (IsUri(sFile)) return true; // pass through http:// links
+
   if (GBypassFilters) return true;
 
   String sExt = ExtractFileExt(sFile).LowerCase();
@@ -798,6 +800,51 @@ bool __fastcall TMainForm::IsAudioFile(String sFile)
           sExt == ".adt" || sExt == ".adts" || sExt == ".mp2" || sExt == ".cda" ||
           sExt == ".au" || sExt == ".snd" || sExt == ".aif" || sExt == ".aiff" || sExt == ".aifc" ||
           sExt == ".mid" || sExt == ".midi" || sExt == ".rmi" || sExt == ".m4a";
+}
+//---------------------------------------------------------------------------
+// Overloaded...
+
+// Could have "file:/laptop/D:/path/file.wma" so the key to telling a URL from
+// a drive letter is that url preambles are more than one char!
+//
+// sIn should be trimmed but does not need to be lower-case...
+bool __fastcall TMainForm::IsUri(String sIn)
+{
+  return sIn.Pos(":/") > 2; // > 2 means you must have more than 1 char before the : (like "file:/")
+}
+
+bool __fastcall TMainForm::IsUri(WideString wIn)
+{
+  return wIn.Pos(":/") > 2; // > 2 means you must have more than 1 char before the : (like "file:/")
+}
+//---------------------------------------------------------------------------
+// Overloaded...
+
+bool __fastcall TMainForm::IsFileUri(String sIn)
+{
+  return sIn.LowerCase().Pos("file:/") == 1;
+}
+
+bool __fastcall TMainForm::IsFileUri(WideString wIn)
+{
+  wIn = LowerCaseW(wIn);
+  return wIn.Pos("file:/") == 1;
+}
+//---------------------------------------------------------------------------
+WideString __fastcall TMainForm::LowerCaseW(WideString s)
+{
+  WideChar c;
+
+  int len = s.Length();
+
+  for (int ii = 1; ii <= len; ii++)
+  {
+    c = s[ii];
+
+    if (iswupper(c))
+      s[ii] = towlower(c);
+  }
+  return WideString(s);
 }
 //---------------------------------------------------------------------------
 void __fastcall TMainForm::VA_10Click(TObject* Sender)
@@ -1480,39 +1527,6 @@ void __fastcall TMainForm::ExportPlaylist2Click(TObject* Sender)
     ShowMessage("Unable to export list or list empty...");
 
   ExportForm->Release();
-}
-//---------------------------------------------------------------------------
-String __fastcall TMainForm::PercentEncode(String sIn, const char* table, bool bEncodeAbove127)
-{
-  String sOut;
-  char c;
-  int len = sIn.Length();
-  int lenPercent = strlen(table);
-  int jj;
-  for (int ii = 1; ii <= len; ii++)
-  {
-    c = sIn[ii];
-    jj = 0;
-    for (; jj < lenPercent; jj++)
-    {
-      if (c == table[jj])
-      {
-        // hex encode SPACE, etc.
-        sOut += "%" + IntToHex((int)(unsigned char)c, 2);
-        break;
-      }
-    }
-
-    // if not found in the special chars table, handle it below...
-    if (jj == lenPercent)
-    {
-      // hex encode the control chars
-      if ((unsigned char)c < SPACE) sOut += "%" + IntToHex((int)(unsigned char)c, 2);
-      else if (bEncodeAbove127 && (unsigned char)c > 127) sOut += "%" + IntToHex((int)(unsigned char)c, 2);
-      else sOut += c;
-    }
-  }
-  return sOut;
 }
 //---------------------------------------------------------------------------
 void __fastcall TMainForm::MenuHelpClick(TObject* Sender)

@@ -26,6 +26,7 @@ __published:	// IDE-managed Components
   void __fastcall FormDestroy(TObject *Sender);
 
 private:	// User declarations
+  String __fastcall PercentEncode(String sIn, const char* table, bool bEncodeAbove127);
   String __fastcall InsertXMLSpecialCodes(String sIn);
   String __fastcall XmlSpecialCharEncode(char c);
   String __fastcall GetFileString(String uListFullPath,

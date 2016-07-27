@@ -733,8 +733,8 @@ bool __fastcall TOFMSDlgForm::GetSelectedItems(void)
           lvitem.pszText = nativeBuffer;
           lvitem.cchTextMax = OF_BUFSIZE;
 
-          WideString name;
-          WideString currDir = this->CurrentFolder;
+          WideString wName;
+          WideString wCurrDir = this->CurrentFolder;
 
 //ShowMessage("A:" + FCurrentFolder);
 //ShowMessage("B:" + currDir);
@@ -749,39 +749,40 @@ bool __fastcall TOFMSDlgForm::GetSelectedItems(void)
           while (iPos != -1)
           {
             int length = SendMessage(hListView, LVM_GETITEMTEXTW, iPos, (LPARAM)&lvitem);
-            name = WideString(lvitem.pszText, length);
+            wName = WideString(lvitem.pszText, length);
 
 #if DEBUG_ON
-            OFDbg->CWrite("\r\nLength: " + String(length) + ", iPos: " + String(iPos) + " Name: " + name + "\r\n");
+            OFDbg->CWrite("\r\nLength: " + String(length) +
+                  ", iPos: " + String(iPos) + " Name: " + wName + "\r\n");
 #endif
 
-            if (!name.IsEmpty())
+            if (!wName.IsEmpty())
             {
-              int len = currDir.Length();
+              int len = wCurrDir.Length();
 
-              WideString sPath;
+              WideString wPath;
 
               if (len > 0)
               {
-                WideChar c = currDir[len];
+                WideChar c = wCurrDir[len];
 
                 if (c != WideChar('\\'))
-                  sPath = currDir + WideString("\\") + name;
+                  wPath = wCurrDir + WideString("\\") + wName;
                 else
-                  sPath = currDir + name;
+                  wPath = wCurrDir + wName;
               }
               else
-                sPath = name;
+                wPath = wName;
 
               bool bIsDirectory = false;
 
-              // sPath, bIsDirectory are by reference...
-              if (GetShortcut(sPath, bIsDirectory))
-                this->AddWideItem(sPath, bIsDirectory);
+              // wPath, bIsDirectory are by reference...
+              if (GetShortcut(wPath, bIsDirectory))
+                this->AddWideItem(wPath, bIsDirectory);
             }
 #if DEBUG_ON
             else
-              OFDbg->CWrite("\r\nname is empty for: " + String(iPos) +"\r\n");
+              OFDbg->CWrite("\r\nwName is empty for: " + String(iPos) +"\r\n");
 #endif
 
             // Get the next selected item
@@ -827,33 +828,35 @@ bool __fastcall TOFMSDlgForm::GetSelectedItems(void)
 /*
  * returns true if there is a valid shortcut (that we had permission to open)
  */
-bool __fastcall TOFMSDlgForm::GetShortcut(WideString &sPath, bool &bIsDirectory)
+bool __fastcall TOFMSDlgForm::GetShortcut(WideString &wPath, bool &bIsDirectory)
 {
   bIsDirectory = false;
+
+  if (MainForm->IsUri(wPath)) return true; // just
 
   try
   {
 #if DEBUG_ON
-    OFDbg->CWrite("\r\nGetShortcut() sPath: " + sPath +"\r\n");
+    OFDbg->CWrite("\r\nGetShortcut() wPath: " + wPath +"\r\n");
 #endif
 
     // Do this first because we might have a .lnk file with no extension in our list-view control.
-    if (OFUtil->DirectoryExistsW(sPath))
+    if (OFUtil->DirectoryExistsW(wPath))
     {
       bIsDirectory = true;
       return true;
     }
 
-    if (OFUtil->FileExistsW(sPath))
+    if (OFUtil->FileExistsW(wPath))
     {
-      if (ExtractFileExt(sPath).LowerCase() == ".lnk")
+      if (ExtractFileExt(wPath).LowerCase() == ".lnk")
       {
-        sPath = GetShortcutTarget(sPath);
+        wPath = GetShortcutTarget(wPath);
 
-        if (OFUtil->FileExistsW(sPath))
+        if (OFUtil->FileExistsW(wPath))
           return true;
 
-        if (OFUtil->DirectoryExistsW(sPath))
+        if (OFUtil->DirectoryExistsW(wPath))
         {
           bIsDirectory = true;
           return true;
@@ -864,30 +867,30 @@ bool __fastcall TOFMSDlgForm::GetShortcut(WideString &sPath, bool &bIsDirectory)
     }
     else
     {
-      sPath += ".lnk"; // case where the .lnk extension is not displayed in the list-view control
+      wPath += ".lnk"; // case where the .lnk extension is not displayed in the list-view control
 
 #if DEBUG_ON
-      OFDbg->CWrite("\r\nCheck file: " + sPath + "\r\n");
+      OFDbg->CWrite("\r\nCheck file: " + wPath + "\r\n");
 #endif
-      if (OFUtil->FileExistsW(sPath))
+      if (OFUtil->FileExistsW(wPath))
       {
-        sPath = GetShortcutTarget(sPath);
+        wPath = GetShortcutTarget(wPath);
 #if DEBUG_ON
-        OFDbg->CWrite("\r\nShortcut target: " + sPath + "\r\n");
+        OFDbg->CWrite("\r\nShortcut target: " + wPath + "\r\n");
 #endif
 
-        if (OFUtil->FileExistsW(sPath))
+        if (OFUtil->FileExistsW(wPath))
         {
 #if DEBUG_ON
-          OFDbg->CWrite("\r\nShortcut exists: " + sPath + "\r\n");
+          OFDbg->CWrite("\r\nShortcut exists: " + wPath + "\r\n");
 #endif
           return true;
         }
 
-        if (OFUtil->DirectoryExistsW(sPath))
+        if (OFUtil->DirectoryExistsW(wPath))
         {
 #if DEBUG_ON
-          OFDbg->CWrite("\r\nDirectory exists: " + sPath + "\r\n");
+          OFDbg->CWrite("\r\nDirectory exists: " + wPath + "\r\n");
 #endif
           bIsDirectory = true;
           return true;
@@ -905,12 +908,12 @@ bool __fastcall TOFMSDlgForm::GetShortcut(WideString &sPath, bool &bIsDirectory)
   return false;
 }
 //---------------------------------------------------------------------------
-WideString __fastcall TOFMSDlgForm::GetShortcutTarget(WideString file)
+WideString __fastcall TOFMSDlgForm::GetShortcutTarget(WideString wPath)
 {
-  if (ExtractFileExt(file).LowerCase() != ".lnk")
+  if (ExtractFileExt(wPath).LowerCase() != ".lnk")
     return "";
 
-  WideString sOut = "";
+  WideString wOut = "";
 
   CoInitialize(NULL);
 
@@ -931,9 +934,9 @@ WideString __fastcall TOFMSDlgForm::GetShortcutTarget(WideString file)
         {
           if (ppf != NULL)
           {
-            ppf->Load(file.c_bstr(), STGM_READ);
+            ppf->Load(wPath.c_bstr(), STGM_READ);
             psl->GetPath(Info, MAX_PATH, wfs, SLGP_UNCPRIORITY);
-            sOut = WideString(Info);
+            wOut = WideString(Info);
           }
         }
       }
@@ -947,7 +950,7 @@ WideString __fastcall TOFMSDlgForm::GetShortcutTarget(WideString file)
   }
   catch(...) { }
 
-  return sOut;
+  return wOut;
 }
 //---------------------------------------------------------------------------
 WideString __fastcall TOFMSDlgForm::GetTextFromCommonDialog(HWND hDlg, UINT msg)

@@ -82,8 +82,9 @@ __published:	// IDE-managed Components
   TMenuItem *RemoveDuplicates1;
   TMenuItem *RandomizeList1;
   TMenuItem *CopySelected;
-  TMenuItem *CopySongInfoToClipboard1;
+  TMenuItem *CopyTagsToClipboard;
   TMenuItem *SelectAllItems;
+  TMenuItem *CopyLinkToClipboard;
   void __fastcall Timer1Timer(TObject *Sender);
   void __fastcall FlashTimerEvent(TObject *Sender);
   void __fastcall FormHide(TObject *Sender);
@@ -116,9 +117,10 @@ __published:	// IDE-managed Components
   void __fastcall RemoveDuplicates1Click(TObject *Sender);
   void __fastcall RandomizeList1Click(TObject *Sender);
   void __fastcall CopySelectedClick(TObject *Sender);
-  void __fastcall CopySongInfoToClipboard1Click(TObject *Sender);
+  void __fastcall CopyTagsToClipboardClick(TObject *Sender);
   void __fastcall FormDestroy(TObject *Sender);
   void __fastcall SelectAllItemsClick(TObject *Sender);
+  void __fastcall CopyLinkToClipboardClick(TObject *Sender);
 
 private:	// User declarations
 

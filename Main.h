@@ -2,7 +2,7 @@
 #ifndef MainH
 #define MainH
 //---------------------------------------------------------------------------
-#define VERSION "1.63"
+#define VERSION "1.64"
 #define FREEWARE_EDITION true
 #define DEBUG_ON false // Include a debug console, use MainForm->CWrite("")
 //---------------------------------------------------------------------------
@@ -333,9 +333,13 @@ public:		// User declarations
   void __fastcall CWrite(String S);
 #endif
 
+  bool __fastcall IsUri(String sIn);
+  bool __fastcall IsUri(WideString wIn);
+  bool __fastcall IsFileUri(String sIn);
+  bool __fastcall IsFileUri(WideString wIn);
+  WideString __fastcall LowerCaseW(WideString s);
   void __fastcall ShowPlaylist(TPlaylistForm* f);
   String __fastcall SetFlag(String S, int f);
-  String __fastcall PercentEncode(String sIn, const char* table, bool bEncodeAbove127);
   bool __fastcall ForceFade(void);
   bool __fastcall SetCurrentPlayer(void);
   void __fastcall RestoreFocus(void);

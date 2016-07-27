@@ -1860,7 +1860,13 @@ void __fastcall TPlaylistForm::DestroyExportDialog(void)
   }
 }
 //---------------------------------------------------------------------------
-void __fastcall TPlaylistForm::CopySongInfoToClipboard1Click(TObject* Sender)
+void __fastcall TPlaylistForm::CopyLinkToClipboardClick(TObject *Sender)
+{
+  // call same function used to copy selected item links in EditMode
+  CopySelectedClick(NULL);
+}
+//---------------------------------------------------------------------------
+void __fastcall TPlaylistForm::CopyTagsToClipboardClick(TObject* Sender)
 {
   try
   {

@@ -182,7 +182,7 @@ int __fastcall TImportForm::NoDialog(TPlaylistForm* f, String sPath, int Mode)
       if (sl == NULL) return 0;
 
       if (Ext.Length() > 0 && Ext.Pos(".") == 1)
-        Ext.Delete(1, 1);
+        Ext = Ext.Delete(1, 1);
 
       MainForm->ImportExt = Ext; // save as utf-8
 
@@ -351,8 +351,9 @@ int __fastcall TImportForm::XmlParser(TPlaylistForm* f, String sExt, String sIn,
             {
               // come here for both an opening or a closing tag!
               bool bTagHasUrl = (!bUrlParse && sTag[len] == '/');
+              bool bClosingTag = sTag[1] == '/'; // S.S. 7/21/16 add bClosingTag
 
-              if (bTagHasUrl || (bUrlParse && sTag[1] == '/'))
+              if (bTagHasUrl || (bUrlParse && bClosingTag)) // S.S. 7/21/16 change to !bClosingTag
               {
                 if (bTagHasUrl)
                   sUrl = sTag;
@@ -381,7 +382,7 @@ int __fastcall TImportForm::XmlParser(TPlaylistForm* f, String sExt, String sIn,
 
                 bUrlParse = false;
               }
-              else if (!bUrlParse)
+              else if (!bUrlParse && !bClosingTag) // S.S. 7/21/16 add !bClosingTag
               {
                 sUrl = "";
                 bUrlParse = true; // start of url string next char
@@ -429,13 +430,13 @@ bool __fastcall TImportForm::ParseFileLine(String &sRef, bool bTagHasUrl)
     {
       pos = sRef.Pos("=");
       if (pos > 0)
-        sRef.Delete(1, pos+1-1); // delete up through "="
+        sRef = sRef.Delete(1, pos+1-1); // delete up through "="
     }
 
     pos = sRef.Pos("\"");
     if (pos > 0)
     {
-      sRef.Delete(1, pos+1-1); // delete "
+      sRef = sRef.Delete(1, pos+1-1); // delete "
       sQuote = "\"";
     }
     else
@@ -443,7 +444,7 @@ bool __fastcall TImportForm::ParseFileLine(String &sRef, bool bTagHasUrl)
       pos = sRef.Pos("\'");
       if (pos > 0)
       {
-        sRef.Delete(1, pos+1-1); // delete '
+        sRef = sRef.Delete(1, pos+1-1); // delete '
         sQuote = "\'";
       }
     }
@@ -460,7 +461,7 @@ bool __fastcall TImportForm::ParseFileLine(String &sRef, bool bTagHasUrl)
       // erase leftover / from the "/>" ending
       if (bTagHasUrl)
         if (sFile[sFile.Length()] == '/')
-          sFile.SetLength(sFile.Length()-1);
+          sFile = sFile.SetLength(sFile.Length()-1);
     }
 
     sRef = sFile;
@@ -479,13 +480,19 @@ bool __fastcall TImportForm::ReplaceRelativePath(String &sFile, String sPath)
 {
   try
   {
+    bool bIsFileUri = MainForm->IsFileUri(sFile);
+    
+    // If it's a non-file URL like HTTP://, just return it as-is...
+    if (MainForm->IsUri(sFile) && !bIsFileUri)
+      return true;
+    
     // Save old path
     WideString sTemp = MainForm->GetCurrentDirW();
 
     // Set current directory to that of our play-list file
     MainForm->SetCurrentDirW(MainForm->Utf8ToWide(ExtractFilePath(sPath)));
 
-    if (sFile.LowerCase().Pos("file:") == 1)
+    if (bIsFileUri)
     {
       sFile = sFile.Delete(1, 5);
       sFile = MainForm->ReplaceAll(sFile, '\\', '/'); // make slashes consistent
@@ -498,9 +505,9 @@ bool __fastcall TImportForm::ReplaceRelativePath(String &sFile, String sPath)
       else if (sFile.Pos("/.") == 1)
         sFile = sFile.Delete(1, 1);
       else if (sFile.Pos("///") == 1)
-        sFile = sFile.Delete(1, 2);
+        sFile = sFile.Delete(1, 3);
       else if (sFile.Pos("//") == 1)
-        sFile = sFile.Delete(1, 1);
+        sFile = sFile.Delete(1, 2);
 
       sFile = ExpandUNCFileName(sFile);
     }

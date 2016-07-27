@@ -83,7 +83,6 @@ int __fastcall TExportForm::Dialog(TPlaylistForm* f, String d, String t)
                   "XML Shareable (xspf)|*.xspf|"
                   "Win Audio XML (wax)|*.wax|"
                   "Windows XML (wmx)|*.wmx|"
-                  "Windows Video (wvx)|*.wvx|"
                   "Winamp (pls)|*.pls|"
                   "Text (txt)|*.txt");
 
@@ -201,17 +200,20 @@ int __fastcall TExportForm::NoDialogU(TPlaylistForm* f, String uListFullPath,
       {
         try
         {
-          sTemp = ProcessFileName(lb->Items->Strings[ii], uListFullPath, Mode, bSaveAsUtf8, bUncPathFormat);
+          String sName = lb->Items->Strings[ii];
+
+          if (sName.IsEmpty()) continue;
+
+          // tack on a leading "file://", ProcessFileName will strip it off then add it back...
+          if (bUncPathFormat && !MainForm->IsUri(sName))
+              sName = sName.Insert("file://", 1);
+
+          // Note: sName is returned as a ref with the song-title (filename)
+          sTemp = ProcessFileName(sName, uListFullPath, Mode, bSaveAsUtf8, bUncPathFormat);
 
           if (!sTemp.IsEmpty())
           {
-#if DEBUG_ON
-    MainForm->CWrite( "\r\nR:" + sTemp + "\r\n");
-#endif
             sTemp = InsertXMLSpecialCodes(sTemp); // replace "&" with "&amp;"
-#if DEBUG_ON
-    MainForm->CWrite( "\r\nS:" + sTemp + "\r\n");
-#endif
 
             sl->Add("     <media src=\"" + sTemp + "\"/>");
             Count++;
@@ -238,12 +240,21 @@ int __fastcall TExportForm::NoDialogU(TPlaylistForm* f, String uListFullPath,
         {
           String sName = lb->Items->Strings[ii];
 
+          if (sName.IsEmpty()) continue;
+
+          // tack on a leading "file://", ProcessFileName will strip it off then add it back...
+          if (bUncPathFormat && !MainForm->IsUri(sName))
+            sName = sName.Insert("file://", 1);
+
           // Note: sName is returned as a ref with the song-title (filename)
           sTemp = ProcessFileName(sName, uListFullPath, Mode, bSaveAsUtf8, bUncPathFormat);
 
           if (!sTemp.IsEmpty())
           {
-            sTemp = MainForm->PercentEncode(sTemp, PERCENTCHARS, true); // also encode chars above 127
+            if (bUncPathFormat)
+              sTemp = PercentEncode(sTemp, PERCENTCHARS, true); // also encode chars above 127
+            else
+              sTemp = InsertXMLSpecialCodes(sTemp); // replace "&" with "&amp;"
 
             sl->Add("   <track>");
             sl->Add("     <title>" + sName + "</title>");
@@ -260,7 +271,7 @@ int __fastcall TExportForm::NoDialogU(TPlaylistForm* f, String uListFullPath,
       sl->Add(" </tracklist>");
       sl->Add("</playlist>");
     }
-    else if (Ext == "asx" || Ext == "wax") // Save as Windows-Media-Player XML file
+    else if (Ext == "asx" || Ext == "wax" || Ext == "wmx") // Save as Windows-Media-Player XML file
     {
       sl->Add("<ASX version = \"3.0\">");
       String sEnc = bSaveAsUtf8 ? "\"UTF-8\"" : "\"ANSI\"";
@@ -273,15 +284,18 @@ int __fastcall TExportForm::NoDialogU(TPlaylistForm* f, String uListFullPath,
         {
           String sName = lb->Items->Strings[ii];
 
+          if (sName.IsEmpty()) continue;
+
+          // tack on a leading "file://", ProcessFileName will strip it off then add it back...
+          if (bUncPathFormat && !MainForm->IsUri(sName))
+              sName = sName.Insert("file://", 1);
+
           // sName is returned by reference with the Title (filename)
           sTemp = ProcessFileName(sName, uListFullPath, Mode,
                                         bSaveAsUtf8, bUncPathFormat);
 
           if (!sTemp.IsEmpty())
           {
-// Unclear if this is needed - it IS needed for .wpl files for WMP 12 to read the list...
-//            sTemp = InsertXMLSpecialCodes(sTemp); // replace "&" with "&amp;"
-
             sl->Add("   <ENTRY>");
             sl->Add("     <TITLE>" + sName + "</TITLE>");
             sl->Add("     <REF HREF = \"" + sTemp + "\" />");
@@ -304,11 +318,23 @@ int __fastcall TExportForm::NoDialogU(TPlaylistForm* f, String uListFullPath,
       {
         try
         {
-          sTemp = ProcessFileName(lb->Items->Strings[ii], uListFullPath,
+          String sName = lb->Items->Strings[ii];
+
+          if (sName.IsEmpty()) continue;
+
+          // tack on a leading "file://", ProcessFileName will strip it off then add it back...
+          if (bUncPathFormat && !MainForm->IsUri(sName))
+              sName = sName.Insert("file://", 1);
+
+          // Note: sName is returned as a ref with the song-title (filename)
+          sTemp = ProcessFileName(sName, uListFullPath,
                                          Mode, bSaveAsUtf8, bUncPathFormat);
 
           if (!sTemp.IsEmpty())
           {
+            if (bUncPathFormat)
+              sTemp = PercentEncode(sTemp, PERCENTCHARS, true); // also encode chars above 127
+
             String sCount = String(Count+1) + "=";
             sl->Add("File" + sCount + sTemp);
             sl->Add("Title" + sCount + UniversalExtractFileName(sTemp));
@@ -321,11 +347,8 @@ int __fastcall TExportForm::NoDialogU(TPlaylistForm* f, String uListFullPath,
         TProgressForm::Move(ii);
       }
 
-      if (sl->Count > 0)
-      {
-        sl->Add("NumberOfEntries=" + String(Count));
-        sl->Add("Version=2");
-      }
+      sl->Add("NumberOfEntries=" + String(Count));
+      sl->Add("Version=2");
     }
     else // handle m3u and m3u8
     {
@@ -334,11 +357,23 @@ int __fastcall TExportForm::NoDialogU(TPlaylistForm* f, String uListFullPath,
       {
         try
         {
-          sTemp = ProcessFileName(lb->Items->Strings[ii], uListFullPath,
+          String sName = lb->Items->Strings[ii];
+
+          if (sName.IsEmpty()) continue;
+
+          // tack on a leading "file://", ProcessFileName will strip it off then add it back...
+          if (bUncPathFormat && !MainForm->IsUri(sName))
+              sName = sName.Insert("file://", 1);
+
+          // Note: sName is returned as a ref with the song-title (filename)
+          sTemp = ProcessFileName(sName, uListFullPath,
                                        Mode, bSaveAsUtf8, bUncPathFormat);
 
           if (!sTemp.IsEmpty())
           {
+            if (bUncPathFormat)
+              sTemp = PercentEncode(sTemp, PERCENTCHARS, true); // also encode chars above 127
+
             sl->Add(sTemp);
             Count++;
           }
@@ -381,7 +416,7 @@ String __fastcall TExportForm::ProcessFileName(String &uName,
     uName = UniversalExtractFileName(sTemp);
 
     // If it's a non-file URL like HTTP://, just return it as-is...
-    if (sTemp.Pos(":/") > 2 && sTemp.LowerCase().Pos("file:") != 1)
+    if (MainForm->IsUri(sTemp) && !MainForm->IsFileUri(sTemp))
       return sTemp;
 
     // Convert to "normal" file-path we can work with
@@ -510,21 +545,16 @@ String __fastcall TExportForm::StripFileUriPrefixIfAny(String &sIn)
     int ii = 7; // start looking for the next / after file:/
     for (; ii <= len; ii++)
       if (sIn[ii] == '/') break;
-    if (ii == len) return ""; // did not find second '/'!
+
+    // S.S. Changed 7/22/16 (1-based indices for these strings!)
+//    if (ii == len) return ""; // did not find second '/'!
+    if (ii > len) return ""; // did not find second '/'!
+
     sTemp = sIn.SubString(1, ii);
     sIn = sIn.SubString(ii+1, len-(ii+1)+1);
     return sTemp;
   }
   catch(...) { return ""; }
-}
-//---------------------------------------------------------------------------
-bool __fastcall TExportForm::IsUri(String sIn)
-{
-  // Could have "file:/laptop/D:/path/file.wma" so the key to telling a URL from
-  // a drive letter is that url preambles are more than one char!
-  //
-  // sIn should be trimmed but does not need to be lower-case...
-  return sIn.Pos(":/") > 2; // > 2 means you must have more than 1 char before the : (like "file:/")
 }
 //---------------------------------------------------------------------------
 String __fastcall TExportForm::UniversalExtractFileName(String sIn)
@@ -543,6 +573,38 @@ String __fastcall TExportForm::UniversalExtractFileName(String sIn)
 
   if (idx != 0) return sIn.SubString(idx+1, len-(idx+1)+1);
   return sIn;
+}
+//---------------------------------------------------------------------------
+String __fastcall TExportForm::PercentEncode(String sIn,
+                                const char* table, bool bEncodeAbove127)
+{
+  String sOut;
+  int len = sIn.Length();
+  int lenPercent = strlen(table);
+  for (int ii = 1; ii <= len; ii++)
+  {
+    char c = sIn[ii];
+    int jj;
+    for (jj = 0; jj < lenPercent; jj++)
+    {
+      if (c == table[jj])
+      {
+        // hex encode SPACE, etc.
+        sOut += "%" + IntToHex((int)(unsigned char)c, 2);
+        break;
+      }
+    }
+
+    // if not found in the special chars table, handle it below...
+    if (jj >= lenPercent)
+    {
+      // hex encode the control chars
+      if ((unsigned char)c < SPACE) sOut += "%" + IntToHex((int)(unsigned char)c, 2);
+      else if (bEncodeAbove127 && (unsigned char)c > 127) sOut += "%" + IntToHex((int)(unsigned char)c, 2);
+      else sOut += c;
+    }
+  }
+  return sOut;
 }
 //---------------------------------------------------------------------------
 

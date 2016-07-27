@@ -27,7 +27,6 @@ private:	// User declarations
 //  String __fastcall TrimAndReplaceSpecial(String sIn);
 //  char __fastcall XmlSpecialCharDecode(String In);
 //  String __fastcall UriDecode(String sSrc);
-//  String __fastcall PercentEncode(String sIn, const char* table);
   int __fastcall XmlParser(TPlaylistForm* f, String sType, String sIn, String sPath, bool bConvertToUtf8);
   bool __fastcall ParseFileLine(String &sRef, bool bTagHasUrl);
   String __fastcall ReplacePercentCodes(String sIn);
@@ -40,6 +39,7 @@ private:	// User declarations
   bool __fastcall mishex(char c);
   bool __fastcall ReadIniFile(String sIniPath, TStringList* sl);
   bool __fastcall IsUtf8(const char* string);
+  bool __fastcall IsUri(String sIn);
 
   int XMLCHARSLEN;
 
