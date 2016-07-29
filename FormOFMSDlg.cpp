@@ -526,6 +526,8 @@ bool __fastcall TOFMSDlgForm::InitDialog(HWND hDlg)
     cancelLoc.length = sizeof(WINDOWPLACEMENT);
     GetWindowPlacement(hCancelButton, &cancelLoc);
 
+    // We will be setting all three of our "overlayed" buttons to the same
+    // dimensions as the original Cancel button
     m_buttonWidth = cancelLoc.rcNormalPosition.right - cancelLoc.rcNormalPosition.left;
     m_buttonHeight = cancelLoc.rcNormalPosition.bottom - cancelLoc.rcNormalPosition.top;
 
@@ -573,6 +575,8 @@ bool __fastcall TOFMSDlgForm::ResizeCustomControl(HWND hDlg)
     else
       rect.left = rect.right - 3*m_buttonWidth - 2*BUTTON_GAP;
 
+    // extend the filename edit box to the rightmost edge of the rightmost
+    // button (Cancel)
     HWND hFileName = GetDlgItem(hParent, ID_FileName);
     WINDOWPLACEMENT fileNameLoc;
     fileNameLoc.length = sizeof(WINDOWPLACEMENT);
@@ -580,6 +584,8 @@ bool __fastcall TOFMSDlgForm::ResizeCustomControl(HWND hDlg)
     fileNameLoc.rcNormalPosition.right = cancelLoc.rcNormalPosition.right;
     SetWindowPlacement(hFileName, &fileNameLoc);
 
+    // position the rightmost edge of the filter box "two button-gaps"
+    // left of the leftmost edge of the leftmost button
     HWND hFilterCombo = GetDlgItem(hParent, ID_FilterCombo);
     WINDOWPLACEMENT filterComboLoc;
     filterComboLoc.length = sizeof(WINDOWPLACEMENT);
@@ -587,6 +593,7 @@ bool __fastcall TOFMSDlgForm::ResizeCustomControl(HWND hDlg)
     filterComboLoc.rcNormalPosition.right = rect.left - (2*BUTTON_GAP);
     SetWindowPlacement(hFilterCombo, &filterComboLoc);
 
+    // rect is a rectangle around the (either two or three) buttons
     return ResizeCustomControl(hDlg, rect);
   }
   catch (...)
@@ -653,7 +660,7 @@ bool __fastcall TOFMSDlgForm::ResizeCustomControl(HWND hDlg, RECT rect)
 
       try
       {
-        hRgn = CreateRectRgnIndirect(&rect);
+        hRgn = CreateRectRgnIndirect(&rect); // (Uses "logical units")
         if (hRgn != NULL)
           SetWindowRgn(hDlg, hRgn, TRUE);
       }

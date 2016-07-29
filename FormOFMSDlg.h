@@ -86,7 +86,7 @@ public:
 
 #define OF_BUFSIZE (MAX_PATH*10)
 
-#define BUTTON_GAP 4
+#define BUTTON_GAP 3
 
 #define INVALID_FILE_ATTRIBUTES 0xFFFFFFFF
 
