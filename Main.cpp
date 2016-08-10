@@ -173,8 +173,10 @@ void __fastcall TMainForm::FormCreate(TObject* Sender)
 void __fastcall TMainForm::FormShow(TObject *Sender)
 {
   // Create the song-list forms
-  Application->CreateForm(__classid(TPlaylistForm), &ListA);
-  Application->CreateForm(__classid(TPlaylistForm), &ListB);
+  if (ListA == NULL)
+    Application->CreateForm(__classid(TPlaylistForm), &ListA);
+  if (ListB == NULL)
+    Application->CreateForm(__classid(TPlaylistForm), &ListB);
 
   if (ListA == NULL || ListB == NULL)
   {
@@ -241,6 +243,7 @@ void __fastcall TMainForm::FormShow(TObject *Sender)
       pReg->ReadSetting(SM_REGKEY_REPEAT_B, bRepeatModeB, false);
       pReg->ReadSetting(SM_REGKEY_SHUFFLE_A, bShuffleModeA, false);
       pReg->ReadSetting(SM_REGKEY_SHUFFLE_B, bShuffleModeB, false);
+
       pReg->ReadSetting(SM_REGKEY_VOL_A, volA, 50);
       pReg->ReadSetting(SM_REGKEY_VOL_B, volB, 50);
     }
@@ -260,12 +263,24 @@ void __fastcall TMainForm::FormShow(TObject *Sender)
       bRepeatModeB = false;
       bShuffleModeA = false;
       bShuffleModeB = false;
+
+      volA = 50;
+      volB = 50;
     }
   }
   __finally
   {
     try { if (pReg != NULL) delete pReg; } catch(...) {}
   }
+
+  // in case a low volume got stuck in the registry...
+  if (volA < 10)
+    volA = 50;
+  if (volB < 10)
+    volB = 50;
+
+  SetCheckmarkA(volA);
+  SetCheckmarkB(volB);
 
   MenuFaderTypeNormal->Checked = bTypeCenterFade ? false : true; // inverse
   MenuFaderModeAuto->Checked = bModeManualFade ? false : true; // inverse
@@ -277,6 +292,8 @@ void __fastcall TMainForm::FormShow(TObject *Sender)
 
   try
   {
+    // SetVolumes() sets currentVolA/currentVolB and both media player volumes
+    // based on the values of volA/volB and the position of TrackBar1
     if (!SetVolumes() || !SetCurrentPlayer())
     {
       ShowMessage("Re-Install Windows Media Player 10 or above!");
@@ -377,7 +394,7 @@ void __fastcall TMainForm::FormClose(TObject* Sender, TCloseAction &Action)
       pReg->WriteSetting(SM_REGKEY_REPEAT_B, bRepeatModeB);
       pReg->WriteSetting(SM_REGKEY_SHUFFLE_A, bShuffleModeA);
       pReg->WriteSetting(SM_REGKEY_SHUFFLE_B, bShuffleModeB);
-      pReg->WriteSetting(SM_REGKEY_VOL_B, volB);
+      pReg->WriteSetting(SM_REGKEY_VOL_A, volA);
       pReg->WriteSetting(SM_REGKEY_VOL_B, volB);
       pReg->WriteSetting(SM_REGKEY_IMPORTEXT, ImportExt);
       pReg->WriteSetting(SM_REGKEY_EXPORTEXT, ExportExt);
@@ -850,78 +867,61 @@ WideString __fastcall TMainForm::LowerCaseW(WideString s)
 void __fastcall TMainForm::VA_10Click(TObject* Sender)
 {
   // Vol 1 10%
-  volA = 10;
-  SetVolumes();
+  SetVolumeAndCheckmarkA(10);
 }
 //---------------------------------------------------------------------------
 void __fastcall TMainForm::VA_25Click(TObject* Sender)
 {
   // Vol 1 25%
-  volA = 25;
-  SetVolumes();
+  SetVolumeAndCheckmarkA(25);
 }
 //---------------------------------------------------------------------------
 void __fastcall TMainForm::VA_50Click(TObject* Sender)
 {
   // Vol 1 50%
-  volA = 50;
-  SetVolumes();
+  SetVolumeAndCheckmarkA(50);
 }
 //---------------------------------------------------------------------------
 void __fastcall TMainForm::VA_75Click(TObject* Sender)
 {
   // Vol 1 75%
-  volA = 75;
-  SetVolumes();
+  SetVolumeAndCheckmarkA(75);
 }
 //---------------------------------------------------------------------------
 void __fastcall TMainForm::VA_100Click(TObject* Sender)
 {
   // Vol 1 100%
-  volA = 100;
-  SetVolumes();
+  SetVolumeAndCheckmarkA(100);
 }
 //---------------------------------------------------------------------------
 void __fastcall TMainForm::VB_10Click(TObject* Sender)
 {
   // Vol 2 10%
-  volB = 10;
-  SetVolumes();
+  SetVolumeAndCheckmarkB(10);
 }
 //---------------------------------------------------------------------------
 void __fastcall TMainForm::VB_25Click(TObject* Sender)
 {
   // Vol 2 25%
-  volB = 25;
-  SetVolumes();
+  SetVolumeAndCheckmarkB(25);
 }
 //---------------------------------------------------------------------------
 void __fastcall TMainForm::VB_50Click(TObject* Sender)
 {
   // Vol 2 50%
-  volB = 50;
-  SetVolumes();
+  SetVolumeAndCheckmarkB(50);
 }
 //---------------------------------------------------------------------------
 void __fastcall TMainForm::VB_75Click(TObject* Sender)
 {
   // Vol 2 75%
-  volB = 75;
-  SetVolumes();
+  SetVolumeAndCheckmarkB(75);
 }
 //---------------------------------------------------------------------------
 void __fastcall TMainForm::VB_100Click(TObject* Sender)
 {
   // Vol 2 100%
-  volB = 100;
-  SetVolumes();
-}
-//---------------------------------------------------------------------------
-void __fastcall TMainForm::TrackBar1Change(TObject* Sender)
-{
-  // Fader Moved
-  SetVolumes();
-  SetCurrentPlayer(); // Set CurrentPlayer variable (used for color-coding)
+  SetVolumeAndCheckmarkB(100);
 }
 //---------------------------------------------------------------------------
 void __fastcall TMainForm::Player1Next1Click(TObject* Sender)
@@ -949,89 +949,62 @@ bool __fastcall TMainForm::ForceFade(void)
     return false;
 
   try
-{
-  // player 1 on now?
-  if (ListB->Tag >= 0 && WindowsMediaPlayer1->playState == wmppsPlaying)
   {
-    // Start Player 2
-    if (WindowsMediaPlayer2->playState != wmppsPlaying)
+    // player 1 on now?
+    if (ListB->Tag >= 0 && WindowsMediaPlayer1->playState == wmppsPlaying)
     {
-      WindowsMediaPlayer2->settings->mute = true;
-      WindowsMediaPlayer2->controls->play();
-      WindowsMediaPlayer2->settings->mute = false;
+      // Start Player 2
+      if (WindowsMediaPlayer2->playState != wmppsPlaying)
+      {
+        WindowsMediaPlayer2->settings->mute = true;
+        WindowsMediaPlayer2->controls->play();
+        WindowsMediaPlayer2->settings->mute = false;
+      }
+
+      bFadeRight = true; // Set fade-direction
+      AutoFadeTimer->Enabled = true; // Start a fade
+      return true;
     }
 
-    bFadeRight = true; // Set fade-direction
-    AutoFadeTimer->Enabled = true; // Start a fade
-    return(true);
-  }
-
-  // player 2 on now?
-  if (ListA->Tag >= 0 && WindowsMediaPlayer2->playState == wmppsPlaying)
-  {
-    // Start Player 1
-    if (WindowsMediaPlayer1->playState != wmppsPlaying)
+    // player 2 on now?
+    if (ListA->Tag >= 0 && WindowsMediaPlayer2->playState == wmppsPlaying)
     {
-      WindowsMediaPlayer1->settings->mute = true;
-      WindowsMediaPlayer1->controls->play();
-      WindowsMediaPlayer1->settings->mute = false;
-    }
+      // Start Player 1
+      if (WindowsMediaPlayer1->playState != wmppsPlaying)
+      {
+        WindowsMediaPlayer1->settings->mute = true;
+        WindowsMediaPlayer1->controls->play();
+        WindowsMediaPlayer1->settings->mute = false;
+      }
 
-    bFadeRight = false; // Set fade-direction
-    AutoFadeTimer->Enabled = true; // Start a fade
-    return(true);
+      bFadeRight = false; // Set fade-direction
+      AutoFadeTimer->Enabled = true; // Start a fade
+      return true;
+    }
   }
-}
   catch(...)
-{
-  ShowMessage("ForceFade() threw an exception");
-}
+  {
+    ShowMessage("ForceFade() threw an exception");
+  }
 
   return false;
 }
 //---------------------------------------------------------------------------
-bool __fastcall TMainForm::SetVolumes(void)
+bool __fastcall TMainForm::SetVolumeAndCheckmarkA(int v)
 {
-  if (!WindowsMediaPlayer1 || !WindowsMediaPlayer2)
-    return(false);
-
-  try
-{
-  if (bTypeCenterFade)
-  {
-    if (TrackBar1->Position < 50)
-      WindowsMediaPlayer1->settings->volume = volA;
-    else
-      WindowsMediaPlayer1->settings->volume =
-        volA*((100-TrackBar1->Position)*2)/100;
-
-    if (TrackBar1->Position >= 50)
-      WindowsMediaPlayer2->settings->volume = volB;
-    else
-      WindowsMediaPlayer2->settings->volume =
-        volB*(TrackBar1->Position*2)/100;
-  }
-  else
-  {
-    WindowsMediaPlayer1->settings->volume =
-      (volA*(100-TrackBar1->Position))/100;
-
-    WindowsMediaPlayer2->settings->volume =
-      (volB*TrackBar1->Position)/100;
-  }
-
-  SetVolumeCheckmarksA(volA);
-  SetVolumeCheckmarksB(volB);
-}
-  catch(...)
-{
-  return(false);
-}
-
-  return(true);
+  bool bRet1 = SetVolumeA(v);
+  bool bRet2 = SetCheckmarkA(v);
+  return bRet1 || bRet2;
 }
 //---------------------------------------------------------------------------
-void __fastcall TMainForm::SetVolumeCheckmarksA(int v)
+bool __fastcall TMainForm::SetVolumeAndCheckmarkB(int v)
+{
+  bool bRet1 = SetVolumeB(v);
+  bool bRet2 = SetCheckmarkB(v);
+  return bRet1 || bRet2;
+}
+//---------------------------------------------------------------------------
+bool __fastcall TMainForm::SetCheckmarkA(int v)
 {
   try
   {
@@ -1066,14 +1039,14 @@ void __fastcall TMainForm::SetVolumeCheckmarksA(int v)
       default:
         VA_50->Checked = true;
       break;
-  };
+    };
+
+    return true;
   }
-  catch(...)
-  {
-  }
+  catch(...) { return false; }
 }
 //---------------------------------------------------------------------------
-void __fastcall TMainForm::SetVolumeCheckmarksB(int v)
+bool __fastcall TMainForm::SetCheckmarkB(int v)
 {
   try
   {
@@ -1108,10 +1081,107 @@ void __fastcall TMainForm::SetVolumeCheckmarksB(int v)
       default:
         VB_50->Checked = true;
       break;
-  };
+    };
+
+    return true;
+  }
+  catch(...) { return false; }
+}
+//---------------------------------------------------------------------------
+bool __fastcall TMainForm::SetVolumes()
+{
+  bool bRetA = SetVolumeA();
+  bool bRetB = SetVolumeB();
+  return bRetA || bRetB;
+}
+//---------------------------------------------------------------------------
+// overloaded...
+
+
+bool __fastcall TMainForm::SetVolumeA(int v)
+{
+  volA = v;
+  return SetVolumeA();
+}
+
+bool __fastcall TMainForm::SetVolumeA(void)
+{
+  if (!WindowsMediaPlayer1)
+    return false;
+
+  // TrackBar1 Min position is 0, Max position is 100 (0-100%)
+  // Units for volA/volB global vars is in percent (0-100)
+  try
+  {
+    if (bTypeCenterFade)
+    {
+      if (TrackBar1->Position < 50)
+        currentVolA = volA;
+      else
+        currentVolA = volA*((100-TrackBar1->Position)*2)/100;
+    }
+    else
+      currentVolA = (volA*(100-TrackBar1->Position))/100;
+
+#if DEBUG_ON
+    MainForm->CWrite("\r\nSetVolumeA(): currentVolA = " + String(currentVolA) + "\r\n");
+#endif
+
+    WindowsMediaPlayer1->settings->volume = currentVolA;
+
+    return true;
   }
   catch(...)
   {
+#if DEBUG_ON
+    MainForm->CWrite("\r\nSetVolumeA() exception!\r\n");
+#endif
+    return false;
+  }
+}
+//---------------------------------------------------------------------------
+// overloaded...
+
+bool __fastcall TMainForm::SetVolumeB(int v)
+{
+  volB = v;
+  return SetVolumeB();
+}
+
+bool __fastcall TMainForm::SetVolumeB(void)
+{
+  if (!WindowsMediaPlayer2)
+    return false;
+
+  // TrackBar1 Min position is 0, Max position is 100 (0-100%)
+  // Units for volA/volB global vars is in percent (0-100)
+  try
+  {
+    if (bTypeCenterFade)
+    {
+      if (TrackBar1->Position >= 50)
+        currentVolB = volB;
+      else
+        currentVolB = volB*(TrackBar1->Position*2)/100;
+    }
+    else
+      currentVolB = (volB*TrackBar1->Position)/100;
+
+#if DEBUG_ON
+    MainForm->CWrite("\r\nSetVolumeB(): volB = " + String(volB) + "\r\n");
+    MainForm->CWrite("\r\nSetVolumeB(): currentVolB = " + String(currentVolB) + "\r\n");
+#endif
+
+    WindowsMediaPlayer2->settings->volume = currentVolB;
+
+    return true;
+  }
+  catch(...)
+  {
+#if DEBUG_ON
+    MainForm->CWrite("\r\nSetVolumeB() exception!\r\n");
+#endif
+    return false;
   }
 }
 //---------------------------------------------------------------------------
@@ -1337,7 +1407,19 @@ void __fastcall TMainForm::AutoFadeTimerEvent(TObject* Sender)
       }
     }
   }
-  catch(...) { ShowMessage("AutoFadeTimerEvent() threw an exception..."); }
+  catch(...)
+  {
+#if DEBUG_ON
+    ShowMessage("AutoFadeTimerEvent() threw an exception...");
+#endif
+  }
+}
+//---------------------------------------------------------------------------
+void __fastcall TMainForm::TrackBar1Change(TObject* Sender)
+{
+  // Fader Moved
+  SetVolumes();
+  SetCurrentPlayer(); // Set CurrentPlayer variable (used for color-coding)
 }
 //---------------------------------------------------------------------------
 bool __fastcall TMainForm::SetCurrentPlayer(void)

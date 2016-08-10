@@ -2,7 +2,7 @@
 #ifndef MainH
 #define MainH
 //---------------------------------------------------------------------------
-#define VERSION "1.64"
+#define VERSION "1.65"
 #define FREEWARE_EDITION true
 #define DEBUG_ON false // Include a debug console, use MainForm->CWrite("")
 //---------------------------------------------------------------------------
@@ -278,13 +278,20 @@ private:	// User declarations
   void __fastcall AddFilesToStringList(TStringList* slFiles);
   bool __fastcall IsAudioFile(String sFile);
   bool __fastcall SetVolumes(void);
-  void __fastcall SetVolumeCheckmarksA(int v);
-  void __fastcall SetVolumeCheckmarksB(int v);
+  bool __fastcall SetVolumeA(int v);
+  bool __fastcall SetVolumeA(void);
+  bool __fastcall SetVolumeB(int v);
+  bool __fastcall SetVolumeB(void);
+  bool __fastcall SetVolumeAndCheckmarkA(int v);
+  bool __fastcall SetVolumeAndCheckmarkB(int v);
+  bool __fastcall SetCheckmarkA(int v);
+  bool __fastcall SetCheckmarkB(int v);
   __int64 __fastcall ComputeDiskSpace(int Mode);
   unsigned __int64 __fastcall RandomRemove(unsigned __int64 TargetBytes);
   void __fastcall WMDropFile(TWMDropFiles &Msg);
 
-  int volA, volB;
+  int volA, volB; // volumes set in registry
+  int currentVolA, currentVolB; // volume as it transitions during a fade
 
   int m_filesAddedCount;
 

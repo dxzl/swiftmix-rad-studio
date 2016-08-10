@@ -61,7 +61,7 @@ ALLLIB = $(LIBFILES) $(LIBRARIES) import32.lib cp32mt.lib
 IncludeVerInfo=1
 AutoIncBuild=0
 MajorVer=1
-MinorVer=63
+MinorVer=65
 Release=0
 Build=0
 Debug=0
@@ -75,32 +75,25 @@ CodePage=1252
 [Version Info Keys]
 CompanyName=Discrete-Time Systems (Scott M. Swift)
 FileDescription=SwiftMiX Audio Player/Mixer
-FileVersion=1.63.0.0
+FileVersion=1.65.0.0
 InternalName=SwiftMiX
-LegalCopyright=07/24/2015
+LegalCopyright=08/10/2016
 LegalTrademarks=
 OriginalFilename=SwiftMiX.exe
 ProductName=SwiftMiX
-ProductVersion=1.63.0.0
+ProductVersion=1.65.0.0
 Comments=Discrete-Time Systems - Mr Swift (All Rights Reserved)
 
 [Excluded Packages]
-$(BCB)\Bin\bcbide40.bpl=Borland C++Builder Core IDE Package
-$(BCB)\BIN\tlib40.bpl=Borland Type Library Engine
-$(BCB)\Bin\stride40.bpl=String Resource Editor IDE Package
-$(BCB)\Bin\bcbcxp40.bpl=Borland C++ Builder Code Explorer
-$(BCB)\Bin\dbx40.bpl=(untitled)
-C:\Windows\system32\\ibsmp40.bpl=Borland C++ InterBase Alerter Component
-C:\Windows\system32\\nmfast40.bpl=NetMasters Fastnet Tools
-$(BCB)\Bin\proide40.bpl=Borland Core IDE Package
-$(BCB)\Bin\mfcowlwizard.bpl=MFC/OWL Wizard
-$(BCB)\Bin\dclqrt40.bpl=QuickReport Components
 $(BCB)\Bin\bcbsmp40.bpl=Borland C++ Sample Components
+$(BCB)\Bin\dclqrt40.bpl=QuickReport Components
+C:\Windows\system32\\ibsmp40.bpl=Borland C++ InterBase Alerter Component
 $(BCB)\Bin\dcldb40.bpl=Borland Database Components
-$(BCB)\Bin\dclocx40.bpl=Borland Sample Imported ActiveX Controls
 $(BCB)\Bin\dcltee40.bpl=Borland TeeChart Components
-$(BCB)\Projects\Bpl\A406_D41.bpl=TurboPower Async Professional 4.06 Designtime Pacakge - VCL41
-$(BCB)\Bin\bcbdrt40.bpl=C++ Builder Direct module
+$(BCB)\Bin\mfcowlwizard.bpl=MFC/OWL Wizard
+C:\Windows\system32\\nmfast40.bpl=NetMasters Fastnet Tools
+$(BCB)\Bin\dclocx40.bpl=Borland Sample Imported ActiveX Controls
+$(BCB)\PROJECTS\Bpl\A406_D41.bpl=TurboPower Async Professional 4.06 Designtime Pacakge - VCL41
 
 [HistoryLists\hlIncludePath]
 Count=4
