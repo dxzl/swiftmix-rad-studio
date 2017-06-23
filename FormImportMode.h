@@ -8,6 +8,13 @@
 #include <Forms.hpp>
 #include <ExtCtrls.hpp>
 //---------------------------------------------------------------------------
+#define IMPORT_MODE_NONE     (-1)
+#define IMPORT_MODE_AUTO      0
+#define IMPORT_MODE_UTF8      1
+#define IMPORT_MODE_ANSI      2
+#define IMPORT_MODE_UTF16     3
+#define IMPORT_MODE_UTF16BE   4
+//---------------------------------------------------------------------------
 class TImportModeForm : public TForm
 {
 __published:	// IDE-managed Components

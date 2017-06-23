@@ -21,8 +21,9 @@ __fastcall TAboutForm::TAboutForm(TComponent* Owner)
             "Mister Swift, " + String(Date().DateString()) + "\n"
             + String(EMAIL);
 
-  RevLabel->Caption = String(VERSION) + "." + String(DEF_PRODUCT_ID) +
-                            "." + String(DEF_SUPER_REV);
+  RevLabel->Caption = String(VERSION);
+//  RevLabel->Caption = String(VERSION) + "." + String(DEF_PRODUCT_ID) +
+//                            "." + String(DEF_SUPER_REV);
 }
 //---------------------------------------------------------------------------
 __fastcall TAboutForm::~TAboutForm()
@@ -72,7 +73,7 @@ void __fastcall TAboutForm::Button2Click(TObject *Sender)
 void __fastcall TAboutForm::WebSiteClick(TObject *Sender)
 {
   // launch internet explorer
-  ShellExecute(Handle, "open", "iexplore.exe", WEBSITE, NULL, SW_SHOW);
+  ShellExecute(Handle, L"open", L"iexplore.exe", WEBSITE, NULL, SW_SHOW);
 }
 //---------------------------------------------------------------------------
 void __fastcall TAboutForm::FormShow(TObject *Sender)
@@ -82,7 +83,7 @@ void __fastcall TAboutForm::FormShow(TObject *Sender)
 //---------------------------------------------------------------------------
 void __fastcall TAboutForm::DisplayDaysRemaining( void )
 {
-  String S;
+  AnsiString S;
 
 #if (FREEWARE_EDITION == false)
   int DaysRem = PK->ComputeDaysRemaining();

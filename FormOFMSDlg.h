@@ -23,7 +23,8 @@
 #include <SysUtils.hpp>
 #include <Forms.hpp>
 #include <Windows.h>
-#include <vcl\olectnrs.hpp>
+#include <dlgs.h>
+//#include <vcl\olectnrs.hpp>
 
 // For SwiftMiX use:
 #define OFDbg MainForm
@@ -37,7 +38,7 @@
 class TWideItem
 {
 public:
-  WideString s;
+  String s;
   bool IsDirectory;
 };
 //---------------------------------------------------------------------------
@@ -58,13 +59,14 @@ public:
 //IDOK	The OK command button (push button)
 //IDCANCEL	The Cancel command button (push button)
 //pshHelp	The Help command button (push button)
+// (dlgs.h)
 //#define stc2 0x0441
 //#define cmb1 0x0470
 //#define stc3 0x0442
 //#define edt1 0x0480
 //#define cmb13 0x047c
 //#define lst1 0x0460
-// #define lst2 0x0461
+//#define lst2 0x0461
 //#define IDOK 1
 //#define IDCANCEL 2
 // Control aliases that actually make sense....
@@ -88,14 +90,19 @@ public:
 
 #define BUTTON_GAP 3
 
-#define INVALID_FILE_ATTRIBUTES 0xFFFFFFFF
+// this is the MAKEINTRESOURCEW macro with "::" before ULONG_PTR
+// (I was having namespace conflicts...)
+#define MYMIR(i) ((LPWSTR)((::ULONG_PTR)((WORD)(i))))
+
+// name of property we set to pass parameters...
+#define PROP_OFN L"OFMS"
 
 typedef void __fastcall (__closure *TOFMSDlgFolderChangeEvent)(TObject* Sender, TWMNotify& Message);
 
 //
 // subclassing stuff
 //
-typedef LRESULT (CALLBACK* SUBCLASSPROC)(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT* uIdSubclass, DWORD* dwRefData);
+typedef LRESULT (CALLBACK* MYSUBCLASSPROC)(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData);
 
 //---------------------------------------------------------------------------
 // This is for the new version IFileDialog
@@ -132,6 +139,7 @@ class TOFMSDlgForm : public TForm
 __published:	// IDE-managed Components
   void __fastcall FormDestroy(TObject *Sender);
   void __fastcall FormActivate(TObject *Sender);
+  void __fastcall FormCreate(TObject *Sender);
 
 private:
   WideChar* __fastcall SetFilter(void);
@@ -141,18 +149,18 @@ private:
   bool __fastcall ResizeCustomControl(HWND hDlg);
   bool __fastcall PositionButton(HWND hDlg, int top, int left, int right);
   bool __fastcall LoadFontFrom(HWND hDlgDest, HWND hDlgSrc);
-  WideString __fastcall GetShortcutTarget(WideString file);
-  bool __fastcall GetShortcut(WideString &sPath, bool &bIsDirectory);
-  bool __fastcall AddWideItem(WideString sPath, bool bIsDirectory);
+  String __fastcall GetShortcutTarget(String file);
+  bool __fastcall GetShortcut(String &sPath, bool &bIsDirectory);
+  bool __fastcall AddWideItem(String sPath, bool bIsDirectory);
   bool __fastcall GetSelectedItems(void);
-  WideString __fastcall GetTextFromCommonDialog(HWND hWnd, UINT msg);
+  String __fastcall GetTextFromCommonDialog(HWND hWnd, UINT msg);
   bool __fastcall InitDialog(HWND hDlg);
-  WideString __fastcall GetNextFileName(void);
+  String __fastcall GetNextFileName(void);
   bool __fastcall DeleteFileNameObjects();
   int __fastcall ProcessNotifyMessage(HWND hDlg, LPOFNOTIFY p_notify);
-  bool __fastcall MyDefSubclassProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
-  bool __fastcall MyRemoveWindowSubclass(HWND hWnd, SUBCLASSPROC pfnSubclass, int uIdSubclass);
-  bool __fastcall MySetWindowSubclass(HWND hWnd, SUBCLASSPROC pfnSubclass, int uIdSubclass);
+//  bool __fastcall MyDefSubclassProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+  bool __fastcall MyRemoveWindowSubclass(HWND hWnd, MYSUBCLASSPROC pfnSubclass, int uIdSubclass);
+  bool __fastcall MySetWindowSubclass(HWND hWnd, MYSUBCLASSPROC pfnSubclass, int uIdSubclass);
 
   WideChar* p_szFileName;
   WideChar* p_szTitleName;
@@ -169,10 +177,10 @@ private:
 
   static const WideChar szUntitled[10];
 
-  WideString FCurrentFolder, FCurrentFilter;
-  WideString FInitialDir, FDlgTitle;
+  String FCurrentFolder, FCurrentFilter;
+  String FInitialDir, FDlgTitle;
 
-  WideString FFilters, FFileNameLabel;
+  String FFilters, FFileNameLabel;
   WideChar* p_filterBuf;
 
   TList* p_fno;
@@ -182,53 +190,47 @@ private:
   HWND FDlgHandle;
 
 protected:
-  WideString __fastcall GetFileName(void);
-  String __fastcall GetFileNameUtf8(void);
-  String __fastcall GetTitleUtf8(void);
+  String __fastcall GetTitle(void);
+  String __fastcall GetFileName(void);
   TList* __fastcall GetFileNameObjects(void);
 
   static UINT CALLBACK OFNHookProc(HWND hDlg, UINT msg, WPARAM wParam,
                                                               LPARAM lParam);
 
   static LRESULT CALLBACK OpenFileSubClass(HWND hDlg, UINT uMsg, WPARAM wParam,
-                     LPARAM lParam, UINT* uIdSubclass, DWORD* dwRefData);
+                     LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData);
 
   static LRESULT CALLBACK DefViewSubClass(HWND hDlg, UINT uMsg, WPARAM wParam,
-                           LPARAM lParam, UINT* uIdSubclass, DWORD* dwRefData);
+                           LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData);
 
-public:		// User declarations
-  __fastcall TOFMSDlgForm(TComponent* Owner);
-  virtual __fastcall ~TOFMSDlgForm();
+public: // User declarations
+//  __fastcall TOFMSDlgForm(TComponent* Owner);
+//  virtual __fastcall ~TOFMSDlgForm();
 
   // Call this show the dialog.
-  bool __fastcall ExecuteW(int iFilter, WideString wInitialDir,
-                                                          String sDlgTitle);
-  bool __fastcall ExecuteU(String uFilter, String uInitialDir,
-                                                            String uDlgTitle);
-  bool __fastcall ExecuteU(int iFilter, String uInitialDir,
-                                                           String uDlgTitle);
+  bool __fastcall Execute(String uFilter, String uInitialDir, String uDlgTitle);
+  bool __fastcall Execute(int iFilter, String uInitialDir, String uDlgTitle);
 
   // You can set these three before calling Execute
-  __property WideString Filters = {read = FFilters, write = FFilters};
-  __property WideString FileNameLabel = {read = FFileNameLabel,
+  __property String Filters = {read = FFilters, write = FFilters};
+  __property String FileNameLabel = {read = FFileNameLabel,
                                                 write = FFileNameLabel};
-	__property bool SingleSelect = {read = FSingleSelect, write = FSingleSelect};
+  __property bool SingleSelect = {read = FSingleSelect, write = FSingleSelect};
 
-	__property bool FolderIsSelected = {read = FFolderIsSelected};
+  __property bool FolderIsSelected = {read = FFolderIsSelected};
 
   __property TList* FileNameObjects = {read = GetFileNameObjects};
 
   __property HWND DlgHandle = {read = FDlgHandle};
   __property UINT Result = {read = FResult};
-	__property int FilterCount = {read = FFilterCount};
-	__property int FilterIndex = {read = FFilterIndex}; // 1-based index
-  __property String TitleUtf8 = {read = GetTitleUtf8 };
-  __property String FileNameUtf8 = {read = GetFileNameUtf8};
-  __property WideString FileName = {read = GetFileName};
-  __property WideString InitialDir = {read = FInitialDir};
-  __property WideString DlgTitle = {read = FDlgTitle};
-  __property WideString CurrentFolder = {read = FCurrentFolder};
-  __property WideString CurrentFilter = {read = FCurrentFilter};
+  __property int FilterCount = {read = FFilterCount};
+  __property int FilterIndex = {read = FFilterIndex}; // 1-based index
+  __property String Title = {read = GetTitle};
+  __property String FileName = {read = GetFileName};
+  __property String InitialDir = {read = FInitialDir};
+  __property String DlgTitle = {read = FDlgTitle};
+  __property String CurrentFolder = {read = FCurrentFolder};
+  __property String CurrentFilter = {read = FCurrentFilter};
 };
 //---------------------------------------------------------------------------
 extern PACKAGE TOFMSDlgForm *OFMSDlgForm;

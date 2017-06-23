@@ -3,16 +3,17 @@
 #include <vcl.h>
 #include "Main.h"
 #pragma hdrstop
+
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
 #pragma link "WMPLib_OCX"
 #pragma resource "*.dfm"
 
 TMainForm* MainForm;
-//CWindowDock* gDock;
 #if !FREEWARE_EDITION
 KeyClass* PK;
 #endif
+
 //---------------------------------------------------------------------------
 __fastcall TMainForm::TMainForm(TComponent* Owner) : TForm(Owner)
 {
@@ -43,9 +44,6 @@ __fastcall TMainForm::TMainForm(TComponent* Owner) : TForm(Owner)
   CInit();
 #endif
 
-  // Create Window Docking Manager
-//  gDock = new CWindowDock();
-
   ProgressForm = NULL; // Program tests this in RecurseFileAdd
 
   Application->HintColor = TColor(0xF5CFB8);
@@ -57,12 +55,12 @@ __fastcall TMainForm::TMainForm(TComponent* Owner) : TForm(Owner)
 
   GPlaylistForm = NULL;
 
-  DeskDir = GetSpecialFolder(CSIDL_DESKTOPDIRECTORY);
+  FsDeskDir = GetSpecialFolder(CSIDL_DESKTOPDIRECTORY);
 
   // Try to register the SwiftMix messages
-  RWM_SwiftMixTime = RegisterWindowMessage("WM_SwiftMixTime");
-  RWM_SwiftMixPlay = RegisterWindowMessage("WM_SwiftMixPlay");
-  RWM_SwiftMixState = RegisterWindowMessage("WM_SwiftMixState");
+  RWM_SwiftMixTime = RegisterWindowMessage(L"WM_SwiftMixTime");
+  RWM_SwiftMixPlay = RegisterWindowMessage(L"WM_SwiftMixPlay");
+  RWM_SwiftMixState = RegisterWindowMessage(L"WM_SwiftMixState");
 }
 //---------------------------------------------------------------------------
 void __fastcall TMainForm::FormCreate(TObject* Sender)
@@ -118,31 +116,37 @@ void __fastcall TMainForm::FormCreate(TObject* Sender)
   WindowsMediaPlayer2->Height = WindowsMediaPlayer1->Height;
   WindowsMediaPlayer2->Width = WindowsMediaPlayer1->Width;
 
-  UpDown1->Left = 0;
-  UpDown1->Height = 21;
-  UpDown1->Width = 17;
+  Panel1->Top = WindowsMediaPlayer2->Top + WindowsMediaPlayer2->Height + 2;
+  Panel1->Width = WindowsMediaPlayer2->Width;
 
-  FadeRate->Left = UpDown1->Left+UpDown1->Width;
-  FadeRate->Height = UpDown1->Height;
-  FadeRate->Width = UpDown1->Width;
+  StatusBar1->Top = Panel1->Top + Panel1->Height + 2;
+  StatusBar1->Width = WindowsMediaPlayer2->Width;
 
-  UpDown2->Left = FadeRate->Left+FadeRate->Width;
-  UpDown2->Height = UpDown1->Height;
-  UpDown2->Width = UpDown1->Width;
-
-  FadePoint->Left = UpDown2->Left+UpDown2->Width;;
-  FadePoint->Height = UpDown1->Height;
-  FadePoint->Width = UpDown1->Width+4;
-
-  TrackBar1->Left = FadePoint->Left+FadePoint->Width+2;
-  TrackBar1->Height = 33;
-  TrackBar1->Top = WindowsMediaPlayer2->Top+WindowsMediaPlayer2->Height+2;
-  TrackBar1->Width = WindowsMediaPlayer1->Width-TrackBar1->Left;
-
-  UpDown1->Top = TrackBar1->Top+((TrackBar1->Height-UpDown1->Height)/2);
-  FadeRate->Top = UpDown1->Top;
-  UpDown2->Top = UpDown1->Top;
-  FadePoint->Top = UpDown1->Top;
+//  UpDown1->Left = 0;
+//  UpDown1->Height = 21;
+//  UpDown1->Width = 17;
+//
+//  FadeRate->Left = UpDown1->Left+UpDown1->Width;
+//  FadeRate->Height = UpDown1->Height;
+//  FadeRate->Width = UpDown1->Width;
+//
+//  UpDown2->Left = FadeRate->Left+FadeRate->Width;
+//  UpDown2->Height = UpDown1->Height;
+//  UpDown2->Width = UpDown1->Width;
+//
+//  FadePoint->Left = UpDown2->Left+UpDown2->Width;;
+//  FadePoint->Height = UpDown1->Height;
+//  FadePoint->Width = UpDown1->Width+4;
+//
+//  TrackBar1->Left = FadePoint->Left+FadePoint->Width+2;
+//  TrackBar1->Height = 33;
+//  TrackBar1->Top = WindowsMediaPlayer2->Top+WindowsMediaPlayer2->Height+2;
+//  TrackBar1->Width = WindowsMediaPlayer1->Width-TrackBar1->Left;
+//
+//  UpDown1->Top = TrackBar1->Top+((TrackBar1->Height-UpDown1->Height)/2);
+//  FadeRate->Top = UpDown1->Top;
+//  UpDown2->Top = UpDown1->Top;
+//  FadePoint->Top = UpDown1->Top;
 
   // Now dynamically Autosize the MainForm...
   AutoSize = true;
@@ -162,9 +166,9 @@ void __fastcall TMainForm::FormCreate(TObject* Sender)
     StatusBar1->Panels->Items[ii]->Width = Size;
 
   // Create Window Docking Manager
-//  FDock = new CWindowDock();
-//  if (FDock == NULL)
-//    ShowMessage("Unable to create docking manager!");
+  FDock = new CWindowDock();
+  if (FDock == NULL)
+    ShowMessage("Unable to create docking manager!");
 
   //enable drag/drop files
   ::DragAcceptFiles(this->Handle, true);
@@ -196,18 +200,18 @@ void __fastcall TMainForm::FormShow(TObject *Sender)
   ListB->OtherForm = ListA;
   ListB->PlayerA = false; // this list is not for the A player
 
-	//-----------------
-	// Add the windows to the docking system
-	//-----------------
-	//Set the parent window
-//  if (gDock != NULL)
-//  {
-//  	gDock->SetParent(this->Handle);
-//
-//  	//Add the child windows
-//  	gDock->AddChild(ListA->Handle); // automatically dock
-//  	gDock->AddChild(ListB->Handle); // automatically dock
-//  }
+  //-----------------
+  // Add the windows to the docking system
+  //-----------------
+  //Set the parent window
+  if (FDock != NULL)
+  {
+    FDock->SetParent(this->Handle);
+
+    //Add the child windows
+    FDock->AddChild(ListA->Handle); // automatically dock
+    FDock->AddChild(ListB->Handle); // automatically dock
+  }
 
   TRegHelper* pReg = NULL;
 
@@ -225,16 +229,16 @@ void __fastcall TMainForm::FormShow(TObject *Sender)
       ExportExt = pReg->ReadSetting(SM_REGKEY_EXPORTEXT);
 
       if (SaveDirA.IsEmpty())
-        SaveDirA = WideToUtf8(DeskDir);
+        SaveDirA = FsDeskDir;
 
       if (SaveDirB.IsEmpty())
-        SaveDirB = WideToUtf8(DeskDir);
+        SaveDirB = FsDeskDir;
 
       if (ImportExt.IsEmpty())
-        ImportExt = WideToUtf8(IMPORT_EXT);
+        ImportExt = IMPORT_EXT;
 
       if (ExportExt.IsEmpty())
-        ExportExt = WideToUtf8(EXPORT_EXT);
+        ExportExt = EXPORT_EXT;
 
       pReg->ReadSetting(SM_REGKEY_FADERMODE, bTypeCenterFade, false);
       pReg->ReadSetting(SM_REGKEY_FADERTYPE, bModeManualFade, false);
@@ -251,10 +255,10 @@ void __fastcall TMainForm::FormShow(TObject *Sender)
     {
       ShowMessage("Unable to read settings from the registry!");
 
-      SaveDirA = WideToUtf8(DeskDir);
-      SaveDirB = WideToUtf8(DeskDir);
-      ImportExt = WideToUtf8(IMPORT_EXT);
-      ExportExt = WideToUtf8(EXPORT_EXT);
+      SaveDirA = FsDeskDir;
+      SaveDirB = FsDeskDir;
+      ImportExt = IMPORT_EXT;
+      ExportExt = EXPORT_EXT;
 
       bTypeCenterFade = false;
       bModeManualFade = false;
@@ -320,7 +324,7 @@ void __fastcall TMainForm::FormDestroy(TObject *Sender)
 // probably we don't need this either...
 //  if (ProgressForm != NULL) ProgressForm->Release();
 
-//  if (FDock != NULL) delete FDock;
+  if (FDock != NULL) delete FDock;
 
 #if DEBUG_ON
   MainForm->CWrite("\r\nFormDestroy() in FormMain()\r\n");
@@ -332,7 +336,6 @@ void __fastcall TMainForm::FormDestroy(TObject *Sender)
 #endif
 
 //  Application->Terminate();
-//  if (gDock != NULL) delete gDock;
 }
 //---------------------------------------------------------------------------
 void __fastcall TMainForm::FormClose(TObject* Sender, TCloseAction &Action)
@@ -524,7 +527,7 @@ bool __fastcall TMainForm::FileDialog(TPlaylistForm* f, String &d, String t)
 
         MainForm->FilesAddedCount = 0;
 
-        fd->ExecuteU(0, d, t); // no def utf-8 extension?
+        fd->Execute(0, d, t); // no def utf-8 extension?
 
         if(fd->Result == IDOK)
         {
@@ -563,8 +566,10 @@ bool __fastcall TMainForm::FileDialog(TPlaylistForm* f, String &d, String t)
 
           if (fd->FileNameObjects != NULL && fd->FileNameObjects->Count > 0)
           {
-            if (f == ListA) SaveDirA = WideToUtf8(fd->CurrentFolder);
-            else SaveDirB = WideToUtf8(fd->CurrentFolder);
+            if (f == ListA)
+              SaveDirA = fd->CurrentFolder;
+            else
+              SaveDirB = fd->CurrentFolder;
 
             int Count = fd->FileNameObjects->Count;
 
@@ -582,11 +587,11 @@ bool __fastcall TMainForm::FileDialog(TPlaylistForm* f, String &d, String t)
               {
                 if (pWI->IsDirectory)
                 {
-                  if (SetCurrentDirectoryW(pWI->s.c_bstr()))
+                  if (SetCurrentDirectory(pWI->s.w_str()))
                     AddAllSongsToListBox(f);
                 }
                 else
-                  AddFileToListBox(f, WideToUtf8(pWI->s), false);
+                  AddFileToListBox(f, pWI->s);
               }
 
               TProgressForm::Move(ii);
@@ -596,7 +601,7 @@ bool __fastcall TMainForm::FileDialog(TPlaylistForm* f, String &d, String t)
           }
 
           // Show the listbox
-          if (f->CheckBox->Items->Count)
+          if (f->Count)
             ShowPlaylist(f);
 
           bRet = true;
@@ -653,7 +658,7 @@ void __fastcall TMainForm::AddAllSongsToListBox(TPlaylistForm* f)
         if (Application->Terminated || (int)GetAsyncKeyState(VK_ESCAPE) < 0)
           break;
 
-        AddFileToListBox(f, sl->Strings[ii], false);
+        AddFileToListBox(f, sl->Strings[ii]);
         TProgressForm::Move(ii);
       }
 
@@ -669,7 +674,7 @@ void __fastcall TMainForm::AddAllSongsToListBox(TPlaylistForm* f)
   }
 }
 //---------------------------------------------------------------------------
-bool __fastcall TMainForm::AddFileToListBox(TPlaylistForm* f, String sFile, bool bConvertToUtf8)
+bool __fastcall TMainForm::AddFileToListBox(TPlaylistForm* f, String sFile)
 // Set bConvertToUtf8 to convert to utf8 unless it already IS utf8!
 {
   if (f == NULL || sFile.Length() == 0)
@@ -680,11 +685,7 @@ bool __fastcall TMainForm::AddFileToListBox(TPlaylistForm* f, String sFile, bool
 
   try
   {
-    if (bConvertToUtf8)
-      sFile = AnsiToUtf8(sFile);
-
-    f->CheckBox->Items->AddObject(sFile, (TObject*)f->TextColor);
-    f->CheckBox->State[f->CheckBox->Items->Count-1] = cbGrayed;
+    f->AddObject(sFile, (TObject*)f->TextColor);
     m_filesAddedCount++;
     return true;
   }
@@ -692,7 +693,7 @@ bool __fastcall TMainForm::AddFileToListBox(TPlaylistForm* f, String sFile, bool
 }
 //---------------------------------------------------------------------------
 void __fastcall TMainForm::RecurseFileAdd(TStringList* slFiles)
-// Uses the WideString versions of the Win32 API FindFirstFile and FindNextFile directly
+// Uses the String versions of the Win32 API FindFirstFile and FindNextFile directly
 // and converts the resulting paths to UTF-8 for storage in an ordinary TStringList
 //
 // Use SetCurrentDirectory() to set our root directory or TOpenDialog sets it also...
@@ -711,7 +712,7 @@ void __fastcall TMainForm::RecurseFileAdd(TStringList* slFiles)
 
   try
   {
-    hFind = FindFirstFileExW(L"*", l, &sr, s, NULL, (DWORD)FIND_FIRST_EX_LARGE_FETCH);
+    hFind = FindFirstFileEx(L"*", l, &sr, s, NULL, (DWORD)FIND_FIRST_EX_LARGE_FETCH);
 
     // Get list of subdirectories into a stringlist
     if (hFind != INVALID_HANDLE_VALUE)
@@ -727,10 +728,10 @@ void __fastcall TMainForm::RecurseFileAdd(TStringList* slFiles)
           if (len == 2 && sr.cFileName[0] == L'.' && sr.cFileName[1] == L'.')
             continue;
 
-//          slSubDirs->Add(WideToUtf8(WideString(sr.cFileName)));
-          slSubDirs->Add(WideToUtf8(sr.cFileName));
+//          slSubDirs->Add(WideToUtf8(String(sr.cFileName)));
+          slSubDirs->Add(sr.cFileName);
         }
-      } while (FindNextFileW(hFind, &sr) == TRUE);
+      } while (FindNextFile(hFind, &sr) == TRUE);
     }
   }
   __finally
@@ -749,10 +750,10 @@ void __fastcall TMainForm::RecurseFileAdd(TStringList* slFiles)
     if (Application->Terminated || (int)GetAsyncKeyState(VK_ESCAPE) < 0)
       break;
 
-    if (SetCurrentDirectoryW(Utf8ToWide(slSubDirs->Strings[ii]).c_bstr()))
+    if (SetCurrentDirectory(slSubDirs->Strings[ii].w_str()))
     {
       RecurseFileAdd(slFiles);
-      SetCurrentDirectoryW(L"..");
+      SetCurrentDirectory(L"..");
     }
 
     // Move Progress bar if it exists
@@ -773,14 +774,14 @@ void __fastcall TMainForm::AddFilesToStringList(TStringList* slFiles)
   try
   {
     // Get the current directory
-    WideString wdir = GetCurrentDirW();
+    String wdir = GetCurrentDir();
 
     hFind = FindFirstFileExW(L"*", l, &sr, s, NULL, (DWORD)FIND_FIRST_EX_LARGE_FETCH);
 
     // Get list of files into a stringlist
     if (hFind != INVALID_HANDLE_VALUE)
     {
-      WideString ws;
+      String ws;
 
       // Don't add these file-types...
       int mask = FILE_ATTRIBUTE_DIRECTORY|FILE_ATTRIBUTE_SYSTEM|FILE_ATTRIBUTE_HIDDEN;
@@ -789,8 +790,8 @@ void __fastcall TMainForm::AddFilesToStringList(TStringList* slFiles)
       {
         if ((sr.dwFileAttributes & mask) == 0)
         {
-          ws = wdir + L"\\" + WideString(sr.cFileName);
-          slFiles->Add(WideToUtf8(ws));
+          ws = wdir + L"\\" + String(sr.cFileName);
+          slFiles->Add(ws);
         }
       } while (FindNextFileW(hFind, &sr) == TRUE);
     }
@@ -819,8 +820,6 @@ bool __fastcall TMainForm::IsAudioFile(String sFile)
           sExt == ".mid" || sExt == ".midi" || sExt == ".rmi" || sExt == ".m4a";
 }
 //---------------------------------------------------------------------------
-// Overloaded...
-
 // Could have "file:/laptop/D:/path/file.wma" so the key to telling a URL from
 // a drive letter is that url preambles are more than one char!
 //
@@ -829,39 +828,10 @@ bool __fastcall TMainForm::IsUri(String sIn)
 {
   return sIn.Pos(":/") > 2; // > 2 means you must have more than 1 char before the : (like "file:/")
 }
-
-bool __fastcall TMainForm::IsUri(WideString wIn)
-{
-  return wIn.Pos(":/") > 2; // > 2 means you must have more than 1 char before the : (like "file:/")
-}
 //---------------------------------------------------------------------------
-// Overloaded...
-
 bool __fastcall TMainForm::IsFileUri(String sIn)
 {
   return sIn.LowerCase().Pos("file:/") == 1;
-}
-
-bool __fastcall TMainForm::IsFileUri(WideString wIn)
-{
-  wIn = LowerCaseW(wIn);
-  return wIn.Pos("file:/") == 1;
-}
-//---------------------------------------------------------------------------
-WideString __fastcall TMainForm::LowerCaseW(WideString s)
-{
-  WideChar c;
-
-  int len = s.Length();
-
-  for (int ii = 1; ii <= len; ii++)
-  {
-    c = s[ii];
-
-    if (iswupper(c))
-      s[ii] = towlower(c);
-  }
-  return WideString(s);
 }
 //---------------------------------------------------------------------------
 void __fastcall TMainForm::VA_10Click(TObject* Sender)
@@ -951,10 +921,10 @@ bool __fastcall TMainForm::ForceFade(void)
   try
   {
     // player 1 on now?
-    if (ListB->Tag >= 0 && WindowsMediaPlayer1->playState == wmppsPlaying)
+    if (ListB->Tag >= 0 && WindowsMediaPlayer1->playState == WMPPlayState::wmppsPlaying)
     {
       // Start Player 2
-      if (WindowsMediaPlayer2->playState != wmppsPlaying)
+      if (WindowsMediaPlayer2->playState != WMPPlayState::wmppsPlaying)
       {
         WindowsMediaPlayer2->settings->mute = true;
         WindowsMediaPlayer2->controls->play();
@@ -967,10 +937,10 @@ bool __fastcall TMainForm::ForceFade(void)
     }
 
     // player 2 on now?
-    if (ListA->Tag >= 0 && WindowsMediaPlayer2->playState == wmppsPlaying)
+    if (ListA->Tag >= 0 && WindowsMediaPlayer2->playState == WMPPlayState::wmppsPlaying)
     {
       // Start Player 1
-      if (WindowsMediaPlayer1->playState != wmppsPlaying)
+      if (WindowsMediaPlayer1->playState != WMPPlayState::wmppsPlaying)
       {
         WindowsMediaPlayer1->settings->mute = true;
         WindowsMediaPlayer1->controls->play();
@@ -1259,10 +1229,10 @@ void __fastcall TMainForm::ShowPlaylist(TPlaylistForm* f)
 
   try
   {
-    if (f->CheckBox->Items->Count && f->Tag == -1)
+    if (f->Count && f->Tag == -1)
       f->QueueFirst();
 
-    f->SetTitleW();
+    f->SetTitle();
 
     if (f->WindowState == wsMinimized)
       f->WindowState = wsNormal;
@@ -1281,8 +1251,8 @@ void __fastcall TMainForm::ShowPlaylist(TPlaylistForm* f)
 
     if (IsWinVistaOrHigher())
     {
-      borderWidth = 2*GetSystemMetrics(SM_CXDLGFRAME);
-      borderHeight = 2*GetSystemMetrics(SM_CYDLGFRAME);
+      borderWidth = GetSystemMetrics(SM_CXDLGFRAME);
+      borderHeight = GetSystemMetrics(SM_CYDLGFRAME);
     }
     else // xp
     {
@@ -1319,6 +1289,8 @@ void __fastcall TMainForm::ShowPlaylist(TPlaylistForm* f)
 
     f->Show();
     MainForm->SetFocus();
+
+//    GDock->WindowMoved(f->Handle);
   }
   catch(...) { ShowMessage("ShowPlaylist() threw an exception"); }
 }
@@ -1429,12 +1401,12 @@ bool __fastcall TMainForm::SetCurrentPlayer(void)
 
   try
   {
-    if (TrackBar1->Position != 100 && WindowsMediaPlayer1->playState == wmppsPlaying)
+    if (TrackBar1->Position != 100 && WindowsMediaPlayer1->playState == WMPPlayState::wmppsPlaying)
       CurrentPlayer |= 1;
     else
       CurrentPlayer &= ~1;
 
-    if (TrackBar1->Position != 0 && WindowsMediaPlayer2->playState == wmppsPlaying)
+    if (TrackBar1->Position != 0 && WindowsMediaPlayer2->playState == WMPPlayState::wmppsPlaying)
       CurrentPlayer |= 2;
     else
       CurrentPlayer &= ~2;
@@ -1499,7 +1471,7 @@ void __fastcall TMainForm::Pause1Click(TObject* Sender)
   if (!WindowsMediaPlayer1)
     return;
 
-  if (WindowsMediaPlayer1->playState == wmppsPaused) // paused?
+  if (WindowsMediaPlayer1->playState == WMPPlayState::wmppsPaused) // paused?
     WindowsMediaPlayer1->controls->play();
   else
     WindowsMediaPlayer1->controls->pause();
@@ -1530,7 +1502,7 @@ void __fastcall TMainForm::Pause2Click(TObject* Sender)
   if (!WindowsMediaPlayer2)
     return;
 
-  if (WindowsMediaPlayer2->playState == wmppsPaused) // paused?
+  if (WindowsMediaPlayer2->playState == WMPPlayState::wmppsPaused) // paused?
     WindowsMediaPlayer2->controls->play();
   else
     WindowsMediaPlayer2->controls->pause();
@@ -1549,7 +1521,7 @@ void __fastcall TMainForm::ImportPlaylist1Click(TObject* Sender)
 
   TImportForm* id = ListA->CreateImportDialog();
 
-  int Count = id->Dialog(ListA, DeskDirUtf8, "Import PlayerA Playlist");
+  int Count = id->Dialog(ListA, FsDeskDir, "Import PlayerA Playlist");
 
   if (Count > 0)
   {
@@ -1571,7 +1543,7 @@ void __fastcall TMainForm::ImportPlaylist2Click(TObject* Sender)
     return;
   Application->CreateForm(__classid(TImportForm), &ImportForm);
 
-  int Count = ImportForm->Dialog(ListB, DeskDirUtf8, "Import PlayerB Playlist");
+  int Count = ImportForm->Dialog(ListB, FsDeskDir, "Import PlayerB Playlist");
 
   if (Count > 0)
   {
@@ -1591,7 +1563,7 @@ void __fastcall TMainForm::ExportPlaylist1Click(TObject* Sender)
 {
   Application->CreateForm(__classid(TExportForm), &ExportForm);
 
-  int Count = ExportForm->Dialog(ListA, DeskDirUtf8, WideToUtf8(L"Export PlayerA Playlist"));
+  int Count = ExportForm->Dialog(ListA, FsDeskDir, "Export PlayerA Playlist");
 
   if (Count == 0)
     ShowMessage("Unable to export list or list empty...");
@@ -1603,7 +1575,7 @@ void __fastcall TMainForm::ExportPlaylist2Click(TObject* Sender)
 {
   Application->CreateForm(__classid(TExportForm), &ExportForm);
 
-  int Count = ExportForm->Dialog(ListB, DeskDirUtf8, WideToUtf8(L"Export PlayerB Playlist"));
+  int Count = ExportForm->Dialog(ListB, FsDeskDir, "Export PlayerB Playlist");
 
   if (Count == 0)
     ShowMessage("Unable to export list or list empty...");
@@ -1615,7 +1587,7 @@ void __fastcall TMainForm::MenuHelpClick(TObject* Sender)
 {
   // launch default web-browser
   //ShellExecute(Handle, "open", "iexplore.exe", HELPSITE, NULL, SW_SHOW);
-  ShellExecute(NULL, "open", HELPSITE, NULL, NULL, SW_SHOWNORMAL);
+  ShellExecute(NULL, L"open", HELPSITE, NULL, NULL, SW_SHOWNORMAL);
 }
 //---------------------------------------------------------------------------
 void __fastcall TMainForm::MenuRepeatModeAClick(TObject* Sender)
@@ -1694,8 +1666,8 @@ void __fastcall TMainForm::MenuExportSongFilesandListsClick(TObject* Sender)
     return;
 
    // Copy all song-list files to directory user selects
-  if ((ListA != NULL && ListA->CheckBox->Items->Count != 0) ||
-                    (ListB != NULL && ListB->CheckBox->Items->Count != 0))
+  if ((ListA != NULL && ListA->Count != 0) ||
+                    (ListB != NULL && ListB->Count != 0))
   {
     MenuAutoFitToDVDCDClick(NULL);
 
@@ -1712,7 +1684,7 @@ void __fastcall TMainForm::MenuExportSongFilesandListsClick(TObject* Sender)
     DirDlgForm->AutoScroll = false; // turn off autoscroll
 
     // Setting CSIDL_MYMUSIC works but the user can't go up from there!
-    WideString wUserDir = DirDlgForm->Execute(CSIDL_DESKTOPDIRECTORY);
+    String wUserDir = DirDlgForm->Execute(CSIDL_DESKTOPDIRECTORY);
 
     DirDlgForm->Close();
     DirDlgForm->Release();
@@ -1724,15 +1696,15 @@ void __fastcall TMainForm::MenuExportSongFilesandListsClick(TObject* Sender)
     {
       wUserDir += "\\SwiftMiX";
 
-      if (DirectoryExistsW(wUserDir))
+      if (DirectoryExists(wUserDir))
       {
-        WideString wMsg = "Old directory already exists:\n\n" +
+        String wMsg = "Old directory already exists:\n\n" +
           wUserDir + "\n\nPlease delete it first...";
-        ShowMessageW(wMsg);
+        ShowMessage(wMsg);
         return;
       }
       else
-        CreateDirectoryW(wUserDir.c_bstr(), NULL); // Create base directory
+        CreateDirectory(wUserDir.w_str(), NULL); // Create base directory
 
       // Save the playlists
       Application->CreateForm(__classid(TExportForm), &ExportForm);
@@ -1743,10 +1715,11 @@ void __fastcall TMainForm::MenuExportSongFilesandListsClick(TObject* Sender)
       // EXPORT_EXT is wpl so we need to set the bSaveAsUtf8 flag... since all the files will be
       // copied into the same directory with the associated lists, we just want the file-name in the list,
       // not the path
-      WideString wFile = wUserDir + "\\SwiftMiXA." + EXPORT_EXT;
-      ExportForm->NoDialogW(ListA, wFile, EXPORT_PATH_NONE, true, false);
+      // We write in utf8 without BOM
+      String wFile = wUserDir + "\\SwiftMiXA." + EXPORT_EXT;
+      ExportForm->NoDialog(ListA, wFile, EXPORT_PATH_NONE, EXPORT_MODE_UTF8, false, false);
       wFile = wUserDir + "\\SwiftMiXB." + EXPORT_EXT;
-      ExportForm->NoDialogW(ListB, wFile,  EXPORT_PATH_NONE, true, false);
+      ExportForm->NoDialog(ListB, wFile,  EXPORT_PATH_NONE, EXPORT_MODE_UTF8, false, false);
 
       ExportForm->Close();
       ExportForm->Release();
@@ -1762,16 +1735,15 @@ void __fastcall TMainForm::MenuExportSongFilesandListsClick(TObject* Sender)
     ShowMessage("Both lists are empty!");
 }
 //---------------------------------------------------------------------------
-void __fastcall TMainForm::CopyMusicFiles(TPlaylistForm* f, WideString wUserDir)
+void __fastcall TMainForm::CopyMusicFiles(TPlaylistForm* f, String uUserDir)
 {
   try
   {
-    int count = f->CheckBox->Items->Count;
+    int count = f->Count;
 
     TProgressForm::Init(count, 5);
 
-    WideString wSourcePath, wDestPath;
-    String uSourcePath, uFileName;
+    String uSourcePath, uFileName, uDestPath;
 
     // Copy ListA files
     for (int ii = 0; ii < count; ii++)
@@ -1783,7 +1755,7 @@ void __fastcall TMainForm::CopyMusicFiles(TPlaylistForm* f, WideString wUserDir)
         return;
       }
 
-      uSourcePath = f->CheckBox->Items->Strings[ii];
+      uSourcePath = f->GetString(ii);
 
       // Note that we use the old UTF-8 string "ListA->CheckBox->Items[ii]"
       // to run the Ansi ExtractFileName() on and path should be UTF-8 too...
@@ -1792,12 +1764,10 @@ void __fastcall TMainForm::CopyMusicFiles(TPlaylistForm* f, WideString wUserDir)
 
       if (uFileName.Length() > 0)
       {
-        wSourcePath = Utf8ToWide(uSourcePath);
+        uDestPath = uUserDir + String("\\") + uFileName;
 
-        wDestPath = wUserDir + WideString("\\") + Utf8ToWide(uFileName);
-
-        if (CopyFileW(wSourcePath.c_bstr(), wDestPath.c_bstr(), FALSE) == 0)
-          if (PromptAbort(wSourcePath))
+        if (CopyFile(uSourcePath.w_str(), uDestPath.w_str(), FALSE) == 0)
+          if (PromptAbort(uSourcePath))
             return;
       }
 
@@ -1807,12 +1777,12 @@ void __fastcall TMainForm::CopyMusicFiles(TPlaylistForm* f, WideString wUserDir)
   catch(...) {}
 }
 //---------------------------------------------------------------------------
-bool __fastcall TMainForm::PromptAbort(WideString s)
+bool __fastcall TMainForm::PromptAbort(String s)
 {
-  WideString sMsg = WideString("Unable to copy file:\n\n") + s +
-                                                WideString("\n\nAbort?");
+  String sMsg = String("Unable to copy file:\n\n") + s +
+                                                String("\n\nAbort?");
 
-  if (MessageBoxW(Handle, sMsg.c_bstr(), L"File Copy Error", MB_ICONQUESTION +
+  if (MessageBox(Handle, sMsg.w_str(), L"File Copy Error", MB_ICONQUESTION +
                                           MB_YESNO + MB_DEFBUTTON1) == IDYES)
   {
     TProgressForm::UnInit();
@@ -1883,12 +1853,12 @@ __int64 __fastcall TMainForm::ComputeDiskSpace(int Mode)
 // DISKSPACE_MESSAGEBOX_YESNO 1
 // DISKSPACE_MESSAGEBOX_OK    2
 {
-  WideString temp;
+  String temp;
 
   unsigned __int64 total_size_A = 0;
 
-  int cA = ListA->CheckBox->Items->Count;
-  int cB = ListB->CheckBox->Items->Count;
+  int cA = ListA->Count;
+  int cB = ListB->Count;
 //  int total = cA + cB;
 
   TProgressForm::Init(cA+cB);
@@ -1900,12 +1870,12 @@ __int64 __fastcall TMainForm::ComputeDiskSpace(int Mode)
     if (Application->Terminated || (int)GetAsyncKeyState(VK_ESCAPE) < 0)
       return -1;
 
-    temp = Utf8ToWide(ListA->CheckBox->Items->Strings[ii]);
+    temp = ListA->GetString(ii);
 
-    if (FileExistsW(temp))
+    if (FileExists(temp))
     {
       // Open file to get size
-      HANDLE h = CreateFileW(temp.c_bstr(),
+      HANDLE h = CreateFile(temp.w_str(),
                          GENERIC_READ,
                          0,
                          NULL,
@@ -1932,12 +1902,12 @@ __int64 __fastcall TMainForm::ComputeDiskSpace(int Mode)
     if (Application->Terminated || (int)GetAsyncKeyState(VK_ESCAPE) < 0)
       return -1;
 
-    temp = Utf8ToWide(ListB->CheckBox->Items->Strings[ii]);
+    temp = ListB->GetString(ii);
 
-    if (FileExistsW(temp))
+    if (FileExists(temp))
     {
       // Open file to get size
-      HANDLE h = CreateFileW(temp.c_bstr(),
+      HANDLE h = CreateFile(temp.w_str(),
                          GENERIC_READ,
                          0,
                          NULL,
@@ -2074,12 +2044,12 @@ __int64 __fastcall TMainForm::ComputeDiskSpace(int Mode)
   {
     s += "\n\nOK to continue with export?";
 
-    int button = MessageBox(Handle, s.c_str(), "Export", MB_ICONQUESTION + MB_YESNO + MB_DEFBUTTON2);
+    int button = MessageBox(Handle, s.w_str(), L"Export", MB_ICONQUESTION + MB_YESNO + MB_DEFBUTTON2);
 
     if (button == IDNO) return (-1);
   }
   else if (Mode == 2)
-    MessageBox(Handle, s.c_str(), "Disc-Space", MB_ICONINFORMATION + MB_OK);
+    MessageBox(Handle, s.w_str(), L"Disc-Space", MB_ICONINFORMATION + MB_OK);
 
   return((__int64)total_size);
 }
@@ -2090,23 +2060,23 @@ unsigned __int64 __fastcall TMainForm::RandomRemove(unsigned __int64 TargetBytes
 
   TPlaylistForm* fp;
 
-  WideString temp;
+  String temp;
 
-  while(ListA->CheckBox->Items->Count > 0 || ListB->CheckBox->Items->Count > 0)
+  while(ListA->Count > 0 || ListB->Count > 0)
   {
     // Delete from the most-populated list
-    fp = (ListA->CheckBox->Items->Count > 0 && ListA->CheckBox->Items->Count > ListB->CheckBox->Items->Count) ? ListA : ListB;
+    fp = (ListA->Count > 0 && ListA->Count > ListB->Count) ? ListA : ListB;
 
-    if (fp->CheckBox->Items->Count > 0)
+    if (fp->Count > 0)
     {
-      int rand_idx = random(fp->CheckBox->Items->Count);
+      int rand_idx = random(fp->Count);
 
-      temp = fp->CheckBox->Items->Strings[rand_idx];
+      temp = fp->GetString(rand_idx);
 
-      if (FileExistsW(temp))
+      if (FileExists(temp))
       {
         // Open file to get size
-        HANDLE h = CreateFileW(temp.c_bstr(),
+        HANDLE h = CreateFile(temp.w_str(),
                            GENERIC_READ,
                            0,
                            NULL,
@@ -2122,18 +2092,18 @@ unsigned __int64 __fastcall TMainForm::RandomRemove(unsigned __int64 TargetBytes
 
           if (bAutoSizePrompt)
           {
-            WideString S_Player = fp == ListA ? L"A" : L"B";
-            WideString s = WideString("Remove: \"") + temp + WideString("\" (") + WideString(file_size) +
-                  WideString(" bytes) from Player ") + S_Player + WideString("'s list?");
+            String S_Player = fp == ListA ? L"A" : L"B";
+            String s = String("Remove: \"") + temp + String("\" (") + String(file_size) +
+                  String(" bytes) from Player ") + S_Player + String("'s list?");
 
-            button = MessageBoxW(Handle, s.c_bstr(), L"Remove Song?", MB_ICONQUESTION + MB_YESNOCANCEL + MB_DEFBUTTON2);
+            button = MessageBox(Handle, s.w_str(), L"Remove Song?", MB_ICONQUESTION + MB_YESNOCANCEL + MB_DEFBUTTON2);
           }
 
           if (button == IDYES)
           {
             acc += file_size;
             // Remove the item
-            fp->CheckBox->Items->Delete(rand_idx);
+            fp->DeleteString(rand_idx);
           }
 
           CloseHandle(h);
@@ -2288,7 +2258,7 @@ void __fastcall TMainForm::LoadListWithDroppedFiles(TWMDropFiles &Msg, TPlaylist
   if (f == NULL)
     return;
 
-  HCURSOR hcurSave = NULL;
+  TCursor Save_Cursor;
   wchar_t* pBuf = NULL;
   TStringList* sl = NULL;
   ImportForm = NULL;
@@ -2303,8 +2273,8 @@ void __fastcall TMainForm::LoadListWithDroppedFiles(TWMDropFiles &Msg, TPlaylist
     if (DroppedCount == 0)
       return;
 
-    // Set the cursor to the hourglass and save the previous cursor.
-    hcurSave = ::SetCursor(::LoadCursor(NULL, IDC_WAIT));
+    Save_Cursor = Screen->Cursor;
+    Screen->Cursor = crHourGlass;    // Show hourglass cursor
 
     TProgressForm::Init(DroppedCount);
 
@@ -2320,13 +2290,13 @@ void __fastcall TMainForm::LoadListWithDroppedFiles(TWMDropFiles &Msg, TPlaylist
       ::DragQueryFileW((HDROP)Msg.Drop, ii, pBuf, MAX_PATH);
 
       if (*pBuf != L'\0')
-        sl->Add(WideToUtf8(pBuf));
+        sl->Add(pBuf);
 
       TProgressForm::Move(ii);
     }
 
     // Repair a quirky list-system... (not needed after the first item has been added to a listbox!)
-    if (sl->Count > 1 && f->CheckBox->Items->Count == 0)
+    if (sl->Count > 1 && f->Count == 0)
       sl->Exchange(0, sl->Count-1);
 
     // Press and hold Shift to bypass the file-extention filtering
@@ -2334,7 +2304,7 @@ void __fastcall TMainForm::LoadListWithDroppedFiles(TWMDropFiles &Msg, TPlaylist
 
     TProgressForm::Init(sl->Count);
 
-    WideString SaveDir = GetCurrentDirW(); // Save
+    String SaveDir = GetCurrentDir(); // Save
 
     for (int ii = 0; ii < sl->Count; ii++)
     {
@@ -2346,9 +2316,9 @@ void __fastcall TMainForm::LoadListWithDroppedFiles(TWMDropFiles &Msg, TPlaylist
 
       String Ext = ExtractFileExt(sFile).LowerCase();
 
-      if (Ext.IsEmpty() && DirectoryExistsW(Utf8ToWide(sFile)))
+      if (Ext.IsEmpty() && DirectoryExists(sFile))
       {
-        SetCurrentDirW(Utf8ToWide(sFile));
+        SetCurrentDir(sFile);
         AddAllSongsToListBox(f); // recurse add folder and sub-folder's songs to list
       }
       else if (this->GBypassFilters || Ext == ".wpl" || Ext == ".m3u8" || Ext == ".m3u" ||
@@ -2356,13 +2326,13 @@ void __fastcall TMainForm::LoadListWithDroppedFiles(TWMDropFiles &Msg, TPlaylist
                             Ext == ".wmx" || Ext == ".wvx" ||  Ext == ".pls" || Ext == ".txt")
         FilesAddedCount += ImportForm->NoDialog(f, sFile,
                 ImportForm->GetMode(Ext, IMPORT_MODE_AUTO)); // Load the playlist
-      else if (AddFileToListBox(f, sFile, false))
+      else if (AddFileToListBox(f, sFile))
         FilesAddedCount++;
 
       TProgressForm::Move(ii);
     }
 
-    SetCurrentDirW(SaveDir); // Restore
+    SetCurrentDir(SaveDir); // Restore
 
     if (FilesAddedCount > 0)
       ShowPlaylist(f);
@@ -2383,109 +2353,169 @@ void __fastcall TMainForm::LoadListWithDroppedFiles(TWMDropFiles &Msg, TPlaylist
     try { if (sl != NULL) delete sl; } catch(...) {}
 
     // Restore the previous cursor.
-    try { if (hcurSave != NULL) ::SetCursor(hcurSave); } catch(...) {}
+    Screen->Cursor = Save_Cursor;
   }
+}
+//---------------------------------------------------------------------------
+bool __fastcall TMainForm::WriteStringToFile(String wPath, String sInfo)
+// Writes sInfo (ANSI or UTF-8) to a UTF-16 path
+{
+  bool bRet = false;
+  FILE* f = NULL;
+
+  try
+  {
+    // open/create file for writing in text-mode
+    f = _wfopen(wPath.w_str(), L"wb");
+
+    unsigned length = sInfo.Length();
+
+    if (f != NULL)
+      if (fwrite(sInfo.w_str(), sizeof(char), length, f) == length)
+        bRet = true;
+  }
+  __finally
+  {
+    try { if (f != NULL) fclose(f); } catch(...) {}
+  }
+
+  return bRet;
+}
+//---------------------------------------------------------------------------
+String __fastcall TMainForm::GetSpecialFolder(int csidl)
+{
+  HMODULE h = NULL;
+  String sOut;
+  WideChar* buf = NULL;
+
+  try
+  {
+    h = LoadLibraryW(L"Shell32.dll");
+
+    if (h != NULL)
+    {
+      tGetFolderPath pGetFolderPath;
+      pGetFolderPath = (tGetFolderPath)GetProcAddress(h, "SHGetFolderPathW");
+
+      if (pGetFolderPath != NULL)
+      {
+        buf = new WideChar[MAX_PATH];
+        buf[0] = L'\0';
+
+        if ((*pGetFolderPath)(Application->Handle, csidl, NULL, SHGFP_TYPE_CURRENT, (LPTSTR)buf) == S_OK)
+          sOut = String(buf);
+      }
+    }
+
+  }
+  __finally
+  {
+    if (h != NULL) FreeLibrary(h);
+    if (buf != NULL) delete [] buf;
+  }
+
+  return sOut;
 }
 //---------------------------------------------------------------------------
 // UTF8 Encode/Decode
 //---------------------------------------------------------------------------
-String __fastcall TMainForm::AnsiToUtf8(String sIn)
-// Code to convert ANSI to UTF-8 (Works!)
-{
-  if (sIn.IsEmpty()) return "";
-
-  // Use the MultiByteToWideChar function to determine the size of the UTF-16 representation of the string. You use
-  // this size to allocate a new buffer that can hold the UTF-16 version of the string.
-  DWORD dwNum = MultiByteToWideChar(CP_ACP, 0, sIn.c_str(), -1, NULL, 0);
-  wchar_t *pwText = new wchar_t[dwNum];
-
-  // The MultiByteToWideChar function takes the ASCII string and converts it into UTF-16, storing it in pwText.
-  MultiByteToWideChar(CP_ACP, 0, sIn.c_str(), -1, pwText, dwNum);
-
-  // The WideCharToMultiByte function tells you the size of the returned string so you can create a buffer for the UTF-8 representation.
-  dwNum = WideCharToMultiByte(CP_UTF8, 0, pwText, -1, NULL, 0, NULL, NULL);
-  char *psText = new char[dwNum];
-
-  // Convert the UTF-16 string into UTF-8, storing the result into psText.
-  WideCharToMultiByte(CP_UTF8, 0, pwText, -1, psText, dwNum, NULL, NULL);
-
-  delete [] pwText;
-
-  // Convert to VCL String.
-  if (dwNum > 1) sIn = String(psText, dwNum-1);
-  else sIn = "";
-
-  delete [] psText;
-
-  return sIn;
-}
+//AnsiString __fastcall TMainForm::AnsiToUtf8(AnsiString sIn)
+//// Code to convert ANSI to UTF-8 (Works!)
+//{
+//  if (sIn.IsEmpty()) return "";
+//
+//  // Use the MultiByteToWideChar function to determine the size of the UTF-16 representation of the string. You use
+//  // this size to allocate a new buffer that can hold the UTF-16 version of the string.
+//  DWORD dwNum = MultiByteToWideChar(CP_ACP, 0, sIn.c_str(), -1, NULL, 0);
+//  wchar_t *pwText = new wchar_t[dwNum];
+//
+//  // The MultiByteToWideChar function takes the ASCII string and converts it into UTF-16, storing it in pwText.
+//  MultiByteToWideChar(CP_ACP, 0, sIn.c_str(), -1, pwText, dwNum);
+//
+//  // The WideCharToMultiByte function tells you the size of the returned string so you can create a buffer for the UTF-8 representation.
+//  dwNum = WideCharToMultiByte(CP_UTF8, 0, pwText, -1, NULL, 0, NULL, NULL);
+//  char *psText = new char[dwNum];
+//
+//  // Convert the UTF-16 string into UTF-8, storing the result into psText.
+//  WideCharToMultiByte(CP_UTF8, 0, pwText, -1, psText, dwNum, NULL, NULL);
+//
+//  delete [] pwText;
+//
+//  // Convert to VCL String.
+//  if (dwNum > 1) sIn = String(psText, dwNum-1);
+//  else sIn = "";
+//
+//  delete [] psText;
+//
+//  return sIn;
+//}
 //---------------------------------------------------------------------------
-String __fastcall TMainForm::Utf8ToAnsi(String sIn)
-// Code to convert UTF-8 to ASCII
-{
-  // Use the MultiByteToWideChar function to determine the size of the UTF-16 representation of the string. You use
-  // this size to allocate a new buffer that can hold the UTF-16 version of the string.
-  DWORD dwNum = MultiByteToWideChar(CP_UTF8, 0, sIn.c_str(), -1, NULL, 0);
-  wchar_t *pwText = new wchar_t[dwNum];
-
-  // The MultiByteToWideChar function takes the UTF-8 string and converts it into UTF-16, storing it in pwText.
-  MultiByteToWideChar(CP_UTF8, 0, sIn.c_str(), -1, pwText, dwNum);
-
-  // The WideCharToMultiByte function tells you the size of the returned string so you can create a buffer for the ANSI representation.
-  dwNum = WideCharToMultiByte(CP_ACP, 0, pwText, -1, NULL, 0, NULL, NULL);
-  char *psText = new char[dwNum];
-
-  // Convert the UTF-16 string into ANSI, storing the result into psText.
-  WideCharToMultiByte(CP_ACP, 0, pwText, -1, psText, dwNum, NULL, NULL);
-
-  delete [] pwText;
-
-  // Convert to VCL String.
-  if (dwNum > 1) sIn = String(psText, dwNum-1);
-  else sIn = "";
-
-  delete [] psText;
-
-  return sIn;
-}
+//AnsiString __fastcall TMainForm::Utf8ToAnsi(AnsiString sIn)
+//// Code to convert UTF-8 to ASCII
+//{
+//  // Use the MultiByteToWideChar function to determine the size of the UTF-16 representation of the string. You use
+//  // this size to allocate a new buffer that can hold the UTF-16 version of the string.
+//  DWORD dwNum = MultiByteToWideChar(CP_UTF8, 0, sIn.c_str(), -1, NULL, 0);
+//  wchar_t *pwText = new wchar_t[dwNum];
+//
+//  // The MultiByteToWideChar function takes the UTF-8 string and converts it into UTF-16, storing it in pwText.
+//  MultiByteToWideChar(CP_UTF8, 0, sIn.c_str(), -1, pwText, dwNum);
+//
+//  // The WideCharToMultiByte function tells you the size of the returned string so you can create a buffer for the ANSI representation.
+//  dwNum = WideCharToMultiByte(CP_ACP, 0, pwText, -1, NULL, 0, NULL, NULL);
+//  char *psText = new char[dwNum];
+//
+//  // Convert the UTF-16 string into ANSI, storing the result into psText.
+//  WideCharToMultiByte(CP_ACP, 0, pwText, -1, psText, dwNum, NULL, NULL);
+//
+//  delete [] pwText;
+//
+//  // Convert to VCL String.
+//  if (dwNum > 1) sIn = String(psText, dwNum-1);
+//  else sIn = "";
+//
+//  delete [] psText;
+//
+//  return sIn;
+//}
 //---------------------------------------------------------------------------
-WideString __fastcall TMainForm::Utf8ToWide(String sIn)
-// Code to convert UTF-8 to UTF-16 (wchar_t)
-{
-  WideString sWide = L"";
-
-  if (sIn.Length() > 0)
-  {
-    wchar_t* pwText = NULL;
-
-    try
-    {
-      // Use the MultiByteToWideChar function to determine the size of the UTF-16 representation of the string. You use
-      // this size to allocate a new buffer that can hold the UTF-16 version of the string.
-      DWORD dwNum = MultiByteToWideChar(CP_UTF8, 0, sIn.c_str(), -1, NULL, 0);
-      wchar_t *pwText = new wchar_t[dwNum];
-
-      if (pwText != NULL)
-      {
-        // The MultiByteToWideChar function takes the UTF-8 string and converts it into UTF-16, storing it in pwText.
-        MultiByteToWideChar(CP_UTF8, 0, sIn.c_str(), -1, pwText, dwNum);
-
-        // Convert to VCL WideString.
-        if (dwNum > 1)
-          sWide = WideString(pwText, dwNum-1);
-      }
-    }
-    // NOTE: Unlike C#, __finally does NOT get called if we execute a return!!!
-    __finally
-    {
-      try { if (pwText != NULL) delete [] pwText; } catch(...) {}
-    }
-  }
-
-  return sWide;
-}
+//WideString __fastcall TMainForm::Utf8ToWide(AnsiString sIn)
+//// Code to convert UTF-8 to UTF-16 (wchar_t)
+//{
+//  WideString sWide = L"";
+//
+//  if (sIn.Length() > 0)
+//  {
+//    wchar_t* pwText = NULL;
+//
+//    try
+//    {
+//      // Use the MultiByteToWideChar function to determine the size of the UTF-16 representation of the string. You use
+//      // this size to allocate a new buffer that can hold the UTF-16 version of the string.
+//      DWORD dwNum = MultiByteToWideChar(CP_UTF8, 0, sIn.c_str(), -1, NULL, 0);
+//      wchar_t *pwText = new wchar_t[dwNum];
+//
+//      if (pwText != NULL)
+//      {
+//        // The MultiByteToWideChar function takes the UTF-8 string and converts it into UTF-16, storing it in pwText.
+//        MultiByteToWideChar(CP_UTF8, 0, sIn.c_str(), -1, pwText, dwNum);
+//
+//        // Convert to VCL WideString.
+//        if (dwNum > 1)
+//          sWide = WideString(pwText, dwNum-1);
+//      }
+//    }
+//    // NOTE: Unlike C#, __finally does NOT get called if we execute a return!!!
+//    __finally
+//    {
+//      try { if (pwText != NULL) delete [] pwText; } catch(...) {}
+//    }
+//  }
+//
+//  return sWide;
+//}
 //---------------------------------------------------------------------------
-String __fastcall TMainForm::WideToUtf8(WideString sIn)
+AnsiString __fastcall TMainForm::WideToUtf8(WideString sIn)
 // Code to convert UTF-16 (WideString or WideChar wchar_t) to UTF-8
 {
   if (sIn.IsEmpty()) return "";
@@ -2510,248 +2540,22 @@ String __fastcall TMainForm::WideToUtf8(WideString sIn)
     nLenUtf8,
     NULL, NULL); // Unrepresented char replacement - Use Default
 
-  String sOut = String(buf, nLenUtf8); // there is no null written...
+  AnsiString sOut = String(buf, nLenUtf8); // there is no null written...
   delete [] buf;
 
   return sOut;
 }
 //---------------------------------------------------------------------------
-String __fastcall TMainForm::ReplaceAll(String sIn, char c1, char c2)
+void __fastcall TMainForm::WMMove(TWMMove &Msg)
 {
-  return ReplaceAll(sIn, String(c1), String(c2));
-}
-
-String __fastcall TMainForm::ReplaceAll(String sIn, String S1, String S2)
-{
-  TReplaceFlags rFlags = (TReplaceFlags() << rfReplaceAll << rfIgnoreCase);
-  return StringReplace(sIn, S1, S2, rFlags);
-}
-//---------------------------------------------------------------------------
-WideString __fastcall TMainForm::ReplaceAllW(String sIn, wchar_t c1, wchar_t c2)
-{
-  return ReplaceAllW(sIn, WideString(c1), WideString(c2));
-}
-
-WideString __fastcall TMainForm::ReplaceAllW(WideString sIn, WideString S1, WideString S2)
-{
-  TReplaceFlags rFlags = (TReplaceFlags() << rfReplaceAll << rfIgnoreCase);
-  return StringReplace(sIn, S1, S2, rFlags);
-}
-//---------------------------------------------------------------------------
-bool __fastcall TMainForm::SetCurrentDirW(WideString wDir)
-// Set the current directory from a WideString
-{
-  return SetCurrentDirectoryW(wDir.c_bstr());
-}
-//---------------------------------------------------------------------------
-bool __fastcall TMainForm::DirectoryExistsW(WideString wPath)
-{
-  // mapiwin.h and winnt.h
-  // FILE_ATTRIBUTE_READONLY         0x00000001
-  // FILE_ATTRIBUTE_HIDDEN           0x00000002
-  // FILE_ATTRIBUTE_SYSTEM           0x00000004
-  // FILE_ATTRIBUTE_DIRECTORY        0x00000010
-  // FILE_ATTRIBUTE_ARCHIVE          0x00000020
-  // FILE_ATTRIBUTE_NORMAL           0x00000080
-  // FILE_ATTRIBUTE_TEMPORARY        0x00000100
-  DWORD dwAttrib = GetFileAttributesW(wPath.c_bstr());
-
-//#if DEBUG_ON
-//    if (dwAttrib == INVALID_FILE_ATTRIBUTES)
-//      MainForm->CWrite( "\r\nDirectoryExistsW No Directory: " + String(sPath) + "\r\n");
-//    else
-//      MainForm->CWrite( "\r\nDirectoryExistsW Attributes: " + IntToHex((int)dwAttrib, 8) + "\r\n");
-//#endif
-
-  return (dwAttrib != INVALID_FILE_ATTRIBUTES &&
-         (dwAttrib & FILE_ATTRIBUTE_DIRECTORY));
-}
-//---------------------------------------------------------------------------
-bool __fastcall TMainForm::FileExistsW(WideString wPath)
-{
-  // mapiwin.h and winnt.h
-  // FILE_ATTRIBUTE_READONLY         0x00000001
-  // FILE_ATTRIBUTE_HIDDEN           0x00000002
-  // FILE_ATTRIBUTE_SYSTEM           0x00000004
-  // FILE_ATTRIBUTE_DIRECTORY        0x00000010
-  // FILE_ATTRIBUTE_ARCHIVE          0x00000020
-  // FILE_ATTRIBUTE_NORMAL           0x00000080
-  // FILE_ATTRIBUTE_TEMPORARY        0x00000100
-  DWORD dwAttrib = GetFileAttributesW(wPath.c_bstr());
-
-//#if DEBUG_ON
-//    if (dwAttrib == INVALID_FILE_ATTRIBUTES)
-//      MainForm->CWrite( "\r\nFileExistsW No Directory: " + String(sPath) + "\r\n");
-//    else
-//      MainForm->CWrite( "\r\nFileExistsW Attributes: " + IntToHex((int)dwAttrib, 8) + "\r\n");
-//#endif
-
-  return (dwAttrib != INVALID_FILE_ATTRIBUTES &&
-         !(dwAttrib & FILE_ATTRIBUTE_DIRECTORY));
-}
-//---------------------------------------------------------------------------
-WideString __fastcall TMainForm::ExtractFileExtW(WideString sIn)
-// Return ".txt" including the period, or empty-string...
-{
-  int len = sIn.Length();
-  int idx = len;
-  wchar_t c;
-
-  for(;;)
-  {
-    if (idx == 0)
-      break;
-
-    c = sIn[idx];
-
-    if (c == '.')
-      break;
-
-    idx--;
-  }
-
-  if (idx != 0)
-    return sIn.SubString(idx, len-idx+1);
-
-  return "";
-}
-//---------------------------------------------------------------------------
-bool __fastcall TMainForm::WriteStringToFileW(WideString wPath, String sInfo)
-// Writes sInfo (ANSI or UTF-8) to a UTF-16 path
-{
-  bool bRet = false;
-  FILE* f = NULL;
-
   try
   {
-    // open/create file for writing in text-mode
-    f = _wfopen(wPath.c_bstr(), L"wb");
-
-    unsigned length = sInfo.Length();
-
-    if (f != NULL)
-      if (fwrite(sInfo.c_str(), sizeof(char), length, f) == length)
-        bRet = true;
+    if (MainForm->GDock != NULL)
+        MainForm->GDock->WindowMoved(this->Handle);
+    // call the base class handler
+    TForm::Dispatch(&Msg);
   }
-  __finally
-  {
-    try { if (f != NULL) fclose(f); } catch(...) {}
-  }
-
-  return bRet;
-}
-//---------------------------------------------------------------------------
-String __fastcall TMainForm::ReadStringFromFileW(WideString wPath)
-{
-  FILE* f = NULL;
-  char* buf = NULL;
-
-  String sOut;
-
-  try
-  {
-    // open/create file for reading in text-mode
-    f = _wfopen(wPath.c_bstr(), L"rb");
-
-    if (f != NULL)
-    {
-      // get file-length
-      fseek(f, 0L, SEEK_END);
-      int length = ftell(f);
-      rewind(f);
-
-      buf = new char[length];
-      int n = fread(buf, 1, length, f);
-
-      if (n == length)
-        sOut = String(buf, length);
-    }
-  }
-  __finally
-  {
-    try { if (f != NULL) fclose(f); } catch(...) {}
-    try { if (buf != NULL) delete [] buf; } catch(...) {}
-  }
-
-  return sOut;
-}
-//---------------------------------------------------------------------------
-WideString __fastcall TMainForm::GetCurrentDirW(void)
-// Get the current directory as a WideString
-{
-  wchar_t* pCurDir = NULL;
-  WideString wDir;
-
-  try
-  {
-    int d_size = GetCurrentDirectoryW(0, NULL);
-    pCurDir = new wchar_t[d_size];
-
-    if (pCurDir != NULL)
-    {
-      GetCurrentDirectoryW(d_size, pCurDir);
-      wDir = WideString(pCurDir);
-    }
-  }
-  __finally
-  {
-    try { if (pCurDir != NULL) delete [] pCurDir; } catch(...) {}
-  }
-
-  return wDir;
-}
-//---------------------------------------------------------------------------
-// Display Utf8 messages
-void __fastcall TMainForm::ShowMessageU(String uStr)
-{
-  MessageBoxW(NULL, Utf8ToWide(uStr).c_bstr(), L"Message", MB_ICONINFORMATION | MB_OK);
-}
-
-// Display WideString messages
-void __fastcall TMainForm::ShowMessageW(WideString wStr)
-{
-  MessageBoxW(NULL, wStr.c_bstr(), L"Message", MB_ICONINFORMATION | MB_OK);
-}
-//---------------------------------------------------------------------------
-// Property getter to return UTF-8 version of the desktop-directory
-String __fastcall TMainForm::GetDeskDir(void)
-{
-  return WideToUtf8(FwDeskDir);
-}
-//---------------------------------------------------------------------------
-WideString __fastcall TMainForm::GetSpecialFolder(int csidl)
-{
-  HMODULE h = NULL;
-  WideString sOut;
-  WideChar* buf = NULL;
-
-  try
-  {
-    h = LoadLibraryW(L"Shell32.dll");
-
-    if (h != NULL)
-    {
-      tGetFolderPath pGetFolderPath;
-      pGetFolderPath = (tGetFolderPath)GetProcAddress(h, "SHGetFolderPathW");
-
-      if (pGetFolderPath != NULL)
-      {
-        buf = new WideChar[MAX_PATH];
-        buf[0] = L'\0';
-
-        if ((*pGetFolderPath)(Application->Handle, csidl, NULL, SHGFP_TYPE_CURRENT, (LPTSTR)buf) == S_OK)
-          sOut = WideString(buf);
-      }
-    }
-
-  }
-  __finally
-  {
-    if (h != NULL) FreeLibrary(h);
-    if (buf != NULL) delete [] buf;
-  }
-
-  return sOut;
+  catch(...) { }
 }
 //---------------------------------------------------------------------------
 #if DEBUG_ON
@@ -2772,9 +2576,8 @@ void __fastcall TMainForm::CInit(void)
 //---------------------------------------------------------------------------
 void __fastcall TMainForm::CWrite(String S)
 {
-  WriteConsole(m_Screen, S.c_str(),S.Length(),0,0);
+  WriteConsole(m_Screen, String(S).w_str(),S.Length(),0,0);
 }
 #endif
 //---------------------------------------------------------------------------
-
 

@@ -78,7 +78,7 @@ void __fastcall TAutoSizeForm::RadioGroup1Click(TObject *Sender)
 //---------------------------------------------------------------------------
 void __fastcall TAutoSizeForm::InfoButtonClick(TObject *Sender)
 {
-  String s =
+  AnsiString s =
     "CD 74 - 650.3 MiB of data (681984000 bytes).\n"
     "CD 80 - 703.1 MiB of data (737280000 bytes).\n"
     "CD 90 - 791.0 MiB of data (829440000 bytes).\n"
@@ -105,8 +105,8 @@ void __fastcall TAutoSizeForm::FormClose(TObject *Sender,
 {
   try
   {
-    String S = MaskEdit->Text;
-    String New;
+    AnsiString S = MaskEdit->Text;
+    AnsiString New;
 
     for ( int ii = 1 ; ii <= S.Length() ; ii++ )
       if ( isdigit(S[ii]) )

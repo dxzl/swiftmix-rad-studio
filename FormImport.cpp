@@ -15,7 +15,7 @@ __fastcall TImportForm::TImportForm(TComponent* Owner)
   pOFMSDlg = NULL;
   pImpModeDlg = NULL;
 
-  XMLCHARSLEN = strlen(XMLCHARS); // do this once for speed!
+  XMLCHARSLEN = StrLen(XMLCHARS); // do this once for speed!
 }
 //---------------------------------------------------------------------------
 __fastcall TImportForm::~TImportForm()
@@ -87,11 +87,11 @@ int __fastcall TImportForm::Dialog(TPlaylistForm* f, String d, String t)
                   "Winamp (pls)|*.pls|"
                   "Text (txt)|*.txt");
 
-    if (pOFMSDlg->ExecuteU(IMPORT_EXT, d, t))
+    if (pOFMSDlg->Execute(IMPORT_EXT, d, t))
     {
       try
       {
-        String Ext = ExtractFileExt(pOFMSDlg->FileNameUtf8).LowerCase();
+        String Ext = ExtractFileExt(pOFMSDlg->FileName).LowerCase();
 
         // Set the "suggested" mode when the dialog opens...
         pImpModeDlg->Mode = this->GetMode(Ext, IMPORT_MODE_AUTO);
@@ -99,7 +99,7 @@ int __fastcall TImportForm::Dialog(TPlaylistForm* f, String d, String t)
         if (pImpModeDlg->ShowModal() == mrCancel)
           return -1;
 
-        return NoDialog(f, pOFMSDlg->FileNameUtf8, pImpModeDlg->Mode);
+        return NoDialog(f, pOFMSDlg->FileName, pImpModeDlg->Mode);
       }
       catch(...)
       {
@@ -172,7 +172,7 @@ int __fastcall TImportForm::NoDialog(TPlaylistForm* f, String sPath, int Mode)
 
     try
     {
-      if (!MainForm->FileExistsW(MainForm->Utf8ToWide(sPath)))
+      if (!FileExists(sPath))
         return 0;
 
       String Ext = ExtractFileExt(sPath).LowerCase();
@@ -190,19 +190,33 @@ int __fastcall TImportForm::NoDialog(TPlaylistForm* f, String sPath, int Mode)
       if (Ext == "pls")
         ReadIniFile(sPath, sl);
       else
-        sl->Text = MainForm->ReadStringFromFileW(MainForm->Utf8ToWide(sPath));
+      {
+        TEncoding* enc;
+
+        if (Mode == IMPORT_MODE_AUTO)
+        {
+          if (Ext == "m3u8")
+            sl->LoadFromFile(sPath, TEncoding::UTF8);
+          else
+            sl->LoadFromFile(sPath); // auto, uses BOM if present or ANSI if not
+        }
+        else
+        {
+          if (Mode == IMPORT_MODE_ANSI)
+            enc = TEncoding::ANSI;
+          else if (Mode == IMPORT_MODE_UTF16)
+            enc = TEncoding::Unicode;
+          else if (Mode == IMPORT_MODE_UTF16BE)
+            enc = TEncoding::BigEndianUnicode;
+          else
+            enc = TEncoding::UTF8;
+
+          sl->LoadFromFile(sPath, enc);
+        }
+      }
 
       if (sl->Count == 0)
         return 0;
-
-      bool bConvertToUtf8;
-
-      if (Mode == IMPORT_MODE_UTF8)
-        bConvertToUtf8 = false; // already utf-8 don't have to convert it
-      else if (Mode == IMPORT_MODE_ANSI)
-        bConvertToUtf8 = true; // need to convert to utf-8 to show in list-box
-      else // automatic
-        bConvertToUtf8 = !IsUtf8(sl->Text.c_str());
 
       if (Ext == "pls")
       {
@@ -219,7 +233,7 @@ int __fastcall TImportForm::NoDialog(TPlaylistForm* f, String sPath, int Mode)
             if (sFile.Length() == 0) continue;
 
             if (ReplaceRelativePath(sFile, sPath)) // returns sFile as an absolute path...
-              if (MainForm->AddFileToListBox(f, sFile, bConvertToUtf8))
+              if (MainForm->AddFileToListBox(f, sFile))
                 Count++;
           }
           catch(...) { }
@@ -230,7 +244,7 @@ int __fastcall TImportForm::NoDialog(TPlaylistForm* f, String sPath, int Mode)
       else
       {
         // Returns Count == 0 if not an XML file-extension
-        Count = XmlParser(f, Ext, sl->Text, sPath, bConvertToUtf8);
+        Count = XmlParser(f, Ext, sl->Text, sPath);
 
         if (Count == 0)
         {
@@ -247,7 +261,7 @@ int __fastcall TImportForm::NoDialog(TPlaylistForm* f, String sPath, int Mode)
               if (sFile.Length() == 0 || sFile[1] == '#') continue; // Filter out .m3u info tags...
 
               if (ReplaceRelativePath(sFile, sPath)) // returns sFile as an absolute path...
-                if (MainForm->AddFileToListBox(f, sFile, bConvertToUtf8))
+                if (MainForm->AddFileToListBox(f, sFile))
                   Count++;
             }
             catch(...) { }
@@ -285,7 +299,7 @@ int __fastcall TImportForm::GetMode(String Ext, int Mode)
   return Mode;
 }
 //---------------------------------------------------------------------------
-int __fastcall TImportForm::XmlParser(TPlaylistForm* f, String sExt, String sIn, String sPath, bool bConvertToUtf8)
+int __fastcall TImportForm::XmlParser(TPlaylistForm* f, String sExt, String sIn, String sPath)
 // sType has "href" "location" or "source", sIn has the raw file data...
 // sl is the listbox we output to, Returns Count of files added, 0 if error or no files
 {
@@ -324,10 +338,6 @@ int __fastcall TImportForm::XmlParser(TPlaylistForm* f, String sExt, String sIn,
     int iTemp = s.Length();
     iTemp = iTemp >= 500 ? 500 : iTemp;
     sIn = s.SubString(1, iTemp).LowerCase();
-
-    // Override bConvertToUtf8 and set it false if we KNOW we already ARE in UTF-8!
-    if (bConvertToUtf8 && sIn.Pos("encoding") > 0 && sIn.Pos("utf-8") > 0)
-      bConvertToUtf8 = false;
 
     TProgressForm::Init(OriginalLength);
 
@@ -375,7 +385,7 @@ int __fastcall TImportForm::XmlParser(TPlaylistForm* f, String sExt, String sIn,
 
                   if (ReplaceRelativePath(sUrl, sPath)) // returns sUrl as an absolute path...
                   {
-                    if (MainForm->AddFileToListBox(f, sUrl, bConvertToUtf8))
+                    if (MainForm->AddFileToListBox(f, sUrl))
                       Count++;
                   }
                 }
@@ -487,15 +497,15 @@ bool __fastcall TImportForm::ReplaceRelativePath(String &sFile, String sPath)
       return true;
     
     // Save old path
-    WideString sTemp = MainForm->GetCurrentDirW();
+    WideString sTemp = GetCurrentDir();
 
     // Set current directory to that of our play-list file
-    MainForm->SetCurrentDirW(MainForm->Utf8ToWide(ExtractFilePath(sPath)));
+    SetCurrentDir(ExtractFilePath(sPath));
 
     if (bIsFileUri)
     {
       sFile = sFile.Delete(1, 5);
-      sFile = MainForm->ReplaceAll(sFile, '\\', '/'); // make slashes consistent
+      sFile = ReplaceStr(sFile, "\\", "/"); // make slashes consistent
 
       // delete leading //
       if (sFile.Pos("///.") == 1)
@@ -513,22 +523,11 @@ bool __fastcall TImportForm::ReplaceRelativePath(String &sFile, String sPath)
     }
     else
     {
-      sFile = MainForm->ReplaceAll(sFile, '/', '\\'); // make slashes consistent
-
-      // ExpandFileName(sFile) won't work... ANSI only...
-      //
-      // See also: _wsplitpath, _wfnsplit, _wfnmerge, _wchdir, _wgetcwd, _wgetcurdir, _wmakepath, _wfullpath
-      //
-      wchar_t* p = _wfullpath(NULL, MainForm->Utf8ToWide(sFile).c_bstr(), _MAX_PATH);
-
-      if (p != NULL)
-      {
-        sFile = MainForm->WideToUtf8(WideString(p));
-        free(p);
-      }
+      sFile = ReplaceStr(sFile, "/", "\\"); // make slashes consistent
+      sFile = ExpandFileName(sFile);
     }
 
-    MainForm->SetCurrentDirW(sTemp);
+    SetCurrentDir(sTemp);
     return true;
   }
   catch(...) { return false; }
@@ -550,7 +549,7 @@ String __fastcall TImportForm::ReplaceXmlCodes(String sIn)
 // Replace &amp; etc...
 {
   for (int ii = 0; ii < XMLCODESLEN; ii++)
-    sIn = MainForm->ReplaceAll(sIn, XMLCODES[ii], String(XMLCHARS[ii]));
+    sIn = ReplaceStr(sIn, String(XMLCODES[ii]), String(XMLCHARS[ii]));
   return sIn;
 }
 //---------------------------------------------------------------------------
@@ -639,87 +638,6 @@ bool __fastcall TImportForm::ReadIniFile(String sIniPath, TStringList* sl)
   }
 
   return bRet;
-}
-//---------------------------------------------------------------------------
-// http://fatal-errors.com/how-to-easily-detect-utf8-encoding-in-the-string-2/377432
-bool __fastcall TImportForm::IsUtf8(const char* string)
-{
-    if(!string)
-        return 0;
-
-    const unsigned char * bytes = (const unsigned char *)string;
-    while(*bytes)
-    {
-        if( (// ASCII
-             // use bytes[0] <= 0x7F to allow ASCII control characters
-                bytes[0] == 0x09 ||
-                bytes[0] == 0x0A ||
-                bytes[0] == 0x0D ||
-                (0x20 <= bytes[0] && bytes[0] <= 0x7E)
-            )
-        ) {
-            bytes += 1;
-            continue;
-        }
-
-        if( (// non-overlong 2-byte
-                (0xC2 <= bytes[0] && bytes[0] <= 0xDF) &&
-                (0x80 <= bytes[1] && bytes[1] <= 0xBF)
-            )
-        ) {
-            bytes += 2;
-            continue;
-        }
-
-        if( (// excluding overlongs
-                bytes[0] == 0xE0 &&
-                (0xA0 <= bytes[1] && bytes[1] <= 0xBF) &&
-                (0x80 <= bytes[2] && bytes[2] <= 0xBF)
-            ) ||
-            (// straight 3-byte
-                ((0xE1 <= bytes[0] && bytes[0] <= 0xEC) ||
-                    bytes[0] == 0xEE ||
-                    bytes[0] == 0xEF) &&
-                (0x80 <= bytes[1] && bytes[1] <= 0xBF) &&
-                (0x80 <= bytes[2] && bytes[2] <= 0xBF)
-            ) ||
-            (// excluding surrogates
-                bytes[0] == 0xED &&
-                (0x80 <= bytes[1] && bytes[1] <= 0x9F) &&
-                (0x80 <= bytes[2] && bytes[2] <= 0xBF)
-            )
-        ) {
-            bytes += 3;
-            continue;
-        }
-
-        if( (// planes 1-3
-                bytes[0] == 0xF0 &&
-                (0x90 <= bytes[1] && bytes[1] <= 0xBF) &&
-                (0x80 <= bytes[2] && bytes[2] <= 0xBF) &&
-                (0x80 <= bytes[3] && bytes[3] <= 0xBF)
-            ) ||
-            (// planes 4-15
-                (0xF1 <= bytes[0] && bytes[0] <= 0xF3) &&
-                (0x80 <= bytes[1] && bytes[1] <= 0xBF) &&
-                (0x80 <= bytes[2] && bytes[2] <= 0xBF) &&
-                (0x80 <= bytes[3] && bytes[3] <= 0xBF)
-            ) ||
-            (// plane 16
-                bytes[0] == 0xF4 &&
-                (0x80 <= bytes[1] && bytes[1] <= 0x8F) &&
-                (0x80 <= bytes[2] && bytes[2] <= 0xBF) &&
-                (0x80 <= bytes[3] && bytes[3] <= 0xBF)
-            )
-        ) {
-            bytes += 4;
-            continue;
-        }
-
-        return 0;
-    }
-
-    return 1;
 }
 //---------------------------------------------------------------------------
 

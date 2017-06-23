@@ -7,10 +7,6 @@
 #include <StdCtrls.hpp>
 #include <Forms.hpp>
 //---------------------------------------------------------------------------
-#define IMPORT_MODE_AUTO   0
-#define IMPORT_MODE_UTF8   1
-#define IMPORT_MODE_ANSI   2
-//---------------------------------------------------------------------------
 // Forward class references...
 class TOFMSDlgForm;
 class TImportModeForm;
@@ -27,7 +23,7 @@ private:	// User declarations
 //  String __fastcall TrimAndReplaceSpecial(String sIn);
 //  char __fastcall XmlSpecialCharDecode(String In);
 //  String __fastcall UriDecode(String sSrc);
-  int __fastcall XmlParser(TPlaylistForm* f, String sType, String sIn, String sPath, bool bConvertToUtf8);
+  int __fastcall XmlParser(TPlaylistForm* f, String sType, String sIn, String sPath);
   bool __fastcall ParseFileLine(String &sRef, bool bTagHasUrl);
   String __fastcall ReplacePercentCodes(String sIn);
   String __fastcall ReplaceXmlCodes(String sIn);
@@ -38,7 +34,7 @@ private:	// User declarations
   char __fastcall xtod(char c);
   bool __fastcall mishex(char c);
   bool __fastcall ReadIniFile(String sIniPath, TStringList* sl);
-  bool __fastcall IsUtf8(const char* string);
+  bool __fastcall IsUtf8(const wchar_t* string);
   bool __fastcall IsUri(String sIn);
 
   int XMLCHARSLEN;

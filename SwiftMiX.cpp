@@ -1,39 +1,49 @@
 //---------------------------------------------------------------------------
+
 #include <vcl.h>
-#include "Main.h"
 #pragma hdrstop
-USERES("SwiftMiX.res");
-USEFORM("Main.cpp", MainForm);
-USEFORM("About.cpp", AboutForm);
-USEFORM("SMList.cpp", PlaylistForm);
+#include <tchar.h>
+//---------------------------------------------------------------------------
+#include <Vcl.Styles.hpp>
+#include <Vcl.Themes.hpp>
 USEFORM("Progress.cpp", ProgressForm);
-USEFORM("AutoSize.cpp", AutoSizeForm);
-USEFORM("FormExportMode.cpp", ExportModeForm);
-USEUNIT("DefaultStrings.cpp");
-USEUNIT("MyCheckLst.pas");
-USEUNIT("XmlTable.cpp");
-USEFORM("FormImportMode.cpp", ImportModeForm);
-USERC("SwiftMiX.rc");
-USEUNIT("RegHelper.cpp");
 USEFORM("FormSFDlg.cpp", SFDlgForm);
+USEFORM("Main.cpp", MainForm);
+USEFORM("SMList.cpp", PlaylistForm);
 USEFORM("FormDirDlg.cpp", DirDlgForm);
+USEFORM("About.cpp", AboutForm);
+USEFORM("AutoSize.cpp", AutoSizeForm);
+USEFORM("FormImportMode.cpp", ImportModeForm);
+USEFORM("FormOFMSDlg.cpp", OFMSDlgForm);
 USEFORM("FormImport.cpp", ImportForm);
 USEFORM("FormExport.cpp", ExportForm);
-USEUNIT("FormOFMSDlg.cpp");
+USEFORM("FormExportMode.cpp", ExportModeForm);
 //---------------------------------------------------------------------------
-WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
+int WINAPI _tWinMain(HINSTANCE, HINSTANCE, LPTSTR, int)
 {
-  try
-  {
-    Application->Initialize();
-    Application->Title = "SwiftMiX";
-    Application->CreateForm(__classid(TMainForm), &MainForm);
+    try
+    {
+         Application->Initialize();
+         Application->MainFormOnTaskBar = true;
+         TStyleManager::TrySetStyle("Golden Graphite");
+     Application->CreateForm(__classid(TMainForm), &MainForm);
      Application->Run();
-  }
-  catch (Exception &exception)
-  {
-     Application->ShowException(&exception);
-  }
-  return 0;
+    }
+    catch (Exception &exception)
+    {
+         Application->ShowException(&exception);
+    }
+    catch (...)
+    {
+         try
+         {
+             throw Exception("");
+         }
+         catch (Exception &exception)
+         {
+             Application->ShowException(&exception);
+         }
+    }
+    return 0;
 }
 //---------------------------------------------------------------------------

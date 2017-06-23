@@ -7,12 +7,6 @@
 #include <StdCtrls.hpp>
 #include <Forms.hpp>
 //---------------------------------------------------------------------------
-
-#define BIF_NEWDIALOGSTYLE (0x00000040)
-#define BIF_SHAREABLE (0x00008000)
-
-#define CSIDL_MYMUSIC 13
-//---------------------------------------------------------------------------
 class TDirDlgForm : public TForm
 {
 __published:	// IDE-managed Components

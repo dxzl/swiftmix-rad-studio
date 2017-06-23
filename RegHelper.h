@@ -20,10 +20,10 @@ public:
 
   void __fastcall ReadSetting(String keyName, bool &bVal, bool bDef);
   void __fastcall ReadSetting(String keyName, int &iVal, int iDef);
-  WideString __fastcall ReadSetting(String keyName);
+  String __fastcall ReadSetting(String keyName);
   void __fastcall WriteSetting(String keyName, bool bVal);
   void __fastcall WriteSetting(String keyName, int iVal);
-  void __fastcall WriteSetting(String keyName, WideString sIn);
+  void __fastcall WriteSetting(String keyName, String sIn);
 };
 //---------------------------------------------------------------------------
 #endif

@@ -2,34 +2,10 @@
 #ifndef MainH
 #define MainH
 //---------------------------------------------------------------------------
-#define VERSION "1.65"
+#define VERSION "1.67"
 #define FREEWARE_EDITION true
 #define DEBUG_ON false // Include a debug console, use MainForm->CWrite("")
 //---------------------------------------------------------------------------
-// Forward class references...
-//class TImportDialog;
-
-#include "DefaultStrings.h"
-#include "LicenseKey.h"
-#include "WMPLib_OCX.h"
-#include "WMPLib_TLB.h"
-#include "CWindowDock.h"
-#include "XmlTable.h"
-#include "RegHelper.h"
-#include "Progress.h"
-#include "EnterKey.h"
-#include "LicenseKey.h"
-#include "AutoSize.h"
-#include "About.h"
-#include "FormSFDlg.h"
-#include "FormOFMSDlg.h"
-#include "FormDirDlg.h"
-#include "FormImportMode.h"
-#include "FormExportMode.h"
-#include "FormImport.h" // include FormOFDlg.h and SMList.h before this
-#include "FormExport.h" // include FormSFDlg.h and SMList.h before this
-#include "SMList.h" // include FormOFDlg.h FormImport.h FormExport.h before this
-
 #include <Windows.hpp>
 
 // this has all the exceptions: EFOpenError, EFilerError etc.
@@ -45,13 +21,41 @@
 #include <Menus.hpp>
 #include <OleCtrls.hpp>
 #include <StdCtrls.hpp>
+#include <StrUtils.hpp>
 
+#include "DefaultStrings.h"
+//#include "LicenseKey.h"
+#include "CWindowDock.h"
+#include "XmlTable.h"
+#include "RegHelper.h"
+#include "Progress.h"
+//#include "EnterKey.h"
+//#include "LicenseKey.h"
+#include "AutoSize.h"
+#include "About.h"
+#include "FormDirDlg.h"
+#include "FormImportMode.h"
+#include "FormExportMode.h"
+#include "SMList.h"
+#include "FormSFDlg.h"
+#include "FormOFMSDlg.h"
+#include "FormImport.h" // include FormOFDlg.h and SMList.h before this
+#include "FormExport.h" // include FormSFDlg.h and SMList.h before this
+#include "..\..\19.0\Imports\WMPLib_OCX.h"
+#include "..\..\19.0\Imports\WMPLib_TLB.h"
 //---------------------------------------------------------------------------
 
-#define HELPSITE "http://www.yahcolorize.com/SwiftMiX/help/help.htm"
-#define WEBSITE "http://www.yahcolorize.com/SwiftMiX/index.htm"
-#define EMAIL "dxzl@live.com"
-#define REGISTRY_KEY "\\Software\\Discrete-Time Systems\\MusicMixer"
+#define HELPSITE L"http://www.yahcolorize.com/swiftmix/help/help.htm"
+#define WEBSITE L"http://www.yahcolorize.com/swiftmix/index.htm"
+#define EMAIL L"dxzl@live.com"
+#define REGISTRY_KEY L"\\Software\\Discrete-Time Systems\\MusicMixer"
+
+// Yahcolorize FindWindow
+#define YC_CLASS L"TDTSColor"
+#define YC_WINDOW L"YahCoLoRiZe"
+
+// Common file dialogs DLL
+#define COMMON_CONTROLS_LIB L"Comctl32.dll"
 
 // Registry entries we save in HKEY_CURRENT_USER
 #define SM_REGKEY_DIR_A "DefDirA"
@@ -71,13 +75,9 @@
 #define SHGFP_TYPE_CURRENT 0 // current value for user, verify it exists
 #define SHGFP_TYPE_DEFAULT 1 // default value, may not exist
 
-#define BIF_NEWDIALOGSTYLE (0x00000040)
-
 #define DISKSPACE_MESSAGEBOX_NONE  0
 #define DISKSPACE_MESSAGEBOX_YESNO 1
 #define DISKSPACE_MESSAGEBOX_OK    2
-
-#define FIND_FIRST_EX_LARGE_FETCH 2 // increase performance on Win 7 and up...
 
 // Additional FindFirstEx flags
 //#define FIND_FIRST_EX_CASE_SENSITIVE 1
@@ -119,15 +119,17 @@
 #define PLAYER_2 1
 //---------------------------------------------------------------------------
 // String constants
-#define ADD_A_TITLE "Player A"
-#define ADD_B_TITLE "Player B"
+#define ADD_A_TITLE U"Player A"
+#define ADD_B_TITLE U"Player B"
 
-#define EXPORT_FILE "MyList."
-#define EXPORT_EXT "wpl"
-#define IMPORT_EXT "wpl"
+#define EXPORT_FILE L"MyList."
+#define EXPORT_EXT L"wpl"
+#define IMPORT_EXT L"wpl"
+
+#define C_NULL '\0'
 //---------------------------------------------------------------------------
 // Forward class references
-class TPlaylistForm;
+//class TPlaylistForm;
 //---------------------------------------------------------------------------
 
 class TMainForm : public TForm
@@ -135,7 +137,6 @@ class TMainForm : public TForm
 __published:	// IDE-managed Components
 
   TWindowsMediaPlayer *WindowsMediaPlayer1;
-  TTrackBar *TrackBar1;
   TWindowsMediaPlayer *WindowsMediaPlayer2;
   TMainMenu *MainMenu1;
   TMenuItem *Player11;
@@ -193,15 +194,18 @@ __published:	// IDE-managed Components
   TMenuItem *N3;
   TMenuItem *MenuExportSongFilesandLists;
   TMenuItem *N11;
-  TUpDown *UpDown1;
-  TEdit *FadeRate;
-  TEdit *FadePoint;
-  TUpDown *UpDown2;
   TMenuItem *MenuSendTiming;
   TMenuItem *MenuShuffleModeA;
   TMenuItem *MenuShuffleModeB;
   TMenuItem *MenuViewDiscSpaceRequired;
   TMenuItem *MenuAutoFitToDVDCD;
+    TPanel *Panel1;
+    TPanel *Panel2;
+    TUpDown *UpDown1;
+    TEdit *FadeRate;
+    TUpDown *UpDown2;
+    TEdit *FadePoint;
+    TTrackBar *TrackBar1;
 
   void __fastcall File1Click(TObject *Sender);
   void __fastcall File2Click(TObject *Sender);
@@ -268,9 +272,9 @@ private:	// User declarations
 #if DEBUG_ON
   void __fastcall CInit(void);
 #endif
-  void __fastcall CopyMusicFiles(TPlaylistForm* f, WideString wUserDir);
-  bool __fastcall PromptAbort(WideString s);
-  WideString __fastcall DirectoryDialogW(WideString sInitialDir, WideString sTitle);
+  void __fastcall CopyMusicFiles(TPlaylistForm* f, String wUserDir);
+  bool __fastcall PromptAbort(String s);
+  String __fastcall DirectoryDialogW(String sInitialDir, String sTitle);
   bool __fastcall IsWinVistaOrHigher(void);
   void __fastcall ErrorCode(int Code);
   void __fastcall AddAllSongsToListBox(TPlaylistForm* f);
@@ -304,22 +308,20 @@ private:	// User declarations
   bool bTrialFeaturesEnabled;
   int CurrentPlayer;
 
-  WideString DeskDir;
-
   TPlaylistForm* GPlaylistForm;
 
   // properties
-  WideString FwDeskDir;
+  String FsDeskDir;
   String FsImportExt, FsExportExt; // Import/Export file-extension (UTF-8)
   String FsSaveDirA, FsSaveDirB; // open/save directory (UTF-8)
 
   bool FBypassFilters;
 
-//  CWindowDock* FDock;
+  CWindowDock* FDock;
 
 protected:
 
-  String __fastcall GetDeskDir(void);
+  void __fastcall WMMove(TWMMove &Msg);
 
 //  void __fastcall WndProc(TMessage &Message);
 
@@ -329,7 +331,7 @@ BEGIN_MESSAGE_MAP
   VCL_MESSAGE_HANDLER(WM_DROPFILES, TWMDropFiles, WMDropFile)
 //  VCL_MESSAGE_HANDLER(WM_NOTIFY, TOFNotify, WMOFNotify)
   //add message handler for WM_MOVE
-//  VCL_MESSAGE_HANDLER(WM_MOVE, TWMMove, WMMove)
+  VCL_MESSAGE_HANDLER(WM_MOVE, TWMMove, WMMove)
 END_MESSAGE_MAP(TForm)
 
 public:		// User declarations
@@ -340,11 +342,8 @@ public:		// User declarations
   void __fastcall CWrite(String S);
 #endif
 
-  bool __fastcall IsUri(String sIn);
-  bool __fastcall IsUri(WideString wIn);
-  bool __fastcall IsFileUri(String sIn);
-  bool __fastcall IsFileUri(WideString wIn);
-  WideString __fastcall LowerCaseW(WideString s);
+  bool __fastcall IsUri(String wIn);
+  bool __fastcall IsFileUri(String wIn);
   void __fastcall ShowPlaylist(TPlaylistForm* f);
   String __fastcall SetFlag(String S, int f);
   bool __fastcall ForceFade(void);
@@ -352,27 +351,11 @@ public:		// User declarations
   void __fastcall RestoreFocus(void);
   bool __fastcall FileDialog(TPlaylistForm* f, String &d, String t);
   void __fastcall LoadListWithDroppedFiles(TWMDropFiles &Msg, TPlaylistForm* f);
-  bool __fastcall AddFileToListBox(TPlaylistForm* f, String sFile, bool bConvertToUtf8);
+  bool __fastcall AddFileToListBox(TPlaylistForm* f, String sFile);
+  AnsiString __fastcall WideToUtf8(WideString sIn);
 
-  // Utils
-  String __fastcall Utf8ToAnsi(String sIn);
-  String __fastcall AnsiToUtf8(String sIn);
-  String __fastcall WideToUtf8(WideString sIn);
-  WideString __fastcall Utf8ToWide(String sIn);
-  String __fastcall ReplaceAll(String sIn, char c1, char c2);
-  String __fastcall ReplaceAll(String sIn, String S1, String S2);
-  WideString __fastcall ReplaceAllW(WideString sIn, WideString S1, WideString S2);
-  WideString __fastcall ReplaceAllW(String sIn, wchar_t c1, wchar_t c2);
-  bool __fastcall SetCurrentDirW(WideString wDir);
-  WideString __fastcall GetCurrentDirW(void);
-  WideString __fastcall ExtractFileExtW(WideString sIn);
-  void __fastcall ShowMessageW(WideString wStr);
-  void __fastcall ShowMessageU(String uStr);
-  bool __fastcall DirectoryExistsW(WideString wPath);
-  bool __fastcall FileExistsW(WideString wPath);
-  String __fastcall ReadStringFromFileW(WideString wPath);
-  bool __fastcall WriteStringToFileW(WideString wPath, String sInfo);
-  WideString __fastcall GetSpecialFolder(int csidl);
+  bool __fastcall WriteStringToFile(String sPath, String sInfo);
+  String __fastcall GetSpecialFolder(int csidl);
 
   int FadeAt;
   bool bFadeRight;
@@ -384,11 +367,12 @@ public:		// User declarations
   bool bAutoSizePrompt;
 
   // properties
+  __property CWindowDock* GDock = {read = FDock, write = FDock};
   __property String ImportExt = {read = FsImportExt, write = FsImportExt};
   __property String ExportExt = {read = FsExportExt, write = FsExportExt};
   __property String SaveDirA = {read = FsSaveDirA, write = FsSaveDirA};
   __property String SaveDirB = {read = FsSaveDirB, write = FsSaveDirB};
-  __property String DeskDirUtf8 = {read = GetDeskDir};
+  __property String DeskDir = {read = FsDeskDir};
   __property bool GBypassFilters = {read = FBypassFilters, write = FBypassFilters, default =  false};
   __property bool ManualFade = {read = bModeManualFade};
   __property bool CenterFade = {read = bTypeCenterFade};

@@ -4,9 +4,9 @@
 //---------------------------------------------------------------------------
 #define XMLCODESLEN 5
 // Note - the XMLCHARS and XMLCODES must each have the same number of entries!
-extern const char* XMLCODES[XMLCODESLEN];
-extern const char XMLCHARS[XMLCODESLEN];
+extern const WideChar* XMLCODES[XMLCODESLEN];
+extern const WideChar XMLCHARS[XMLCODESLEN];
 
-extern const char PERCENTCHARS[];
-extern const char WINDOWSPERCENTCHARS[];
+extern const WideChar PERCENTCHARS[];
+extern const WideChar WINDOWSPERCENTCHARS[];
 #endif

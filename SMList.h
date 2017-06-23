@@ -4,14 +4,16 @@
 //---------------------------------------------------------------------------
 #include <Classes.hpp>
 #include <Controls.hpp>
+#include <Dialogs.hpp>
 #include <StdCtrls.hpp>
+#include <Vcl.CheckLst.hpp>
 #include <Forms.hpp>
 #include <ExtCtrls.hpp>
 #include <Menus.hpp>
+#include <System.WideStrUtils.hpp>
 
-#include "WMPLib_OCX.h"
-#include "WMPLib_TLB.h"
-#include "MyCheckLst.hpp"
+#include "..\..\19.0\Imports\WMPLib_OCX.h"
+#include "..\..\19.0\Imports\WMPLib_TLB.h"
 //---------------------------------------------------------------------------
 
 // Timer times
@@ -100,8 +102,6 @@ __published:	// IDE-managed Components
   void __fastcall CheckBoxClickCheck(TObject *Sender);
   void __fastcall CheckBoxDblClick(TObject *Sender);
   void __fastcall CheckBoxMouseDown(TObject *Sender, TMouseButton Button, TShiftState Shift, int X, int Y);
-  void __fastcall CheckBoxDrawItem(TWinControl *Control, int Index, const TRect &Rect, TOwnerDrawState State);
-  void __fastcall CheckBoxMeasureItem(TWinControl *Control, int Index, int &Height);
   void __fastcall CheckBoxDragDrop(TObject *Sender, TObject *Source, int X, int Y);
   void __fastcall CheckBoxDragOver(TObject *Sender, TObject *Source, int X, int Y, TDragState State, bool &Accept);
   void __fastcall FormClose(TObject *Sender, TCloseAction &Action);
@@ -124,8 +124,9 @@ __published:	// IDE-managed Components
 
 private:	// User declarations
 
-  bool __fastcall InsertNewDeleteOld(TMyCheckListBox* SourceList,
-                TMyCheckListBox* DestList, int SourceIndex, int &DestIndex );
+  bool __fastcall IsPlayOrPause(TPlaylistForm* f);
+  bool __fastcall InsertNewDeleteOld(TCheckListBox* SourceList,
+                TCheckListBox* DestList, int SourceIndex, int &DestIndex );
   void __fastcall SetCheckState(int oldtag);
   void __fastcall QueueToIndex(int Index);
   void __fastcall UpdatePlayerStatus(void);
@@ -135,30 +136,17 @@ private:	// User declarations
   void __fastcall SetTimer(int mode, int time);
   void __fastcall DeleteItem(int ItemIndex);
   void __fastcall CheckAllItems(void);
-  void __fastcall DrawFocusRect(TCanvas* c, HPEN hpen, TRect &r);
-//  HPEN __fastcall CreateFocusPen();
   void __fastcall WMListDropFile(TWMDropFiles &Msg);
   void __fastcall WMSetText(TWMSetText &Msg);
-//  void __fastcall WMMove(TWMMove &Msg);
-//  void __fastcall SettingChanged(TMessage &msg);
-// to change the the size of the window generated when the
-//  void __fastcall UpdateWorkArea(); // the refresh the window and then at the
-//  void __fastcall WMWindowPosChanging(TWMWindowPosChanging &msg);
 
-//  HWND snapwin; // the definition of Form2 adsorption where to a handle of the window
-//  RECT work_area;
-//  bool snapped; // whether the adsorption flag
-//  //BOOL would be winprocthing;
-//  int thresh; // how far away began to adsorption
-
-  int CheckState, TimerMode;
+  int TimerMode;
   bool bInhibitFlash;
   bool bDoubleClick, bCheckClick;
   int Duration, PrevState;
   bool bForceNextPlay, bSkipFilePrompt, bOpening;
 
   // Properties
-  TMyCheckListBox* FCheckBox;
+  TCheckListBox* FCheckBox;
   TPlaylistForm* FOtherForm;
   TWindowsMediaPlayer *FWmp, *FOtherWmp;
   int FNextIndex, FTargetIndex;
@@ -179,8 +167,14 @@ protected:
   bool __fastcall GetIsExportDlg(void);
   bool __fastcall GetIsImportDlg(void);
   bool __fastcall GetIsOpenDlg(void);
+  void __fastcall WMMove(TWMMove &Msg);
+
+  // property getters
+  int __fastcall GetCount(void);
 
 BEGIN_MESSAGE_MAP
+  //add message handler for WM_MOVE
+  VCL_MESSAGE_HANDLER(WM_MOVE, TWMMove, WMMove)
   //add message handler for WM_DROPFILES
   VCL_MESSAGE_HANDLER(WM_DROPFILES, TWMDropFiles, WMListDropFile)
   //add message handler for WM_SETEXT (allows UTF-8 title-bar)
@@ -202,20 +196,24 @@ public:		// User declarations
   void __fastcall ClearAndStop(void);
   void __fastcall GetSongInfo(void);
   void __fastcall GetSongInfo(STRUCT_A &sms);
-  void __fastcall SetTitleW(void);
-  WideString __fastcall GetNext(bool bNoSet = false, bool bEnableRandom = false);
-  void __fastcall MySetCaption(WideString wStr);
-  void __fastcall MySetCaption(String sStr, bool bStrIsUtf8); // pass in Utf-8
+  void __fastcall SetTitle(void);
+  String __fastcall GetNext(bool bNoSet = false, bool bEnableRandom = false);
   void __fastcall DestroyImportDialog(void);
   void __fastcall DestroyExportDialog(void);
   void __fastcall DestroyFileDialog(void);
   TImportForm* __fastcall CreateImportDialog(void);
   TExportForm* __fastcall CreateExportDialog(void);
   TOFMSDlgForm* __fastcall CreateFileDialog(void);
+  void __fastcall AddObject(String s, TObject* o);
+  String __fastcall GetString(int idx);
+  void __fastcall DeleteString(int idx);
+  int __fastcall GetPlayTag(void);
 
   STRUCT_A MediaInfo;
 
-  __property TMyCheckListBox* CheckBox = {read = FCheckBox};
+//  __property TCheckListBox* CheckBox = {read = FCheckBox};
+  __property int Count = {read = GetCount};
+  __property int PlayTag = {read = GetPlayTag};
   __property TPlaylistForm* OtherForm = {read = FOtherForm, write = FOtherForm};
   __property TWindowsMediaPlayer* Wmp = {read = FWmp, write = FWmp};
   __property TWindowsMediaPlayer* OtherWmp = {read = FOtherWmp, write = FOtherWmp};

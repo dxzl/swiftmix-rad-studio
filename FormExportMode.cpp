@@ -10,9 +10,10 @@ TExportModeForm *ExportModeForm;
 __fastcall TExportModeForm::TExportModeForm(TComponent* Owner)
   : TForm(Owner)
 {
-  FMode = -1; // undefined
-  FSaveAsUtf8 = false;
-  FUncPathFormat = false;
+  FMode = EXPORT_PATH_NONE; // undefined
+  FEncoding = EXPORT_MODE_NONE; // undefined
+  FWriteBOM = false;
+  FUncPathFmt = false;
   FFile = "";
 }
 //---------------------------------------------------------------------------
@@ -31,10 +32,10 @@ void __fastcall TExportModeForm::FormDestroy(TObject *Sender)
 //---------------------------------------------------------------------------
 void __fastcall TExportModeForm::FormShow(TObject *Sender)
 {
-  if (FMode == -1)
+  if (FMode == EXPORT_PATH_NONE)
     FMode = EXPORT_PATH_ABSOLUTE;
 
-  RadioGroup->ItemIndex = FMode;
+  RGPathType->ItemIndex = FMode;
 
   this->Caption = FFile; // this will handle UTF-8 (with special handler WMSetText())
   FileLabel->Caption = FTitle; // ANSI only!
@@ -51,35 +52,29 @@ void __fastcall TExportModeForm::FormShow(TObject *Sender)
   //  "Windows XML (wmx)|*.wmx|" +
   //  "Winamp (pls)|*.pls|" +
   //  "Text (txt)|*.txt"; // 11
-  SaveAsUtf8CheckBox->Enabled = true;
-  SaveAsUtf8CheckBox->Checked = (Ext == ".m3u" || Ext == ".pls" ||
-      Ext == ".txt") ? false : true;
+  FEncoding = (Ext == ".m3u" || Ext == ".pls" || Ext == ".txt") ? EXPORT_MODE_ANSI : EXPORT_MODE_UTF8;
+
+  RGEncoding->ItemIndex = FEncoding;
 
   UncPathCheckBox->Enabled = (Ext == ".xspf") ? false : true; // xspf no choice allowed
   UncPathCheckBox->Checked = (Ext == ".xspf") ? true : false;
+
+  WriteBOMCheckBox->Enabled = true;
+  WriteBOMCheckBox->Checked = (Ext == ".wpl" || Ext == ".m3u" ||
+    Ext == ".m3u8" || Ext == ".pls" || Ext == ".txt") ? false : true;
 }
 //---------------------------------------------------------------------------
 void __fastcall TExportModeForm::FormClose(TObject *Sender, TCloseAction &Action)
 {
-  FMode = RadioGroup->ItemIndex;
-  FSaveAsUtf8 = SaveAsUtf8CheckBox->Checked;
-  FUncPathFormat = UncPathCheckBox->Checked;
+  FMode = RGPathType->ItemIndex;
+  FEncoding = RGEncoding->ItemIndex;
+  FUncPathFmt = UncPathCheckBox->Checked;
+  FWriteBOM = WriteBOMCheckBox->Checked;
 }
 //---------------------------------------------------------------------------
 void __fastcall TExportModeForm::CancelClick(TObject *Sender)
 {
   Close();
-}
-//---------------------------------------------------------------------------
-void __fastcall TExportModeForm::WMSetText(TWMSetText &Msg)
-// Allow Unicode Window Caption (the Caption property is ANSI-only)
-{
-  if (Msg.Text != NULL)
-  {
-    WideString w = MainForm->Utf8ToWide(String(Msg.Text));
-    DefWindowProcW(this->Handle, Msg.Msg, 0, (LPARAM)w.c_bstr());
-    Msg.Result = TRUE;
-  }
 }
 //---------------------------------------------------------------------------
 

@@ -37,16 +37,10 @@ void __fastcall TExportForm::FormClose(TObject *Sender,
       TCloseAction &Action)
 {
   if (pSFDlg != NULL)
-  {
-    pSFDlg->Close();
     pSFDlg->Release();
-  }
 
   if (pExpModeDlg != NULL)
-  {
-    pExpModeDlg->Close();
     pExpModeDlg->Release();
-  }
 
 #if DEBUG_ON
   MainForm->CWrite( "\r\nFormClose() in TExportForm()!\r\n");
@@ -67,15 +61,14 @@ int __fastcall TExportForm::Dialog(TPlaylistForm* f, String d, String t)
   if (f == NULL || pExpModeDlg == NULL || pSFDlg == NULL)
     return 0;
 
-  if (f->CheckBox == NULL || f->CheckBox->Items->Count == 0 || f->CheckBox->Tag < 0)
+  if (f->Count == 0 || f->PlayTag < 0)
     return 0;
 
   int Count = -1;
 
   try
   {
-    // NOTE: It's critical to use WideString() to wrap the following string!
-    pSFDlg->Filters = WideString("All Files (*.*)|*.*|"
+    pSFDlg->Filters = String("All Files (*.*)|*.*|"
                   "Windows Media (wpl)|*.wpl|"
                   "MPEG UTF-8 (m3u8)|*.m3u8|"
                   "MPEG ANSI (m3u)|*.m3u|"
@@ -87,34 +80,33 @@ int __fastcall TExportForm::Dialog(TPlaylistForm* f, String d, String t)
                   "Text (txt)|*.txt");
 
     // Run the TSaveDialog and get a file name...
-    String uDefFile = MainForm->WideToUtf8(WideString(EXPORT_FILE) +
-                                                  WideString(EXPORT_EXT));
+    String uDefFile = String(EXPORT_FILE) + String(EXPORT_EXT);
 
-    if (pSFDlg->ExecuteU(uDefFile, d, t) == FALSE)
+    if (pSFDlg->Execute(uDefFile, d, t) == FALSE)
       return -1; // -1 will suppress an error-message
 
-    String uName = pSFDlg->FileNameUtf8; // Get UTF-8 filepath
+    String uName = pSFDlg->FileName; // Get UTF-8 filepath
 
     if (uName.IsEmpty())
       return -1;
 
     String sPlayer = f == ListA ? "A" : "B";
-    pExpModeDlg->Title = "Export Player " + sPlayer + " List"; // ANSI only!
+    pExpModeDlg->Title = "Export Player " + sPlayer + " List";
     pExpModeDlg->FileName = uName;
     pExpModeDlg->Mode = EXPORT_PATH_ABSOLUTE;
 
     if (pExpModeDlg->ShowModal() == mrCancel)
       return -1;
 
-    WideString wName = pSFDlg->FileName;
-    bool bFileExists = MainForm->FileExistsW(wName);
+    String wName = pSFDlg->FileName;
+    bool bFileExists = FileExists(wName);
 
     if (bFileExists)
     {
-      WideString sMsg = WideString("File Already Exists:\n\n\"") +  wName +
-                                            WideString("\"\n\nOverwrite it?");
+      String sMsg = String("File Already Exists:\n\n\"") +  wName +
+                                            String("\"\n\nOverwrite it?");
 
-      int button = MessageBoxW(MainForm->Handle, sMsg.c_bstr(),
+      int button = MessageBox(MainForm->Handle, sMsg.w_str(),
               L"File Exists", MB_YESNO + MB_ICONQUESTION + MB_DEFBUTTON1);
 
       if (button == IDNO)
@@ -122,29 +114,22 @@ int __fastcall TExportForm::Dialog(TPlaylistForm* f, String d, String t)
     }
 
     // Gets the count of items exported
-    Count = NoDialogW(f, wName, pExpModeDlg->Mode,
-        pExpModeDlg->SaveAsUtf8, pExpModeDlg->UncPathFormat);
+    Count = NoDialog(f, wName, pExpModeDlg->Mode, pExpModeDlg->Encoding,
+                    pExpModeDlg->UncPathFmt, pExpModeDlg->WriteBOM);
   }
   catch(...) {}
 
   return Count;
 }
 //---------------------------------------------------------------------------
-int __fastcall TExportForm::NoDialogW(TPlaylistForm* f, WideString wListFullPath,
-                              int Mode, bool bSaveAsUtf8, bool bUncPathFormat)
-{
-  return NoDialogU(f, MainForm->WideToUtf8(wListFullPath),
-                             Mode, bSaveAsUtf8, bUncPathFormat);
-}
-
-int __fastcall TExportForm::NoDialogU(TPlaylistForm* f, String uListFullPath,
-                              int Mode, bool bSaveAsUtf8, bool bUncPathFormat)
+int __fastcall TExportForm::NoDialog(TPlaylistForm* f, String uListFullPath,
+                  int Mode, int Enc, bool bUncPathFormat, bool bWriteBOM)
 //
 // uListFullPath must be UTF-8 (we use MainForm->WriteStringToFileW() to save the UTF-8 TStringList()...
 // (we use the vcl's ansi string-parsing functions on uListFullPath - they work on a utf-8 string
 // but not on a WideString)
 //
-// The bSaveAsUtf8 and bUncPathFormat flags pertain to the file-paths in the play-list
+// The bSaveAsAnsi and bUncPathFormat flags pertain to the file-paths in the play-list
 //
 // Mode
 // EXPORT_PATH_RELATIVE       0
@@ -155,9 +140,7 @@ int __fastcall TExportForm::NoDialogU(TPlaylistForm* f, String uListFullPath,
   if (f == NULL)
     return 0;
 
-  TMyCheckListBox* lb = f->CheckBox;
-
-  if (lb == NULL || lb->Items->Count == 0 || lb->Tag < 0)
+  if (f->Count == 0 || f->PlayTag < 0)
     return 0;
 
   int Count = 0;
@@ -169,7 +152,7 @@ int __fastcall TExportForm::NoDialogU(TPlaylistForm* f, String uListFullPath,
 
   try
   {
-    int len = lb->Items->Count;
+    int len = f->Count;
 
     String Ext = ExtractFileExt(uListFullPath).LowerCase();
 
@@ -181,6 +164,16 @@ int __fastcall TExportForm::NoDialogU(TPlaylistForm* f, String uListFullPath,
     String sTemp, sSavePrefix;
 
     TProgressForm::Init(len);
+
+    String sEnc;
+    if (Enc == EXPORT_MODE_ANSI)
+      sEnc = "\"ANSI\"";
+    else if (Enc == EXPORT_MODE_UTF16BE)
+      sEnc ="\"UTF-16BE\"";
+    else if (Enc == EXPORT_MODE_UTF16)
+      sEnc ="\"UTF-16\"";
+    else
+      sEnc ="\"UTF-8\"";
 
     if (Ext == "wpl")
     {
@@ -200,7 +193,7 @@ int __fastcall TExportForm::NoDialogU(TPlaylistForm* f, String uListFullPath,
       {
         try
         {
-          String sName = lb->Items->Strings[ii];
+          String sName = f->GetString(ii);
 
           if (sName.IsEmpty()) continue;
 
@@ -209,7 +202,7 @@ int __fastcall TExportForm::NoDialogU(TPlaylistForm* f, String uListFullPath,
               sName = sName.Insert("file://", 1);
 
           // Note: sName is returned as a ref with the song-title (filename)
-          sTemp = ProcessFileName(sName, uListFullPath, Mode, bSaveAsUtf8, bUncPathFormat);
+          sTemp = ProcessFileName(sName, uListFullPath, Mode, bUncPathFormat);
 
           if (!sTemp.IsEmpty())
           {
@@ -229,7 +222,6 @@ int __fastcall TExportForm::NoDialogU(TPlaylistForm* f, String uListFullPath,
     }
     else if (Ext == "xspf") // Save as Windows-Media-Player XML file
     {
-      String sEnc = bSaveAsUtf8 ? "\"UTF-8\"" : "\"ANSI\"";
       sl->Add("<?xml version=\"1.0\" encoding=" + sEnc + "?>");
       sl->Add("<playlist version=\"1\" xmlns=\"http://xspf.org/ns/0/\">");
       sl->Add(" <tracklist>");
@@ -238,7 +230,7 @@ int __fastcall TExportForm::NoDialogU(TPlaylistForm* f, String uListFullPath,
       {
         try
         {
-          String sName = lb->Items->Strings[ii];
+          String sName = f->GetString(ii);
 
           if (sName.IsEmpty()) continue;
 
@@ -247,7 +239,7 @@ int __fastcall TExportForm::NoDialogU(TPlaylistForm* f, String uListFullPath,
             sName = sName.Insert("file://", 1);
 
           // Note: sName is returned as a ref with the song-title (filename)
-          sTemp = ProcessFileName(sName, uListFullPath, Mode, bSaveAsUtf8, bUncPathFormat);
+          sTemp = ProcessFileName(sName, uListFullPath, Mode, bUncPathFormat);
 
           if (!sTemp.IsEmpty())
           {
@@ -274,7 +266,6 @@ int __fastcall TExportForm::NoDialogU(TPlaylistForm* f, String uListFullPath,
     else if (Ext == "asx" || Ext == "wax" || Ext == "wmx") // Save as Windows-Media-Player XML file
     {
       sl->Add("<ASX version = \"3.0\">");
-      String sEnc = bSaveAsUtf8 ? "\"UTF-8\"" : "\"ANSI\"";
       sl->Add("   <PARAM name = \"encoding\" value = " + sEnc + " />");
       sl->Add("   <TITLE>" + ExtractFileName(uListFullPath) + "</TITLE>");
 
@@ -282,7 +273,7 @@ int __fastcall TExportForm::NoDialogU(TPlaylistForm* f, String uListFullPath,
       {
         try
         {
-          String sName = lb->Items->Strings[ii];
+          String sName = f->GetString(ii);
 
           if (sName.IsEmpty()) continue;
 
@@ -291,8 +282,7 @@ int __fastcall TExportForm::NoDialogU(TPlaylistForm* f, String uListFullPath,
               sName = sName.Insert("file://", 1);
 
           // sName is returned by reference with the Title (filename)
-          sTemp = ProcessFileName(sName, uListFullPath, Mode,
-                                        bSaveAsUtf8, bUncPathFormat);
+          sTemp = ProcessFileName(sName, uListFullPath, Mode, bUncPathFormat);
 
           if (!sTemp.IsEmpty())
           {
@@ -318,7 +308,7 @@ int __fastcall TExportForm::NoDialogU(TPlaylistForm* f, String uListFullPath,
       {
         try
         {
-          String sName = lb->Items->Strings[ii];
+          String sName = f->GetString(ii);
 
           if (sName.IsEmpty()) continue;
 
@@ -327,8 +317,7 @@ int __fastcall TExportForm::NoDialogU(TPlaylistForm* f, String uListFullPath,
               sName = sName.Insert("file://", 1);
 
           // Note: sName is returned as a ref with the song-title (filename)
-          sTemp = ProcessFileName(sName, uListFullPath,
-                                         Mode, bSaveAsUtf8, bUncPathFormat);
+          sTemp = ProcessFileName(sName, uListFullPath, Mode, bUncPathFormat);
 
           if (!sTemp.IsEmpty())
           {
@@ -357,7 +346,7 @@ int __fastcall TExportForm::NoDialogU(TPlaylistForm* f, String uListFullPath,
       {
         try
         {
-          String sName = lb->Items->Strings[ii];
+          String sName = f->GetString(ii);
 
           if (sName.IsEmpty()) continue;
 
@@ -366,8 +355,7 @@ int __fastcall TExportForm::NoDialogU(TPlaylistForm* f, String uListFullPath,
               sName = sName.Insert("file://", 1);
 
           // Note: sName is returned as a ref with the song-title (filename)
-          sTemp = ProcessFileName(sName, uListFullPath,
-                                       Mode, bSaveAsUtf8, bUncPathFormat);
+          sTemp = ProcessFileName(sName, uListFullPath, Mode, bUncPathFormat);
 
           if (!sTemp.IsEmpty())
           {
@@ -385,7 +373,21 @@ int __fastcall TExportForm::NoDialogU(TPlaylistForm* f, String uListFullPath,
     }
 
     if (sl->Count > 0)
-      MainForm->WriteStringToFileW(MainForm->Utf8ToWide(uListFullPath), sl->Text);
+    {
+      sl->WriteBOM = bWriteBOM;
+
+      TEncoding* enc;
+      if (Enc == EXPORT_MODE_ANSI)
+        enc = TEncoding::ANSI;
+      else if (Enc == EXPORT_MODE_UTF8)
+        enc = TEncoding::UTF8;
+      else if (Enc == EXPORT_MODE_UTF16)
+        enc = TEncoding::Unicode;
+      else if (Enc == EXPORT_MODE_UTF16BE)
+        enc = TEncoding::BigEndianUnicode;
+
+      sl->SaveToFile(uListFullPath, enc);
+    }
 
     TProgressForm::UnInit();
   }
@@ -396,7 +398,7 @@ int __fastcall TExportForm::NoDialogU(TPlaylistForm* f, String uListFullPath,
 }
 //---------------------------------------------------------------------------
 String __fastcall TExportForm::ProcessFileName(String &uName,
-        String uListFullPath, int Mode, bool bSaveAsUtf8, bool bUncPathFormat)
+        String uListFullPath, int Mode, bool bUncPathFormat)
 // uName is the full utf-8 file path from the list-box. It can be in
 // "file:/localhost/drive/path/file.ext" format
 // or like "C:\path\song.wma", "relative-path\song.wma",
@@ -408,9 +410,6 @@ String __fastcall TExportForm::ProcessFileName(String &uName,
   try
   {
     String sTemp = uName;
-
-    if (!bSaveAsUtf8)
-      sTemp = MainForm->Utf8ToAnsi(sTemp);
 
     // Return the title (filename) in uName
     uName = UniversalExtractFileName(sTemp);
@@ -427,7 +426,7 @@ String __fastcall TExportForm::ProcessFileName(String &uName,
 
     if (bUncPathFormat)
     {
-      sTemp = MainForm->ReplaceAll(sTemp, '\\', '/');
+      sTemp = ReplaceStr(sTemp, "\\", "/");
 
       // FYI: Looks like Microsoft metafiles that have relative links HAVE to
       // be on the local server... then you access those playlists via an ASX
@@ -467,7 +466,7 @@ String __fastcall TExportForm::GetFileString(String uListFullPath,
 //
 {
   // ANSI ReplaceAll should work ok on a UTF-8 path...
-  sSongFullPath = MainForm->ReplaceAll(sSongFullPath, '/', '\\');
+  sSongFullPath = ReplaceStr(sSongFullPath, "/", "\\");
 
   try
   {
@@ -522,7 +521,7 @@ String __fastcall TExportForm::InsertXMLSpecialCodes(String sIn)
   return sOut;
 }
 //---------------------------------------------------------------------------
-String __fastcall TExportForm::XmlSpecialCharEncode(char c)
+String __fastcall TExportForm::XmlSpecialCharEncode(WideChar c)
 {
   for (int ii = 0; ii < XMLCODESLEN; ii++)
     if (XMLCHARS[ii] == c)
@@ -561,7 +560,7 @@ String __fastcall TExportForm::UniversalExtractFileName(String sIn)
 {
   int len = sIn.Length();
   int idx = len;
-  char c;
+  WideChar c;
 
   for(;;)
   {
@@ -571,26 +570,28 @@ String __fastcall TExportForm::UniversalExtractFileName(String sIn)
     idx--;
   }
 
-  if (idx != 0) return sIn.SubString(idx+1, len-(idx+1)+1);
+  if (idx != 0)
+    return sIn.SubString(idx+1, len-(idx+1)+1);
+
   return sIn;
 }
 //---------------------------------------------------------------------------
 String __fastcall TExportForm::PercentEncode(String sIn,
-                                const char* table, bool bEncodeAbove127)
+                                const WideChar* table, bool bEncodeAbove127)
 {
   String sOut;
   int len = sIn.Length();
-  int lenPercent = strlen(table);
+  int lenPercent = StrLen(table);
   for (int ii = 1; ii <= len; ii++)
   {
-    char c = sIn[ii];
+    WideChar c = sIn[ii];
     int jj;
     for (jj = 0; jj < lenPercent; jj++)
     {
       if (c == table[jj])
       {
         // hex encode SPACE, etc.
-        sOut += "%" + IntToHex((int)(unsigned char)c, 2);
+        sOut += "%" + IntToHex((int)(WideChar)c, 2);
         break;
       }
     }
@@ -599,8 +600,8 @@ String __fastcall TExportForm::PercentEncode(String sIn,
     if (jj >= lenPercent)
     {
       // hex encode the control chars
-      if ((unsigned char)c < SPACE) sOut += "%" + IntToHex((int)(unsigned char)c, 2);
-      else if (bEncodeAbove127 && (unsigned char)c > 127) sOut += "%" + IntToHex((int)(unsigned char)c, 2);
+      if ((WideChar)c < SPACE) sOut += "%" + IntToHex((int)(WideChar)c, 2);
+      else if (bEncodeAbove127 && (WideChar)c > 127) sOut += "%" + IntToHex((int)(WideChar)c, 2);
       else sOut += c;
     }
   }

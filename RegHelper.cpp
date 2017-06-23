@@ -1,10 +1,11 @@
 //---------------------------------------------------------------------------
-#pragma package(smart_init)
+#include <vcl.h>
 #include "Main.h"
 #pragma hdrstop
 
 #include "RegHelper.h"
 
+#pragma package(smart_init)
 //---------------------------------------------------------------------------
 //  constructor
 __fastcall TRegHelper::TRegHelper(bool bCreate)
@@ -47,9 +48,9 @@ __fastcall TRegHelper::~TRegHelper()
   catch(...) {}
 }
 //---------------------------------------------------------------------------
-WideString __fastcall TRegHelper::ReadSetting(String keyName)
+String __fastcall TRegHelper::ReadSetting(String keyName)
 {
-  WideString sOut;
+  String sOut;
 
   // Read key from registry at HKEY_CURRENT_USER
   if (!bOpened)
@@ -57,8 +58,7 @@ WideString __fastcall TRegHelper::ReadSetting(String keyName)
 
   try
   {
-    String s = Reg->ReadString(keyName);
-    sOut = MainForm->Utf8ToWide(s);
+    sOut = Reg->ReadString(keyName);
   }
   catch (...)
   {
@@ -100,7 +100,7 @@ void __fastcall TRegHelper::ReadSetting(String keyName, int &iVal, int iDef)
   }
 }
 //---------------------------------------------------------------------------
-void __fastcall TRegHelper::WriteSetting(String keyName, WideString sIn)
+void __fastcall TRegHelper::WriteSetting(String keyName, String sIn)
 {
   // Read key from registry at HKEY_CURRENT_USER
   if (!bOpened)
@@ -108,7 +108,7 @@ void __fastcall TRegHelper::WriteSetting(String keyName, WideString sIn)
 
   try
   {
-    Reg->WriteString(keyName, MainForm->WideToUtf8(sIn));
+    Reg->WriteString(keyName, sIn);
   }
   catch(...) {}
 }

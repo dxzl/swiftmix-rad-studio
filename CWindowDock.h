@@ -39,7 +39,7 @@ const unsigned char CWD_DT_LEFTTOP = 11; //Docked at the left top of the parent
 const unsigned char CWD_DT_TOPLEFT = 12; //Docked at the top left of the parent;
 
 //Default values
-const long CWD_DEF_THRESHOLD = 10; //Default docking threshold
+const long CWD_DEF_THRESHOLD = 3; //Default docking threshold
 
 //-----------------
 // Classes
@@ -48,60 +48,60 @@ const long CWD_DEF_THRESHOLD = 10; //Default docking threshold
 class CWDChild
 {
 public:
-	//Constructors
-	CWDChild();
-	~CWDChild();
+    //Constructors
+    CWDChild();
+    ~CWDChild();
 
-	//Operators
-	bool operator ==(const CWDChild &rhs);
+    //Operators
+    bool operator ==(const CWDChild &rhs);
 
-	//Set properties
-	void SetHandle(HWND hwnd);
-	void SetDockType(unsigned char DockType);
-	void SetX(long x);
-	void SetY(long y);
+    //Set properties
+    void SetHandle(HWND hwnd);
+    void SetDockType(unsigned char DockType);
+    void SetX(long x);
+    void SetY(long y);
 
-	//Get properties
-	HWND GetHandle() const;
-	unsigned char GetDockType() const;
-	long GetX() const;
-	long GetY() const;
+    //Get properties
+    HWND GetHandle() const;
+    unsigned char GetDockType() const;
+    long GetX() const;
+    long GetY() const;
 
 private:
-	//Member data
-	HWND m_Hwnd; //Window handle
-	unsigned char m_DockType; //Docking type
-	long m_x; //X co-ordinate of the window relative to the parent upon docking
-	long m_y; //Y co-ordinate of the window relative to the parent upon docking
+    //Member data
+    HWND m_Hwnd; //Window handle
+    unsigned char m_DockType; //Docking type
+    long m_x; //X co-ordinate of the window relative to the parent upon docking
+    long m_y; //Y co-ordinate of the window relative to the parent upon docking
 };
 
 //CWindowDock - The window docking system
 class CWindowDock
 {
 public:
-	//Constructors
-	CWindowDock();
-	~CWindowDock();
+    //Constructors
+    CWindowDock();
+    ~CWindowDock();
 
-	//Set properties
-	void SetParent(HWND hParent);
-	void SetThreshold(long lThreshold);
+    //Set properties
+    void SetParent(HWND hParent);
+    void SetThreshold(long lThreshold);
 
-	//Add, remove and find child windows
-	void AddChild(HWND hChild, bool AutoDock = true);
-	void RemoveChild(HWND hChild);
-	CWDChild *FindChild(HWND hChild);
+    //Add, remove and find child windows
+    void AddChild(HWND hChild, bool AutoDock = true);
+    void RemoveChild(HWND hChild);
+    CWDChild *FindChild(HWND hChild);
 
-	//Update window positions and dock states
-	void WindowMoved(HWND hwnd);
+    //Update window positions and dock states
+    void WindowMoved(HWND hwnd);
 
 private:
-	//Member data
-	HWND m_Parent; //The parent window
-	long m_Threshold; //The docking threshold
-	list<CWDChild*> m_ChildList; //List of child windows
-	bool m_Working; //Stops WindowMoved from being called while it is already running
-	bool m_AutoDock; //Set to true when adding a window to auto dock it
+    //Member data
+    HWND m_Parent; //The parent window
+    long m_Threshold; //The docking threshold
+    list<CWDChild*> m_ChildList; //List of child windows
+    bool m_Working; //Stops WindowMoved from being called while it is already running
+    bool m_AutoDock; //Set to true when adding a window to auto dock it
 };
 
 #endif //_CWINDOWDOCK_INCLUDE_

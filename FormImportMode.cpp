@@ -10,7 +10,7 @@ TImportModeForm *ImportModeForm;
 __fastcall TImportModeForm::TImportModeForm(TComponent* Owner)
   : TForm(Owner)
 {
-  FMode = -1; // undefined
+  FMode = IMPORT_MODE_NONE; // undefined
 }
 //---------------------------------------------------------------------------
 void __fastcall TImportModeForm::FormDestroy(TObject *Sender)
@@ -28,7 +28,9 @@ void __fastcall TImportModeForm::FormCreate(TObject *Sender)
 //---------------------------------------------------------------------------
 void __fastcall TImportModeForm::FormShow(TObject *Sender)
 {
-  if (FMode == -1) FMode = IMPORT_MODE_AUTO;
+  if (FMode == IMPORT_MODE_NONE)
+    FMode = IMPORT_MODE_AUTO;
+
   RadioGroup->ItemIndex = FMode;
 }
 //---------------------------------------------------------------------------
