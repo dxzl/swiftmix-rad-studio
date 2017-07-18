@@ -20,3 +20,5 @@ Project web-site:
 http://swiftmix.yahcolorize.com
 
 Contact: dxzl@live.com
+
+![Preview](swiftmix.png)
