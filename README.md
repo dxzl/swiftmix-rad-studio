@@ -17,7 +17,7 @@ Project->Options->Resource Compiler->Directories and Conditionals->Include File 
 
 Project web-site:
 
-http://swiftmix.yahcolorize.com
+http://swiftmix.yahcolorize.com/swiftmix
 
 Contact: dxzl@live.com
 
