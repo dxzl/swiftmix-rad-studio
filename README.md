@@ -1,4 +1,4 @@
-# swiftmix-borland-cpp
+# swiftmix-rad-studio
 SwiftMiX is a DJ-like music-mixer that uses Windows-Media Player Active-X components. It can import/export/convert most playlists and handles Unicode file-paths.
 
 This project builds with Embarcadero RAD Studio 10.2 (Tokyo)
