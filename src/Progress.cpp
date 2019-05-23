@@ -24,7 +24,16 @@ int __fastcall TProgressForm::GetProgressPosition(void)
 void __fastcall TProgressForm::SetProgressPosition(int Value)
 {
   if (ProgressForm != NULL)
-    ProgressForm->ProgressBar->Position = 100*Value/FMaxVal;
+  {
+    int iNewPos = 100*Value/FMaxVal;
+
+    // MUST check position or GUI processing is very S L O W!
+    if (ProgressForm->ProgressBar->Position != iNewPos)
+    {
+      ProgressForm->ProgressBar->Position = iNewPos;
+      Application->ProcessMessages();
+    }
+  }
 }
 //---------------------------------------------------------------------------
 // static
@@ -59,10 +68,12 @@ void __fastcall TProgressForm::UnInit(void)
 // static
 void __fastcall TProgressForm::Move(int newVal)
 {
-  if (ProgressForm != NULL)
+  // MUST check position or GUI processing is very S L O W!
+  if (ProgressForm != NULL && ProgressForm->Position != newVal)
+  {
     ProgressForm->Position = newVal;
-
-  Application->ProcessMessages();
+    Application->ProcessMessages();
+  }
 }
 //---------------------------------------------------------------------------
 

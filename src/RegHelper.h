@@ -6,10 +6,17 @@
 #include <Registry.hpp>
 #include <Classes.hpp>
 //---------------------------------------------------------------------------
+// have to redefine this due to an ambiguity with Wmplib_tlb
+#if  defined(_WIN64)
+ typedef unsigned long long ULONG_PTR;
+ #else
+ typedef unsigned long ULONG_PTR;
+ #endif
+ //---------------------------------------------------------------------------
 class TRegHelper
 {
 private:
-  TRegistry* Reg;
+  TRegistry* MyReg;
 
   bool bOpened;
 

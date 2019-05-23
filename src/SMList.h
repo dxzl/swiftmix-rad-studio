@@ -63,9 +63,17 @@ struct STRUCT_B
   __fastcall STRUCT_B(); // constructor
 };
 //---------------------------------------------------------------------------
+class TPlayerURL
+{
+  public:
+    String URL;
+    TColor color;
+    unsigned cacheNumber; // has the current count of m_NumCachedFiles from FormMain
+};
+//---------------------------------------------------------------------------
 class TPlaylistForm : public TForm
 {
-__published:	// IDE-managed Components
+__published:  // IDE-managed Components
   TTimer *Timer1;
   TTimer *FlashTimer;
   TTimer *PositionTimer;
@@ -122,7 +130,7 @@ __published:	// IDE-managed Components
   void __fastcall SelectAllItemsClick(TObject *Sender);
   void __fastcall CopyLinkToClipboardClick(TObject *Sender);
 
-private:	// User declarations
+private:  // User declarations
 
   bool __fastcall IsPlayOrPause(TPlaylistForm* f);
   bool __fastcall InsertNewDeleteOld(TCheckListBox* SourceList,
@@ -134,10 +142,13 @@ private:	// User declarations
   void __fastcall StopPlayer(TWindowsMediaPlayer* p);
   void __fastcall StartPlayer(TWindowsMediaPlayer* p);
   void __fastcall SetTimer(int mode, int time);
-  void __fastcall DeleteItem(int ItemIndex);
   void __fastcall CheckAllItems(void);
   void __fastcall WMListDropFile(TWMDropFiles &Msg);
   void __fastcall WMSetText(TWMSetText &Msg);
+
+  void __fastcall AddListItem(String s, TPlayerURL* p);
+  void __fastcall InsertListItem(int idx, String s, TPlayerURL* p);
+  void __fastcall ClearListItems(void);
 
   int TimerMode;
   bool bInhibitFlash;
@@ -153,6 +164,7 @@ private:	// User declarations
   TColor FTextColor;
   bool FInEditMode;
   bool FPlayerA;
+  unsigned FCacheCount;
 
   TOFMSDlgForm* pOFMSDlg;
   TExportForm* pExportDlg;
@@ -188,7 +200,7 @@ END_MESSAGE_MAP(TForm)
   // Added to intercept a WM_SETTEXT and set unicode window captions
 //  void __fastcall CustomMessageHandler(TMessage &msg);
 
-public:		// User declarations
+public:  // User declarations
 
   bool __fastcall QueueFirst(void);
   void __fastcall NextPlayer(bool bForceStartPlay = false);
@@ -204,10 +216,10 @@ public:		// User declarations
   TImportForm* __fastcall CreateImportDialog(void);
   TExportForm* __fastcall CreateExportDialog(void);
   TOFMSDlgForm* __fastcall CreateFileDialog(void);
-  void __fastcall AddObject(String s, TObject* o);
-  String __fastcall GetString(int idx);
-  void __fastcall DeleteString(int idx);
   int __fastcall GetPlayTag(void);
+
+  void __fastcall AddListItem(String s);
+  void __fastcall DeleteListItem(int idx);
 
   STRUCT_A MediaInfo;
 
@@ -225,6 +237,8 @@ public:		// User declarations
   __property bool IsExportDlg = {read = GetIsExportDlg};
   __property bool IsOpenDlg = {read = GetIsOpenDlg};
   __property TColor TextColor = {read = FTextColor};
+  __property unsigned CacheCount = {read = FCacheCount, write = FCacheCount};
+  __property TCheckListBox* CheckBox = {read = FCheckBox};
 };
 //---------------------------------------------------------------------------
 extern PACKAGE TPlaylistForm *ListA;

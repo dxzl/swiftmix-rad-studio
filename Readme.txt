@@ -11,6 +11,7 @@ Free compiler: [Embarcadero C++ Builder 10.2 Tokyo Starter Edition](https://www.
 Before loading the project, you need to install the Windows Media Player Control as follows:
 Click Component->Import Component->Import Active-X Control
 Click Next and scroll down the list and choose Windows Media Player
+(The TWindowsMediaPlayer component will be in the ActiveX page of the tool-palette)
 
 Now you can click File->Open Project and choose SwiftMiXeR.cbproj
 

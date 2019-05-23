@@ -66,7 +66,7 @@ void __fastcall TAboutForm::Button2Click(TObject *Sender)
     Application->Terminate();
     }
 #else
-  ShowMessage( "This edition is free. (Yeah you can thank me later.)" );
+  ShowMessage( "This edition is free." );
 #endif
 }
 //---------------------------------------------------------------------------

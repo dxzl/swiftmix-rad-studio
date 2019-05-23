@@ -2,7 +2,7 @@
 #ifndef MainH
 #define MainH
 //---------------------------------------------------------------------------
-#define VERSION "1.67"
+#define VERSION "1.69"
 #define FREEWARE_EDITION true
 #define DEBUG_ON false // Include a debug console, use MainForm->CWrite("")
 //---------------------------------------------------------------------------
@@ -40,15 +40,23 @@
 #include "FormSFDlg.h"
 #include "FormOFMSDlg.h"
 #include "FormImport.h" // include FormOFDlg.h and SMList.h before this
-#include "FormExport.h" // include FormSFDlg.h and SMList.h before this
-#include "..\..\19.0\Imports\WMPLib_OCX.h"
-#include "..\..\19.0\Imports\WMPLib_TLB.h"
+#include "FormExport.h"
+#include "..\..\20.0\Imports\MediaPlayer_OCX.h"
+#include "..\..\20.0\Imports\MediaPlayer_TLB.h"
+#include "WMPLib_OCX.h"
+//#include "..\..\20.0\Imports\WMPLib_OCX.h"
+//#include "..\..\20.0\Imports\WMPLib_TLB.h"
 //---------------------------------------------------------------------------
 
 #define HELPSITE L"http://www.yahcolorize.com/swiftmix/help/help.htm"
 #define WEBSITE L"http://www.yahcolorize.com/swiftmix/index.htm"
 #define EMAIL L"dxzl@live.com"
-#define REGISTRY_KEY L"\\Software\\Discrete-Time Systems\\MusicMixer"
+#define REGISTRY_KEY L"Software\\Discrete-Time Systems\\MusicMixer\\"
+#define FILE_CACHE_PATH1 L"\\Discrete-Time Systems"
+#define FILE_CACHE_PATH2 L"\\MusicMixer"
+
+#define MAX_CACHE_FILES 2 // max disk-cache files to keep for each player
+#define URL_FILEMOVE_BUFSIZE 65536
 
 // Yahcolorize FindWindow
 #define YC_CLASS L"TDTSColor"
@@ -58,19 +66,21 @@
 #define COMMON_CONTROLS_LIB L"Comctl32.dll"
 
 // Registry entries we save in HKEY_CURRENT_USER
-#define SM_REGKEY_DIR_A "DefDirA"
-#define SM_REGKEY_DIR_B "DefDirB"
-#define SM_REGKEY_VOL_A "VolA"
-#define SM_REGKEY_VOL_B "VolB"
-#define SM_REGKEY_REPEAT_A "RepeatA"
-#define SM_REGKEY_REPEAT_B "RepeatB"
-#define SM_REGKEY_SHUFFLE_A "ShuffleA"
-#define SM_REGKEY_SHUFFLE_B "ShuffleB"
-#define SM_REGKEY_FADERTYPE "FaderType"
-#define SM_REGKEY_FADERMODE "FaderMode"
-#define SM_REGKEY_SENDTIMING "SendTiming"
-#define SM_REGKEY_IMPORTEXT "ImportExt"
-#define SM_REGKEY_EXPORTEXT "ExportExt"
+#define SM_REGKEY_DIR_A L"DefDirA"
+#define SM_REGKEY_DIR_B L"DefDirB"
+#define SM_REGKEY_VOL_A L"VolA"
+#define SM_REGKEY_VOL_B L"VolB"
+#define SM_REGKEY_REPEAT_A L"RepeatA"
+#define SM_REGKEY_REPEAT_B L"RepeatB"
+#define SM_REGKEY_SHUFFLE_A L"ShuffleA"
+#define SM_REGKEY_SHUFFLE_B L"ShuffleB"
+#define SM_REGKEY_FADERTYPE L"FaderType"
+#define SM_REGKEY_FADERMODE L"FaderMode"
+#define SM_REGKEY_SENDTIMING L"SendTiming"
+#define SM_REGKEY_IMPORTEXT L"ImportExt"
+#define SM_REGKEY_EXPORTEXT L"ExportExt"
+#define SM_REGKEY_CACHE_MAX_FILES L"CacheMaxFiles"
+#define SM_REGKEY_CACHE_ENABLED L"CacheEnabled"
 
 #define SHGFP_TYPE_CURRENT 0 // current value for user, verify it exists
 #define SHGFP_TYPE_DEFAULT 1 // default value, may not exist
@@ -206,6 +216,7 @@ __published:	// IDE-managed Components
     TUpDown *UpDown2;
     TEdit *FadePoint;
     TTrackBar *TrackBar1;
+  TMenuItem *MenuCacheFiles;
 
   void __fastcall File1Click(TObject *Sender);
   void __fastcall File2Click(TObject *Sender);
@@ -267,6 +278,9 @@ __published:	// IDE-managed Components
   void __fastcall FormDestroy(TObject *Sender);
   void __fastcall FormShow(TObject *Sender);
   void __fastcall WindowsMediaPlayerError(TObject *Sender);
+  void __fastcall MenuCacheFilesClick(TObject *Sender);
+  void __fastcall StatusBar1MouseDown(TObject *Sender, TMouseButton Button, TShiftState Shift,
+          int X, int Y);
 
 private:	// User declarations
 #if DEBUG_ON
@@ -293,16 +307,19 @@ private:	// User declarations
   __int64 __fastcall ComputeDiskSpace(int Mode);
   unsigned __int64 __fastcall RandomRemove(unsigned __int64 TargetBytes);
   void __fastcall WMDropFile(TWMDropFiles &Msg);
+  bool __fastcall DeleteDirAndFiles(String sDir);
+  bool __fastcall InitRegistryVars(void);
+  bool __fastcall InitFileCaching(void);
+  int __fastcall WebGetData(Char* WEB_URL);
 
-  int volA, volB; // volumes set in registry
+  // property vars (mostly!)
+
+  int volA, volB, FMaxCacheFiles; // volumes set in registry
   int currentVolA, currentVolB; // volume as it transitions during a fade
 
-  int m_filesAddedCount;
-
   // Flags for registry settings
-  bool bTypeCenterFade, bModeManualFade, bSendTiming;
-  bool bRepeatModeA, bShuffleModeA;
-  bool bRepeatModeB, bShuffleModeB;
+  bool bTypeCenterFade, bModeManualFade, bSendTiming, bFileCacheEnabled;
+  bool bRepeatModeA, bShuffleModeA, bRepeatModeB, bShuffleModeB;
 
   // Globals for Trial-Version
   bool bTrialFeaturesEnabled;
@@ -310,12 +327,13 @@ private:	// User declarations
 
   TPlaylistForm* GPlaylistForm;
 
-  // properties
-  String FsDeskDir;
+  String FsDeskDir, FsCacheDir;
   String FsImportExt, FsExportExt; // Import/Export file-extension (UTF-8)
   String FsSaveDirA, FsSaveDirB; // open/save directory (UTF-8)
 
   bool FBypassFilters;
+
+  unsigned FFilesAddedCount;
 
   CWindowDock* FDock;
 
@@ -356,15 +374,13 @@ public:		// User declarations
 
   bool __fastcall WriteStringToFile(String sPath, String sInfo);
   String __fastcall GetSpecialFolder(int csidl);
+  bool __fastcall ShellCommand(String sVerb, String sFile, String sCmd, bool bWaitForCompletion=true);
+  bool __fastcall CopyFileToCache(TPlaylistForm* f, int idx, bool bWaitForCompletion);
+  bool __fastcall DeleteOldestCacheFile(TPlaylistForm* f);
+  String __fastcall GetURL(TCheckListBox* l, int idx);
 
-  int FadeAt;
-  bool bFadeRight;
-
-  int RWM_SwiftMixPlay;
-  int RWM_SwiftMixTime;
-  int RWM_SwiftMixState;
-
-  bool bAutoSizePrompt;
+  int RWM_SwiftMixPlay, RWM_SwiftMixTime, RWM_SwiftMixState, FadeAt;
+  bool bFadeRight, bAutoSizePrompt;
 
   // properties
   __property CWindowDock* GDock = {read = FDock, write = FDock};
@@ -372,6 +388,7 @@ public:		// User declarations
   __property String ExportExt = {read = FsExportExt, write = FsExportExt};
   __property String SaveDirA = {read = FsSaveDirA, write = FsSaveDirA};
   __property String SaveDirB = {read = FsSaveDirB, write = FsSaveDirB};
+  __property String CacheDir = {read = FsCacheDir};
   __property String DeskDir = {read = FsDeskDir};
   __property bool GBypassFilters = {read = FBypassFilters, write = FBypassFilters, default =  false};
   __property bool ManualFade = {read = bModeManualFade};
@@ -381,9 +398,11 @@ public:		// User declarations
   __property bool RepeatModeB = {read = bRepeatModeB};
   __property bool ShuffleModeA = {read = bShuffleModeA};
   __property bool ShuffleModeB = {read = bShuffleModeB};
+  __property bool CacheEnabled = {read = bFileCacheEnabled};
   __property int VolA = {read = volA};
   __property int VolB = {read = volB};
-  __property int FilesAddedCount = {read = m_filesAddedCount, write = m_filesAddedCount};
+  __property unsigned FilesAddedCount = {read = FFilesAddedCount};
+  __property int MaxCacheFiles = {read = FMaxCacheFiles};
 };
 //---------------------------------------------------------------------------
 extern PACKAGE TMainForm *MainForm;

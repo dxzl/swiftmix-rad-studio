@@ -238,8 +238,6 @@ int __fastcall TImportForm::NoDialog(TPlaylistForm* f, String sPath, int Mode)
           }
           catch(...) { }
         }
-
-        Count = sl->Count;
       }
       else
       {
@@ -384,10 +382,8 @@ int __fastcall TImportForm::XmlParser(TPlaylistForm* f, String sExt, String sIn,
                     sUrl = ReplaceXmlCodes(sUrl);
 
                   if (ReplaceRelativePath(sUrl, sPath)) // returns sUrl as an absolute path...
-                  {
                     if (MainForm->AddFileToListBox(f, sUrl))
                       Count++;
-                  }
                 }
 
                 bUrlParse = false;
