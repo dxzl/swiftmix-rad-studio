@@ -100,12 +100,13 @@ void __fastcall TPlaylistForm::FormCreate(TObject* Sender)
 //---------------------------------------------------------------------------
 void __fastcall TPlaylistForm::FormDestroy(TObject *Sender)
 {
-  if (FCheckBox != NULL)
-    delete FCheckBox;
-
+  ClearAndStop();
   DestroyFileDialog();
   DestroyImportDialog();
   DestroyExportDialog();
+
+  if (FCheckBox)
+    delete FCheckBox;
 }
 //---------------------------------------------------------------------------
 void __fastcall TPlaylistForm::FormClose(TObject* Sender, TCloseAction &Action)

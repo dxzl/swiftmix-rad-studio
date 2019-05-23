@@ -548,24 +548,22 @@ bool __fastcall TMainForm::ShellCommand(String sVerb, String sFile,
 void __fastcall TMainForm::StatusBar1MouseDown(TObject *Sender, TMouseButton Button,
           TShiftState Shift, int X, int Y)
 {
-  int i, j, WidthIndex;
+  int j, WidthIndex;
+  int iNumPanels = StatusBar1->Panels->Count;
 
   // for each panel in the bar...
 
-  for (int i = 0 ; StatusBar1.Panels.Count - 1 ; i++)
+  WidthIndex = 0;
+
+  for (int j = 0 ; j < iNumPanels; j++)
   {
+    WidthIndex += StatusBar1->Panels->Items[j]->Width;
 
-    WidthIndex = 0;
-
-    for (int j = 0 ; j < ; j++)
+    if (X <= WidthIndex)
     {
-      WidthIndex = WidthIndex + StatusBar1.Panels.Items[j].Width;
-
-      if (X <= WidthIndex)
-      {
-        ShowMessage ('You clicked panel ' + IntToStr(i));
-        break;
-      }
+      if (j == 2)
+        MenuFaderModeAutoClick(NULL);
+      break;
     }
   }
 }

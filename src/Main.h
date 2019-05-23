@@ -2,7 +2,7 @@
 #ifndef MainH
 #define MainH
 //---------------------------------------------------------------------------
-#define VERSION "1.69"
+#define VERSION "1.70"
 #define FREEWARE_EDITION true
 #define DEBUG_ON false // Include a debug console, use MainForm->CWrite("")
 //---------------------------------------------------------------------------
@@ -24,7 +24,6 @@
 #include <StrUtils.hpp>
 
 #include "DefaultStrings.h"
-//#include "LicenseKey.h"
 #include "CWindowDock.h"
 #include "XmlTable.h"
 #include "RegHelper.h"
@@ -44,8 +43,6 @@
 #include "..\..\20.0\Imports\MediaPlayer_OCX.h"
 #include "..\..\20.0\Imports\MediaPlayer_TLB.h"
 #include "WMPLib_OCX.h"
-//#include "..\..\20.0\Imports\WMPLib_OCX.h"
-//#include "..\..\20.0\Imports\WMPLib_TLB.h"
 //---------------------------------------------------------------------------
 
 #define HELPSITE L"http://www.yahcolorize.com/swiftmix/help/help.htm"
