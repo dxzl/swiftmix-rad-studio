@@ -1,4 +1,4 @@
-/*------------------------------------------------------------------
+//-----------------------------------------------------------------
 // Author: Mr. Swift 2015
 // Thanks to Scott Wisniewski for his 2010 C# subclassed file-dialog
 // and to Denis Ponomarenko for his 2007 COSFDlg class implementation.
@@ -10,7 +10,7 @@
 // http://www.codeproject.com/Articles/17916/Simple-MFC-independent-Open-Save-File-Dialog-class
 // http://www.codeproject.com/Articles/3235/Multiple-Selection-in-a-File-Dialog
 //
-  ----------------------------------------------------------------*/
+//----------------------------------------------------------------
 // NOTE: The original file-open dialog's code for Borland C++ Builder is in the source-code files:
 // OPENSAVE.CPP and DLGFILE.CPP
 //
@@ -191,9 +191,11 @@ bool __fastcall TOFMSDlgForm::Execute(int iFilter, String uInitialDir,
   m_ofn.lpstrTitle  = FDlgTitle.w_str();
   m_ofn.lpstrInitialDir = FInitialDir.w_str();
 
-  m_ofn.Flags = OFN_NOTESTFILECREATE|OFN_HIDEREADONLY|OFN_EXPLORER|
-                    OFN_ENABLEHOOK|OFN_ENABLESIZING|OFN_FILEMUSTEXIST|
-                        OFN_PATHMUSTEXIST|OFN_ENABLETEMPLATE;
+  //m_ofn.Flags = OFN_NOTESTFILECREATE|OFN_HIDEREADONLY|OFN_EXPLORER|
+  //                  OFN_ENABLEHOOK|OFN_ENABLESIZING|OFN_FILEMUSTEXIST|
+  //                      OFN_PATHMUSTEXIST|OFN_ENABLETEMPLATE;
+  m_ofn.Flags = OFN_HIDEREADONLY|OFN_EXPLORER|OFN_ENABLEHOOK|
+                        OFN_ENABLESIZING|OFN_ENABLETEMPLATE;
 
   // Additional options for our custom multi-select version
   // (setting OFN_NODEREFERENCELINKS will allow .lnk files to be selected
@@ -579,12 +581,12 @@ bool __fastcall TOFMSDlgForm::ResizeCustomControl(HWND hDlg)
 
     // extend the filename edit box to the rightmost edge of the rightmost
     // button (Cancel)
-    HWND hFileName = GetDlgItem(hParent, ID_FileName);
+    HWND hFileNameCombo = GetDlgItem(hParent, ID_FileNameCombo);
     WINDOWPLACEMENT fileNameLoc;
     fileNameLoc.length = sizeof(WINDOWPLACEMENT);
-    GetWindowPlacement(hFileName, &fileNameLoc);
+    GetWindowPlacement(hFileNameCombo, &fileNameLoc);
     fileNameLoc.rcNormalPosition.right = cancelLoc.rcNormalPosition.right;
-    SetWindowPlacement(hFileName, &fileNameLoc);
+    SetWindowPlacement(hFileNameCombo, &fileNameLoc);
 
     // position the rightmost edge of the filter box "two button-gaps"
     // left of the leftmost edge of the leftmost button
@@ -639,7 +641,7 @@ bool __fastcall TOFMSDlgForm::ResizeCustomControl(HWND hDlg, RECT rect)
       //We clip hDlg to only draw in the rectangle around our custom buttons.
       //When we supply a custom dialog template to GetOpenFileName(), it adds
       //an extra HWND to the open file dialog, and then sticks all the controls
-      //in the dialog //template inside the HWND. It then resizes the control
+      //in the dialog template inside the HWND. It then resizes the control
       //to stretch from the top of the open file dialog to the bottom of the
       //window, extending the bottom of the window large enough to include the
       //additional height of the dialog template. This ends up sticking our custom
@@ -1038,19 +1040,8 @@ bool __fastcall TOFMSDlgForm::DeleteFileNameObjects()
   try
   {
     for (int ii = 0; ii < p_fno->Count; ii++)
-    {
       if (p_fno->Items[ii] != NULL)
-      {
-#if DEBUG_ON
-    OFDbg->CWrite("\r\nDelete...\r\n");
-#endif
         delete p_fno->Items[ii];
-#if DEBUG_ON
-    OFDbg->CWrite("\r\nDeleted...\r\n");
-#endif
-//        try { delete (TWideItem*)sl->Items[ii]; } catch(...) {}
-      }
-    }
 
     p_fno->Clear();
     return true;
@@ -1124,6 +1115,10 @@ LRESULT CALLBACK TOFMSDlgForm::OpenFileSubClass(HWND hDlg, UINT uMsg, WPARAM wPa
   TOFMSDlgForm* p = (TOFMSDlgForm*)dwRefData;
   if (p == NULL) return NULL;
 
+//#if DEBUG_ON
+//    if (uMsg != 32 && uMsg != 78 && uMsg != 289)
+//      OFDbg->CWrite("\r\nOpenFileSubClass, uMsg:" + String(uMsg) + ", wParam:" + IntToHex((int)wParam) + "\r\n");
+//#endif
   switch (uMsg)
   {
     case WM_ITEMS_SELECTED: // Custom message!
@@ -1160,6 +1155,10 @@ LRESULT CALLBACK TOFMSDlgForm::OpenFileSubClass(HWND hDlg, UINT uMsg, WPARAM wPa
 
     case WM_PARENTNOTIFY:
     {
+#if DEBUG_ON
+      // we get a hex 201 when we click in the file-edit combobox
+      OFDbg->CWrite("\r\nWM_PARENTNOTIFY: " + IntToHex((int)LOWORD(wParam)) + "\r\n");
+#endif
       if (LOWORD(wParam) == WM_CREATE)
       {
         // If the subclass has already been installed, the reference data is just updated...
@@ -1199,8 +1198,57 @@ LRESULT CALLBACK TOFMSDlgForm::DefViewSubClass(HWND hDlg, UINT uMsg, WPARAM wPar
     TOFMSDlgForm* p = (TOFMSDlgForm*)dwRefData;
     if (p == NULL) return NULL;
 
+//#if DEBUG_ON
+//    OFDbg->CWrite("\r\nDefViewSubClass, uMsg:" + String(uMsg) + ", wParam:" + IntToHex((int)wParam) + "\r\n");
+//#endif
+
     switch (uMsg)
     {
+      //case WM_ACTIVATE:
+      //break;
+
+      // 135 decimal
+      //case WM_GETDLGCODE:
+        // wParam, The virtual key, pressed by the user, that prompted Windows to
+        // issue this notification. The handler must selectively handle these keys.
+        // For instance, the handler might accept and process VK_RETURN but delegate
+        // VK_TAB to the owner window. For a list of values, see Virtual-Key Codes.
+        //
+        // The WM_GETDLGCODE message and the returned values are useful only with
+        // user-defined dialog box controls or standard controls modified by subclassing.
+        //
+        //DLGC_BUTTON 0x2000
+        //Button.
+        //DLGC_DEFPUSHBUTTON 0x0010
+        //Default push button.
+        //DLGC_HASSETSEL 0x0008
+        //EM_SETSEL messages.
+        //DLGC_RADIOBUTTON 0x0040
+        //Radio button.
+        //DLGC_STATIC 0x0100
+        //Static control.
+        //DLGC_UNDEFPUSHBUTTON 0x0020
+        //Non-default push button.
+        //DLGC_WANTALLKEYS 0x0004
+        //All keyboard input.
+        //DLGC_WANTARROWS 0x0001
+        //Direction keys.
+        //DLGC_WANTCHARS 0x0080
+        //WM_CHAR messages.
+        //DLGC_WANTMESSAGE 0x0004
+        //All keyboard input (the application passes this message in the MSG structure to the control).
+        //DLGC_WANTTAB 0x0002
+        //TAB key.
+        //
+        // https://docs.microsoft.com/en-us/windows/desktop/dlgbox/wm-getdlgcode
+        //HWND hControl = GetFocus(); // gets handle of control that had focus when Enter key was pressed
+        // we can send a return code to tell the dialog what info we want to process from here on...
+        // but it seems to default to sending 0 for the Enter key in the file-path combobox
+
+        //return DLGC_WANTALLKEYS|DLGC_WANTCHARS|EM_SETSEL; <-- Example - multiple flags
+
+      //break;
+
       case WM_NOTIFY:
       {
         LPOFNOTIFY ofNotify = (LPOFNOTIFY)lParam;
@@ -1315,6 +1363,10 @@ LRESULT CALLBACK TOFMSDlgForm::DefViewSubClass(HWND hDlg, UINT uMsg, WPARAM wPar
 // value to indicate that it has used the SetWindowLong function to set a nonzero DWL_MSGRESULT value.
 UINT CALLBACK TOFMSDlgForm::OFNHookProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+//#if DEBUG_ON
+//  OFDbg->CWrite("\r\nOFNHookProc(, msg:" + String(msg) + ", wParam:" + IntToHex((int)wParam) + "\r\n");
+//#endif
+
   switch (msg)
   {
     case WM_CLOSE:
@@ -1467,10 +1519,17 @@ UINT CALLBACK TOFMSDlgForm::OFNHookProc(HWND hDlg, UINT msg, WPARAM wParam, LPAR
 
             case ID_CUSTOM_SELECT:
             {
-              HWND hFileName = GetDlgItem(hParent, ID_FileName);
+              HWND hFileNameCombo = GetDlgItem(hParent, ID_FileNameCombo);
 
               // get the file-edit-box modify flag
-              BOOL bModified = hFileName == NULL ? FALSE : SendMessage(hFileName, EM_GETMODIFY, 0, 0);
+              HWND hWndEdit = (HWND)SendMessage(hFileNameCombo, CBEM_GETEDITCONTROL, 0, 0);
+              BOOL bModified = (hWndEdit == NULL) ? FALSE : SendMessage(hWndEdit, EM_GETMODIFY, 0, 0);
+#if DEBUG_ON
+              if (bModified)
+                OFDbg->CWrite("\r\nEdit box contents: Modified\r\n");
+              else
+                OFDbg->CWrite("\r\nEdit box contents: NOT Modified\r\n");
+#endif
 
               if (bModified)
               {
@@ -1483,10 +1542,10 @@ UINT CALLBACK TOFMSDlgForm::OFNHookProc(HWND hDlg, UINT msg, WPARAM wParam, LPAR
                 p->DeleteFileNameObjects();
 
                 // if the user typed their own path - use that...
-                int bufLen = GetWindowTextLengthW(hFileName) + 1;
+                int bufLen = GetWindowTextLengthW(hFileNameCombo) + 1;
                 WideChar* buf = new WideChar[bufLen];
 
-                int strLen = GetWindowTextW(hFileName, buf, bufLen);
+                int strLen = GetWindowTextW(hFileNameCombo, buf, bufLen);
 
                 if (strLen > 0)
                 {
@@ -1528,7 +1587,7 @@ UINT CALLBACK TOFMSDlgForm::OFNHookProc(HWND hDlg, UINT msg, WPARAM wParam, LPAR
                 }
               }
 
-              // Note: Calling SendMessage( hParent, WM_CLOSE, 0, 0);
+              // Note: Calling SendMessage(hParent, WM_CLOSE, 0, 0);
               // seemed to work ok too...
               PostMessage(hParent, WM_COMMAND,
                     MAKEWPARAM(IDCANCEL, BN_CLICKED),
@@ -1577,6 +1636,9 @@ int __fastcall TOFMSDlgForm::ProcessNotifyMessage(HWND hDlg, LPOFNOTIFY p_notify
   // CDN_INITDONE, CDN_SELCHANGE, CDN_SHAREVIOLATION, CDN_TYPECHANGE.
   switch (p_notify->hdr.code)
   {
+//#if DEBUG_ON
+//  OFDbg->CWrite("\r\nProcessNotifyMessage, p_notify->hdr.code:" + String(p_notify->hdr.code) + "\r\n");
+//#endif
     case CDN_SELCHANGE:
     {
       // when a new file is selected, this sets the file-name box and window
@@ -1593,11 +1655,11 @@ int __fastcall TOFMSDlgForm::ProcessNotifyMessage(HWND hDlg, LPOFNOTIFY p_notify
       {
         this->FFolderIsSelected = DirectoryExists(newFile) ? true : false;
 
-        HWND hFileName = GetDlgItem(hParent, ID_FileName);
+        HWND hFileNameCombo = GetDlgItem(hParent, ID_FileNameCombo);
 
         // clear the file-name edit-box when a new folder is opened
-        if (hFileName != NULL)
-          SetWindowText(hFileName, newFile.w_str());
+        if (hFileNameCombo != NULL)
+          SetWindowText(hFileNameCombo, newFile.w_str());
 
         return TRUE;
       }
@@ -1668,11 +1730,11 @@ int __fastcall TOFMSDlgForm::ProcessNotifyMessage(HWND hDlg, LPOFNOTIFY p_notify
         // Set TOFMSDlgForm's window-title to the current folder
         SetWindowTextW(hParent, String(this->FDlgTitle + ": " + newFolder).w_str());
 
-        HWND hFileName = GetDlgItem(hParent, ID_FileName);
+        HWND hFileNameCombo = GetDlgItem(hParent, ID_FileNameCombo);
 
         // clear the file-name edit-box when a new folder is opened
-        if (hFileName != NULL)
-          SetWindowTextW(hFileName, L"");
+        if (hFileNameCombo != NULL)
+          SetWindowTextW(hFileNameCombo, L"");
 
         return TRUE;
       }
@@ -1713,10 +1775,10 @@ int __fastcall TOFMSDlgForm::ProcessNotifyMessage(HWND hDlg, LPOFNOTIFY p_notify
       // save the parent handle for later use by the destructor to send a WM_CLOSE
       this->FDlgHandle = GetParent(hDlg);
 
-      HWND hFileName = GetDlgItem(this->FDlgHandle, ID_FileName);
+      HWND hFileNameCombo = GetDlgItem(this->FDlgHandle, ID_FileNameCombo);
 
-      if (hFileName != NULL)
-        ::SetFocus(hFileName);
+      if (hFileNameCombo != NULL)
+        ::SetFocus(hFileNameCombo);
 
 #if DEBUG_ON
       OFDbg->CWrite("\r\nTOFMSDlgForm() CDN_INITDONE\r\n");

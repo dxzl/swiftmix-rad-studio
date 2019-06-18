@@ -55,7 +55,7 @@ __fastcall TMainForm::TMainForm(TComponent* Owner) : TForm(Owner)
   Application->HintHidePause = 4000;
   Application->ShowHint = true;
 
-  FadeAt = 10;
+  FfadeAt = 10; // start fade 10 seconds before end
 
   GPlaylistForm = NULL;
 
@@ -175,9 +175,9 @@ void __fastcall TMainForm::FormCreate(TObject* Sender)
     StatusBar1->Panels->Items[ii]->Width = Size;
 
   // Create Window Docking Manager
-  FDock = new CWindowDock();
-  if (FDock == NULL)
-    ShowMessage("Unable to create docking manager!");
+//  FDock = new CWindowDock();
+//  if (FDock == NULL)
+//    ShowMessage("Unable to create docking manager!");
 
   //enable drag/drop files
   ::DragAcceptFiles(this->Handle, true);
@@ -213,17 +213,17 @@ void __fastcall TMainForm::FormShow(TObject *Sender)
   // Add the windows to the docking system
   //-----------------
   //Set the parent window
-  if (FDock != NULL)
-  {
-    FDock->SetParent(this->Handle);
+//  if (FDock != NULL)
+//  {
+//    FDock->SetParent(this->Handle);
+//
+//    //Add the child windows
+//    FDock->AddChild(ListA->Handle); // automatically dock
+//    FDock->AddChild(ListB->Handle); // automatically dock
+//  }
 
-    //Add the child windows
-    FDock->AddChild(ListA->Handle); // automatically dock
-    FDock->AddChild(ListB->Handle); // automatically dock
-  }
-
-  SetCheckmarkA(volA);
-  SetCheckmarkB(volB);
+  SetCheckmarkA(FvolA);
+  SetCheckmarkB(FvolB);
 
   MenuFaderTypeNormal->Checked = bTypeCenterFade ? false : true; // inverse
   MenuFaderModeAuto->Checked = bModeManualFade ? false : true; // inverse
@@ -256,7 +256,7 @@ void __fastcall TMainForm::FormShow(TObject *Sender)
     StatusBar1->Panels->Items[2]->Text = "Manual";
 }
 //---------------------------------------------------------------------------
-bool __fastcall TMainForm::InitRegistryVars(void)
+void __fastcall TMainForm::InitRegistryVars(void)
 {
   TRegHelper* pReg = NULL;
 
@@ -295,15 +295,17 @@ bool __fastcall TMainForm::InitRegistryVars(void)
       pReg->ReadSetting(SM_REGKEY_CACHE_ENABLED, bFileCacheEnabled, true);
 
       pReg->ReadSetting(SM_REGKEY_CACHE_MAX_FILES, FMaxCacheFiles, MAX_CACHE_FILES);
+      if (FMaxCacheFiles < MAX_CACHE_FILES)
+        FMaxCacheFiles = MAX_CACHE_FILES; // need to make this the minimum!!!!
 
-      pReg->ReadSetting(SM_REGKEY_VOL_A, volA, 50);
-      pReg->ReadSetting(SM_REGKEY_VOL_B, volB, 50);
+      pReg->ReadSetting(SM_REGKEY_VOL_A, FvolA, 50);
+      pReg->ReadSetting(SM_REGKEY_VOL_B, FvolB, 50);
 
       // in case a low volume got stuck in the registry...
-      if (volA < 10)
-        volA = 50;
-      if (volB < 10)
-        volB = 50;
+      if (FvolA < 10)
+        FvolA = 50;
+      if (FvolB < 10)
+        FvolB = 50;
     }
     else
     {
@@ -325,8 +327,8 @@ bool __fastcall TMainForm::InitRegistryVars(void)
 
       FMaxCacheFiles = MAX_CACHE_FILES;
 
-      volA = 50;
-      volB = 50;
+      FvolA = 50;
+      FvolB = 50;
     }
   }
   __finally
@@ -376,7 +378,7 @@ void __fastcall TMainForm::FormDestroy(TObject *Sender)
 // probably we don't need this either...
 //  if (ProgressForm != NULL) ProgressForm->Release();
 
-  if (FDock != NULL) delete FDock;
+//  if (FDock != NULL) delete FDock;
 
   // delete file-cache directory and files
   if (DirectoryExists(FsCacheDir))
@@ -457,8 +459,8 @@ void __fastcall TMainForm::FormClose(TObject* Sender, TCloseAction &Action)
       pReg->WriteSetting(SM_REGKEY_SHUFFLE_B, bShuffleModeB);
       pReg->WriteSetting(SM_REGKEY_CACHE_ENABLED, bFileCacheEnabled);
       pReg->WriteSetting(SM_REGKEY_CACHE_MAX_FILES, FMaxCacheFiles);
-      pReg->WriteSetting(SM_REGKEY_VOL_A, volA);
-      pReg->WriteSetting(SM_REGKEY_VOL_B, volB);
+      pReg->WriteSetting(SM_REGKEY_VOL_A, FvolA);
+      pReg->WriteSetting(SM_REGKEY_VOL_B, FvolB);
     }
   }
   __finally
@@ -481,6 +483,8 @@ bool __fastcall TMainForm::DeleteDirAndFiles(String sDir)
 bool __fastcall TMainForm::ShellCommand(String sVerb, String sFile,
                                   String sCmd, bool bWaitForCompletion)
 {
+  int bRet = true;
+
   try
   {
     // example (from YahCoLoRiZe old version):
@@ -514,7 +518,10 @@ bool __fastcall TMainForm::ShellCommand(String sVerb, String sFile,
       // only use the two lines below for SEE_MASK_NOCLOSEPROCESS
       if (bWaitForCompletion)
       {
-        WaitForSingleObject(shExecInfo.hProcess, INFINITE);
+        //if (!WaitForSingleObject(shExecInfo.hProcess, INFINITE))
+        if (WaitForSingleObject(shExecInfo.hProcess, 2000) != 0) // wait for 2 seconds
+          bRet = false;
+
         CloseHandle(shExecInfo.hProcess);
       }
     }
@@ -536,13 +543,13 @@ bool __fastcall TMainForm::ShellCommand(String sVerb, String sFile,
       if (bWaitForCompletion)
         Sleep(1000); // wait to complete
     }
-
-    return true;
   }
   catch(...)
   {
-    return false;
+    bRet = false;
   }
+
+  return bRet;
 }
 //---------------------------------------------------------------------------
 void __fastcall TMainForm::StatusBar1MouseDown(TObject *Sender, TMouseButton Button,
@@ -727,6 +734,152 @@ bool __fastcall TMainForm::FileDialog(TPlaylistForm* f, String &d, String t)
   return bRet;
 }
 //---------------------------------------------------------------------------
+void __fastcall TMainForm::WMDropFile(TWMDropFiles &Msg)
+{
+  if (Msg.Drop == 0) return;
+
+  try
+  {
+    if (ListA == NULL || ListB == NULL ||
+      WindowsMediaPlayer1 == NULL || WindowsMediaPlayer2 == NULL) return;
+
+    // Which player are we over?
+    int left = WindowsMediaPlayer1->Left;
+    int right = left + WindowsMediaPlayer1->Width;
+
+    int topA = WindowsMediaPlayer1->Top;
+    int bottomA = topA + WindowsMediaPlayer1->Height;
+
+    int topB = WindowsMediaPlayer2->Top;
+    int bottomB = topB + WindowsMediaPlayer2->Height;
+
+    //get drop location
+    TPoint p;
+    ::DragQueryPoint((HDROP)Msg.Drop, &p);
+
+    // Convert drop-coordinates to client
+    ::ScreenToClient(NULL, &p);
+
+    if (p.x > left && p.x < right)
+    {
+      if (p.y > topA && p.y < bottomA)
+        LoadListWithDroppedFiles(Msg, ListA);
+      else if (p.y > topB && p.y < bottomB)
+        LoadListWithDroppedFiles(Msg, ListB);
+    }
+  }
+  // NOTE: Unlike C#, __finally does NOT get called if we execute a return!!!
+  __finally
+  {
+    try { ::DragFinish((HDROP)Msg.Drop); } catch(...) {}
+    Msg.Result = 0;
+  }
+}
+//---------------------------------------------------------------------------
+void __fastcall TMainForm::LoadListWithDroppedFiles(TWMDropFiles &Msg, TPlaylistForm* f)
+{
+  if (f == NULL)
+    return;
+
+  TCursor Save_Cursor;
+  wchar_t* pBuf = NULL;
+  TStringList* sl = NULL;
+  ImportForm = NULL;
+
+  FFilesAddedCount = 0;
+
+  try
+  {
+    //get dropped files count
+    int DroppedCount = ::DragQueryFileW((HDROP)Msg.Drop, -1, NULL, 0);
+
+    if (DroppedCount == 0)
+      return;
+
+    Save_Cursor = Screen->Cursor;
+    Screen->Cursor = crHourGlass;    // Show hourglass cursor
+
+    TProgressForm::Init(DroppedCount);
+
+    if (ImportForm == NULL)
+      Application->CreateForm(__classid(TImportForm), &ImportForm);
+
+    pBuf = new wchar_t[MAX_PATH];
+    sl = new TStringList();
+//    sl->Sorted = true; // don't want to mess up a user-chosen order...
+
+    for (int ii = 0; ii < DroppedCount; ii++)
+    {
+      ::DragQueryFileW((HDROP)Msg.Drop, ii, pBuf, MAX_PATH);
+
+      if (*pBuf != L'\0')
+        sl->Add(pBuf);
+
+      TProgressForm::Move(ii);
+    }
+
+    // Repair a quirky list-system... (not needed after the first item has been added to a listbox!)
+    if (sl->Count > 1 && f->Count == 0)
+      sl->Exchange(0, sl->Count-1);
+
+    // Press and hold Shift to bypass the file-extention filtering
+    this->GBypassFilters = (GetKeyState(VK_SHIFT) & 0x8000);
+
+    TProgressForm::Init(sl->Count);
+
+    String SaveDir = GetCurrentDir(); // Save
+
+    for (int ii = 0; ii < sl->Count; ii++)
+    {
+      Application->ProcessMessages();
+
+      if (Application->Terminated || (int)GetAsyncKeyState(VK_ESCAPE) < 0)
+        break;
+
+      String sFile = sl->Strings[ii]; // these strings are in UTF-8!
+
+      String Ext = ExtractFileExt(sFile).LowerCase();
+
+      if (Ext.IsEmpty() && DirectoryExists(sFile))
+      {
+        SetCurrentDir(sFile);
+        AddAllSongsToListBox(f); // recurse add folder and sub-folder's songs to list
+      }
+      else if (this->GBypassFilters || Ext == ".wpl" || Ext == ".m3u8" || Ext == ".m3u" ||
+                            Ext == ".asx" || Ext == ".xspf" || Ext == ".wax" ||
+                            Ext == ".wmx" || Ext == ".wvx" ||  Ext == ".pls" || Ext == ".txt")
+        FFilesAddedCount += ImportForm->NoDialog(f, sFile,
+                ImportForm->GetMode(Ext, IMPORT_MODE_AUTO)); // Load the playlist
+      else if (AddFileToListBox(f, sFile))
+        FFilesAddedCount++;
+
+      TProgressForm::Move(ii);
+    }
+
+    SetCurrentDir(SaveDir); // Restore
+
+    if (FFilesAddedCount > 0)
+      ShowPlaylist(f);
+    else
+      ShowMessage("Song(s) may not have been added because either they did not\n"
+             "appear to be sound files or the file was not found.\n\n"
+             "Perhaps your music drive USB cable is unplugged?\n\n"
+             "(To bypass the filter-list, press and hold SHIFT until you release\n"
+             "the mouse button and drag/drop the file(s) again.)");
+  }
+  __finally
+  {
+    try { TProgressForm::UnInit(); } catch(...) {}
+
+    try { if (ImportForm != NULL) ImportForm->Release(); } catch(...) {}
+    try { if (pBuf != NULL) delete [] pBuf; } catch(...) {}
+    try { if (sl != NULL) delete sl; } catch(...) {}
+
+    // Restore the previous cursor.
+    Screen->Cursor = Save_Cursor;
+  }
+}
+//---------------------------------------------------------------------------
 void __fastcall TMainForm::AddAllSongsToListBox(TPlaylistForm* f)
 // Strings are in UTF-8 format!
 {
@@ -747,6 +900,7 @@ void __fastcall TMainForm::AddAllSongsToListBox(TPlaylistForm* f)
       for (int ii = 0 ; ii < Count ; ii++)
       {
         Application->ProcessMessages();
+
         if (Application->Terminated || (int)GetAsyncKeyState(VK_ESCAPE) < 0)
           break;
 
@@ -776,11 +930,11 @@ bool __fastcall TMainForm::AddFileToListBox(TPlaylistForm* f, String sFile)
 
   try
   {
-    f->AddListItem(sFile);
+    f->AddListItem(sFile, IsUri(sFile));
 
-    // move the first two checked files to the cache
-    //if (f->Count == 1)
-    //  CopyFileToCache(f, -1, false);
+    // move the first file to the cache
+    if (f->Count == 0)
+      CopyFileToCache(f, -1, false);
 
     FFilesAddedCount++;
 
@@ -825,7 +979,6 @@ void __fastcall TMainForm::RecurseFileAdd(TStringList* slFiles)
           if (len == 2 && sr.cFileName[0] == L'.' && sr.cFileName[1] == L'.')
             continue;
 
-//          slSubDirs->Add(WideToUtf8(String(sr.cFileName)));
           slSubDirs->Add(sr.cFileName);
         }
       } while (FindNextFile(hFind, &sr) == TRUE);
@@ -1167,7 +1320,7 @@ bool __fastcall TMainForm::SetVolumes()
 
 bool __fastcall TMainForm::SetVolumeA(int v)
 {
-  volA = v;
+  FvolA = v;
   return SetVolumeA();
 }
 
@@ -1182,19 +1335,19 @@ bool __fastcall TMainForm::SetVolumeA(void)
   {
     if (bTypeCenterFade)
     {
-      if (TrackBar1->Position < 50)
-        currentVolA = volA;
+      if (FaderTrackBar->Position < 50)
+        FcurrentVolA = FvolA;
       else
-        currentVolA = volA*((100-TrackBar1->Position)*2)/100;
+        FcurrentVolA = FvolA*((100-FaderTrackBar->Position)*2)/100;
     }
     else
-      currentVolA = (volA*(100-TrackBar1->Position))/100;
+      FcurrentVolA = (FvolA*(100-FaderTrackBar->Position))/100;
 
-#if DEBUG_ON
-    MainForm->CWrite("\r\nSetVolumeA(): currentVolA = " + String(currentVolA) + "\r\n");
-#endif
+//#if DEBUG_ON
+//    MainForm->CWrite("\r\nSetVolumeA(): currentVolA = " + String(FcurrentVolA) + "\r\n");
+//#endif
 
-    WindowsMediaPlayer1->settings->volume = currentVolA;
+    WindowsMediaPlayer1->settings->volume = FcurrentVolA;
 
     return true;
   }
@@ -1211,7 +1364,7 @@ bool __fastcall TMainForm::SetVolumeA(void)
 
 bool __fastcall TMainForm::SetVolumeB(int v)
 {
-  volB = v;
+  FvolB = v;
   return SetVolumeB();
 }
 
@@ -1226,20 +1379,20 @@ bool __fastcall TMainForm::SetVolumeB(void)
   {
     if (bTypeCenterFade)
     {
-      if (TrackBar1->Position >= 50)
-        currentVolB = volB;
+      if (FaderTrackBar->Position >= 50)
+        FcurrentVolB = FvolB;
       else
-        currentVolB = volB*(TrackBar1->Position*2)/100;
+        FcurrentVolB = FvolB*(FaderTrackBar->Position*2)/100;
     }
     else
-      currentVolB = (volB*TrackBar1->Position)/100;
+      FcurrentVolB = (FvolB*FaderTrackBar->Position)/100;
 
-#if DEBUG_ON
-    MainForm->CWrite("\r\nSetVolumeB(): volB = " + String(volB) + "\r\n");
-    MainForm->CWrite("\r\nSetVolumeB(): currentVolB = " + String(currentVolB) + "\r\n");
-#endif
+//#if DEBUG_ON
+//    MainForm->CWrite("\r\nSetVolumeB(): volB = " + String(FvolB) + "\r\n");
+//    MainForm->CWrite("\r\nSetVolumeB(): currentVolB = " + String(FcurrentVolB) + "\r\n");
+//#endif
 
-    WindowsMediaPlayer2->settings->volume = currentVolB;
+    WindowsMediaPlayer2->settings->volume = FcurrentVolB;
 
     return true;
   }
@@ -1411,6 +1564,15 @@ void __fastcall TMainForm::ViewPlaylist2Click(TObject* Sender)
   ShowPlaylist(ListB);
 }
 //---------------------------------------------------------------------------
+// Here, we either increment or decrement the fader trackbar position by the
+// trackbar frequency. The base timer unit is 50ms. The up-down Fade Rate
+// can be 0 to +9 or 0 to -9. When it's positive, the timer-tick is 50ms and the
+// tick-frequency of the trackbar is 0-9. There are 100 steps in the
+// trackbar range. So the "normal" fade is 50ms * 100 steps = 5 seconds.
+// The fastest fade is (50ms*100)/9 = .55 seconds. For negative fade-rates
+// the tick-frequency is 1 and the trackbar interval is 50ms to (50*9) = 450ms.
+// So the slowest fade-time is 100 steps at 50ms per step * 9 or 450 * 100 or
+// 45 seconds.
 void __fastcall TMainForm::AutoFadeTimerEvent(TObject* Sender)
 {
   if (!WindowsMediaPlayer1 || !WindowsMediaPlayer2) return;
@@ -1419,12 +1581,12 @@ void __fastcall TMainForm::AutoFadeTimerEvent(TObject* Sender)
   {
     if (bFadeRight)
     {
-      if (TrackBar1->Position < 100)
+      if (FaderTrackBar->Position < FaderTrackBar->Max)
       {
-        if (TrackBar1->Position <= 100-TrackBar1->Frequency)
-          TrackBar1->Position += TrackBar1->Frequency;
+        if (FaderTrackBar->Position <= FaderTrackBar->Max-FaderTrackBar->Frequency)
+          FaderTrackBar->Position += FaderTrackBar->Frequency;
         else
-          TrackBar1->Position = 100;
+          FaderTrackBar->Position = FaderTrackBar->Max;
       }
       else
       {
@@ -1439,21 +1601,21 @@ void __fastcall TMainForm::AutoFadeTimerEvent(TObject* Sender)
         WindowsMediaPlayer1->settings->mute = false;
 
         // Queue next song
-        WindowsMediaPlayer1->URL = ListA->GetNext();
+        WindowsMediaPlayer1->URL = ListA->GetNextCheckCache();
 
-        if (ListA->Tag < 0)
+        if (ListA->Count == 0)
           if (FileDialog(ListA, SaveDirA, ADD_A_TITLE))
             ListA->QueueFirst();
       }
     }
     else
     {
-      if (TrackBar1->Position > 0)
+      if (FaderTrackBar->Position > FaderTrackBar->Min)
       {
-        if (TrackBar1->Position >= TrackBar1->Frequency)
-          TrackBar1->Position -= TrackBar1->Frequency;
+        if (FaderTrackBar->Position >= FaderTrackBar->Frequency)
+          FaderTrackBar->Position -= FaderTrackBar->Frequency;
         else
-          TrackBar1->Position = 0;
+          FaderTrackBar->Position = FaderTrackBar->Min;
       }
       else
       {
@@ -1468,9 +1630,9 @@ void __fastcall TMainForm::AutoFadeTimerEvent(TObject* Sender)
         WindowsMediaPlayer2->settings->mute = false;
 
         // Queue next song
-        WindowsMediaPlayer2->URL = ListB->GetNext();
+        WindowsMediaPlayer2->URL = ListB->GetNextCheckCache();
 
-        if (ListB->Tag < 0)
+        if (ListB->Count == 0)
           if (FileDialog(ListB, SaveDirB, ADD_B_TITLE))
             ListB->QueueFirst();
       }
@@ -1484,7 +1646,7 @@ void __fastcall TMainForm::AutoFadeTimerEvent(TObject* Sender)
   }
 }
 //---------------------------------------------------------------------------
-void __fastcall TMainForm::TrackBar1Change(TObject* Sender)
+void __fastcall TMainForm::FaderTrackBarChange(TObject* Sender)
 {
   // Fader Moved
   SetVolumes();
@@ -1498,12 +1660,14 @@ bool __fastcall TMainForm::SetCurrentPlayer(void)
 
   try
   {
-    if (TrackBar1->Position != 100 && WindowsMediaPlayer1->playState == WMPPlayState::wmppsPlaying)
+    if (FaderTrackBar->Position != FaderTrackBar->Max &&
+              WindowsMediaPlayer1->playState == WMPPlayState::wmppsPlaying)
       CurrentPlayer |= 1;
     else
       CurrentPlayer &= ~1;
 
-    if (TrackBar1->Position != 0 && WindowsMediaPlayer2->playState == WMPPlayState::wmppsPlaying)
+    if (FaderTrackBar->Position != FaderTrackBar->Min &&
+          WindowsMediaPlayer2->playState == WMPPlayState::wmppsPlaying)
       CurrentPlayer |= 2;
     else
       CurrentPlayer &= ~2;
@@ -2303,25 +2467,43 @@ unsigned __int64 __fastcall TMainForm::RandomRemove(unsigned __int64 TargetBytes
   return 0;
 }
 //---------------------------------------------------------------------------
-void __fastcall TMainForm::UpDown2Changing(TObject* Sender, bool &AllowChange)
+void __fastcall TMainForm::FPUpDownChangingEx(TObject *Sender, bool &AllowChange,
+          int NewValue, TUpDownDirection Direction)
 {
-  FadeAt = ((TUpDown*)Sender)->Position;
+  FfadeAt = NewValue;
 }
 //---------------------------------------------------------------------------
-void __fastcall TMainForm::UpDown1Changing(TObject* Sender, bool &AllowChange)
+// NOTE: If the UpDown fade-rate is 0, we force it to be 1 to avoid
+// setting the timer interval to 0. 0 is allowed but turns off the
+// timer-event's hook. So -9 becomes -10 and +9 becomes +10, effectively.
+void __fastcall TMainForm::FRUpDownChangingEx(TObject *Sender, bool &AllowChange,
+          int NewValue, TUpDownDirection Direction)
 {
-  int Pos = ((TUpDown*)Sender)->Position;
-
-  if (Pos <= 0)
+  if (NewValue < 0)
   {
-    Pos = -Pos;
-    AutoFadeTimer->Interval = 50*Pos;
-    TrackBar1->Frequency = 1;
+    if (NewValue > FRUpDown->Min)
+    {
+      int PrevPos = ((TUpDown*)Sender)->Position;
+
+      if (NewValue < PrevPos)
+      {
+        if (FPUpDown->Position < FPUpDown->Max)
+          FPUpDown->Position += 3;
+      }
+      else
+      {
+        if (FPUpDown->Position > FPUpDown->Min)
+          FPUpDown->Position -= 3;
+      }
+    }
+
+    AutoFadeTimer->Interval = -NewValue*40;
+    FaderTrackBar->Frequency = 1;
   }
   else
   {
     AutoFadeTimer->Interval = 50;
-    TrackBar1->Frequency = Pos;
+    FaderTrackBar->Frequency = NewValue;
   }
 }
 //---------------------------------------------------------------------------
@@ -2391,152 +2573,6 @@ void __fastcall TMainForm::WindowsMediaPlayer2MediaChange(TObject* Sender, LPDIS
   // Populate MediaInfo struct
   if (ListB != NULL)
     ListB->GetSongInfo();
-}
-//---------------------------------------------------------------------------
-void __fastcall TMainForm::WMDropFile(TWMDropFiles &Msg)
-{
-  if (Msg.Drop == 0) return;
-
-  try
-  {
-    if (ListA == NULL || ListB == NULL ||
-      WindowsMediaPlayer1 == NULL || WindowsMediaPlayer2 == NULL) return;
-
-    // Which player are we over?
-    int left = WindowsMediaPlayer1->Left;
-    int right = left + WindowsMediaPlayer1->Width;
-
-    int topA = WindowsMediaPlayer1->Top;
-    int bottomA = topA + WindowsMediaPlayer1->Height;
-
-    int topB = WindowsMediaPlayer2->Top;
-    int bottomB = topB + WindowsMediaPlayer2->Height;
-
-    //get drop location
-    TPoint p;
-    ::DragQueryPoint((HDROP)Msg.Drop, &p);
-
-    // Convert drop-coordinates to client
-    ::ScreenToClient(NULL, &p);
-
-    if (p.x > left && p.x < right)
-    {
-      if (p.y > topA && p.y < bottomA)
-        LoadListWithDroppedFiles(Msg, ListA);
-      else if (p.y > topB && p.y < bottomB)
-        LoadListWithDroppedFiles(Msg, ListB);
-    }
-  }
-  // NOTE: Unlike C#, __finally does NOT get called if we execute a return!!!
-  __finally
-  {
-    try { ::DragFinish((HDROP)Msg.Drop); } catch(...) {}
-    Msg.Result = 0;
-  }
-}
-//---------------------------------------------------------------------------
-void __fastcall TMainForm::LoadListWithDroppedFiles(TWMDropFiles &Msg, TPlaylistForm* f)
-{
-  if (f == NULL)
-    return;
-
-  TCursor Save_Cursor;
-  wchar_t* pBuf = NULL;
-  TStringList* sl = NULL;
-  ImportForm = NULL;
-
-  FFilesAddedCount = 0;
-
-  try
-  {
-    //get dropped files count
-    int DroppedCount = ::DragQueryFileW((HDROP)Msg.Drop, -1, NULL, 0);
-
-    if (DroppedCount == 0)
-      return;
-
-    Save_Cursor = Screen->Cursor;
-    Screen->Cursor = crHourGlass;    // Show hourglass cursor
-
-    TProgressForm::Init(DroppedCount);
-
-    if (ImportForm == NULL)
-      Application->CreateForm(__classid(TImportForm), &ImportForm);
-
-    pBuf = new wchar_t[MAX_PATH];
-    sl = new TStringList();
-//    sl->Sorted = true; // don't want to mess up a user-chosen order...
-
-    for (int ii = 0; ii < DroppedCount; ii++)
-    {
-      ::DragQueryFileW((HDROP)Msg.Drop, ii, pBuf, MAX_PATH);
-
-      if (*pBuf != L'\0')
-        sl->Add(pBuf);
-
-      TProgressForm::Move(ii);
-    }
-
-    // Repair a quirky list-system... (not needed after the first item has been added to a listbox!)
-    if (sl->Count > 1 && f->Count == 0)
-      sl->Exchange(0, sl->Count-1);
-
-    // Press and hold Shift to bypass the file-extention filtering
-    this->GBypassFilters = (GetKeyState(VK_SHIFT) & 0x8000);
-
-    TProgressForm::Init(sl->Count);
-
-    String SaveDir = GetCurrentDir(); // Save
-
-    for (int ii = 0; ii < sl->Count; ii++)
-    {
-      Application->ProcessMessages();
-      if (Application->Terminated || (int)GetAsyncKeyState(VK_ESCAPE) < 0)
-        break;
-
-      String sFile = sl->Strings[ii]; // these strings are in UTF-8!
-
-      String Ext = ExtractFileExt(sFile).LowerCase();
-
-      if (Ext.IsEmpty() && DirectoryExists(sFile))
-      {
-        SetCurrentDir(sFile);
-        AddAllSongsToListBox(f); // recurse add folder and sub-folder's songs to list
-      }
-      else if (this->GBypassFilters || Ext == ".wpl" || Ext == ".m3u8" || Ext == ".m3u" ||
-                            Ext == ".asx" || Ext == ".xspf" || Ext == ".wax" ||
-                            Ext == ".wmx" || Ext == ".wvx" ||  Ext == ".pls" || Ext == ".txt")
-        FFilesAddedCount += ImportForm->NoDialog(f, sFile,
-                ImportForm->GetMode(Ext, IMPORT_MODE_AUTO)); // Load the playlist
-      else if (AddFileToListBox(f, sFile))
-        FFilesAddedCount++;
-
-      TProgressForm::Move(ii);
-    }
-
-    SetCurrentDir(SaveDir); // Restore
-
-    if (FFilesAddedCount > 0)
-      ShowPlaylist(f);
-    else
-      ShowMessage("Song(s) may not have been added because either they did not\n"
-             "appear to be sound files or the file was not found.\n\n"
-             "Perhaps your music drive USB cable is unplugged?\n\n"
-             "(To bypass the filter-list, press and hold SHIFT until you release\n"
-             "the mouse button and drag/drop the file(s) again.)");
-  }
-  // NOTE: Unlike C#, __finally does NOT get called if we execute a return!!!
-  __finally
-  {
-    try { TProgressForm::UnInit(); } catch(...) {}
-
-    try { if (ImportForm != NULL) ImportForm->Release(); } catch(...) {}
-    try { if (pBuf != NULL) delete [] pBuf; } catch(...) {}
-    try { if (sl != NULL) delete sl; } catch(...) {}
-
-    // Restore the previous cursor.
-    Screen->Cursor = Save_Cursor;
-  }
 }
 //---------------------------------------------------------------------------
 bool __fastcall TMainForm::WriteStringToFile(String wPath, String sInfo)
@@ -2774,6 +2810,8 @@ bool __fastcall TMainForm::CopyFileToCache(TPlaylistForm* f, int idx, bool bWait
 
   try
   {
+    String sDestFile;
+
     // prefetch the next file into our temporary cache directory
     if (bFileCacheEnabled && idx >= 0 && idx < f->CheckBox->Count)
     {
@@ -2781,40 +2819,123 @@ bool __fastcall TMainForm::CopyFileToCache(TPlaylistForm* f, int idx, bool bWait
 
       String sFile = GetURL(f->CheckBox, idx);
       TPlayerURL* p = (TPlayerURL*)f->CheckBox->Items->Objects[idx];
-      if (p && FileExists(sFile))
+      if (!p) return false;
+
+      // here, we avoid a headache for a large music file that's already in the
+      // process of being transferred but might not have completed.
+      // So just return "success".
+      //
+      // We might have a problem if for any reason, the xfer fails - say a web
+      // xfer via URL - then we will think we have a cache file but NOT have it.
+      //
+      // We might need to monitor a media-load failure (see OpenStateChange()
+      // in SMList.cpp) and go back to the original url, and erase the cache
+      // entry.
+      if (p->cacheNumber > 0)
+        return true;
+
+      // check sFile's first characters for ftp:\\, http:\\ or https:\\
+      // see if this is a URL that WebGetData can handle...
+      String lsFile = sFile.LowerCase();
+      int iPos1 = lsFile.Pos("http://");
+      int iPos2 = lsFile.Pos("https://");
+      int iPos3 = lsFile.Pos("ftp://");
+
+      if (iPos1 == 1 || iPos2 == 1 || iPos3 == 1)
       {
-        String sDestFile = CacheDir + "\\" + ExtractFileName(sFile);
+        int ii;
+        int len = sFile.Length();
+        for (ii = len; ii > 0; ii--)
+          if (sFile[ii] == '/' || sFile[ii] == '\\' || sFile[ii] == ':')
+            break;
+
+        sDestFile = CacheDir + "\\" + sFile.SubString(ii+1, len-ii);
+
         if (!FileExists(sDestFile))
         {
-          // copy new file to cache
-          String sCopy = L"/c copy \"" + sFile + "\" \"" + sDestFile + "\"";
-          ShellCommand(L"open", L"cmd.exe", sCopy.c_str(), bWaitForCompletion);
-          p->URL = sDestFile;
-          p->cacheNumber = f->CacheCount+1; // all cache #s must be non-zero!
-
-          // delete the oldest file in the cache...
-          DeleteOldestCacheFile(f);
-
-          f->CacheCount++;
-
-          // if count is 0 (unlikely) - we've exceeded the # files in a 32 bit int
-          // of continuous playback... if so, just turn off caching and the files
-          // (up to MAX_CACHE_FILES) will be deleted on exit along with the directory
-          // containing them.
-          if (f->CacheCount == 0)
+          int retCode = WebGetData(sFile, sDestFile);
+          if (retCode < 0)
           {
-             bFileCacheEnabled = false;
-             return false;
+            switch(retCode)
+            {
+              case -2:
+                ShowMessage("Can't open new cache file: \"" + String(sDestFile) + "\"");
+              break;
+
+              case -3:
+                ShowMessage("Can't load library wininet.dll");
+              break;
+
+              case -4:
+                ShowMessage("Can't find one or more functions in wininet.dll");
+              break;
+
+              case -5:
+                ShowMessage("Connection Failed or Syntax error");
+              break;
+
+              case -6:
+                ShowMessage("Unable to open internet URL: \"" + String(sFile) + "\"");
+              break;
+
+              case -7:
+                ShowMessage("Exception thrown opening internet URL");
+              break;
+
+              default:
+              break;
+            }
+
+            return false;
           }
+        }
 
-          //if (FileExists(p->URL))
-          //  ShowMessage(p->URL);
+        p->bDownloaded = true;
+        bRet = true;
+      }
+      else if (FileExists(sFile))
+      {
+        sDestFile = CacheDir + "\\" + ExtractFileName(sFile);
+        if (!FileExists(sDestFile))
+        {
+          if (bWaitForCompletion)
+          {
+            if (CopyFile(sFile.c_str(), sDestFile.c_str(), FALSE) == 0)
+              return false;
+          }
+          else
+          {
+            // copy new file to cache
+            String sCopy = L"/c copy \"" + sFile + "\" \"" + sDestFile + "\"";
+            ShellCommand(L"open", L"cmd.exe", sCopy.c_str(), false);
+          }
+        }
 
-          bRet = true;
+        p->bDownloaded = false;
+        bRet = true;
+      }
+
+      if(bRet)
+      {
+        p->cachePath = sDestFile;
+        p->cacheNumber = f->CacheCount+1; // all cache #s must be non-zero!
+
+        // delete the oldest file in the cache...
+        DeleteCacheFile(f);
+
+        f->CacheCount++;
+
+        // if count is 0 (unlikely) - we've exceeded the # files in a 32 bit int
+        // of continuous playback... if so, just turn off caching and the files
+        // (up to MAX_CACHE_FILES) will be deleted on exit along with the directory
+        // containing them.
+        if (f->CacheCount == 0)
+        {
+           bFileCacheEnabled = false;
+           return false;
         }
       }
     }
-
   }
   catch(...) {}
 
@@ -2823,7 +2944,13 @@ bool __fastcall TMainForm::CopyFileToCache(TPlaylistForm* f, int idx, bool bWait
 //---------------------------------------------------------------------------
 // returns true if we had to delete a file from the cache due to
 // being at the file limit of MAX_CACHE_FILES
-bool __fastcall TMainForm::DeleteOldestCacheFile(TPlaylistForm* f)
+// cacheNumber defaults to 0 (delete oldest cache file)
+// Set cacheNumber > 0 to delete a specific cached file
+//
+// NOTE: f->CacheCount for each player-list just keeps increasing... it's never
+// decremented - the reasoning is that we can then always find the oldest cache
+// file by searching for the lowest TPlayerURL* p->cacheNumber.
+bool __fastcall TMainForm::DeleteCacheFile(TPlaylistForm* f, unsigned cacheNumber)
 {
   bool bRet = false;
 
@@ -2831,6 +2958,10 @@ bool __fastcall TMainForm::DeleteOldestCacheFile(TPlaylistForm* f)
   {
     // CacheCount will just keep going up as we add new files - which lets us
     // always know which is the oldest (and needs deleting)
+
+// TODO: problem I'm having (I think) is - that we have f->CacheCount+1 > FMaxCacheFiles
+// due to drag-dropping files between lists - and we delete files before the max is
+// reached - perpetually - deleting files we need.
     if (FMaxCacheFiles > 0 && f->CacheCount+1 > FMaxCacheFiles)
     {
       // scan the list and delete oldest file
@@ -2843,10 +2974,24 @@ bool __fastcall TMainForm::DeleteOldestCacheFile(TPlaylistForm* f)
         // NOTE: a cacheNumber of 0 means the file has not been
         // cached and the returned URL will be the original file - which
         // we don't want to delete!!!!!!
-        if (p && p->cacheNumber > 0 && p->cacheNumber < minCacheCount)
+        if (!p) continue;
+
+        if (cacheNumber == 0)
         {
-          minCacheCount = p->cacheNumber;
-          listIdx = ii;
+          // search for oldest cache file
+          if (p->cacheNumber > 0 && p->cacheNumber < minCacheCount)
+          {
+            minCacheCount = p->cacheNumber;
+            listIdx = ii;
+          }
+        }
+        else // find the list index that matches a specific cacheNumber
+        {
+          if (p->cacheNumber == cacheNumber)
+          {
+            listIdx = ii;
+            break;
+          }
         }
       }
 
@@ -2855,16 +3000,49 @@ bool __fastcall TMainForm::DeleteOldestCacheFile(TPlaylistForm* f)
         TPlayerURL* p = (TPlayerURL*)f->CheckBox->Items->Objects[listIdx];
 
         // be extra careful not to delete the original music file!
-        String sOrigUrl = f->CheckBox->Items->Strings[listIdx];
+        String sOrigCachePath = f->CheckBox->Items->Strings[listIdx];
 
-        if (p && p->cacheNumber > 0 && FileExists(p->URL) && p->URL != sOrigUrl)
+        if (p && p->cacheNumber > 0 && FileExists(p->cachePath) && p->cachePath != sOrigCachePath)
         {
           //ShowMessage(sDelFile);
-          String sCopy = L"/c del \"" + p->URL + "\"";
+          String sCopy;
+          //sCopy = L"/c takeown /f \"" + p->cachePath + "\"";
+          //ShellCommand(L"open", L"cmd.exe", sCopy.c_str(), true);
+          if (p->bDownloaded)
+          {
+            //Attrib Command Options
+            //Item Explanation
+            //attrib Execute the attrib command alone to see the attributes set on the files within the directory that you execute the command from.
+            //+a Sets the archive file attribute to the file or directory.
+            //-a Clears the archive attribute.
+            //+h Sets the hidden file attribute to the file or directory.
+            //-h Clears the hidden attribute.
+            //+i Sets the 'not content indexed' file attribute to the file or directory.
+            //-i Clears the 'not content indexed' file attribute.
+            //+r Sets the read-only file attribute to the file or directory.
+            //-r Clears the read-only attribute.
+            //+s Sets the system file attribute to the file or directory.
+            //-s Clears the system attribute.
+            //+v Sets the integrity file attribute to the file or directory.
+            //-v Clears the integrity attribute.
+            //+x Sets the no scrub file attribute to the file or directory.
+            //-x Clears the no scrub attribute.
+            // drive:, path, filename This is the file (filename, optionally with drive and path), directory (path, optionally with drive), or drive that you want to view or change the attributes of. Wildcard use is allowed.
+            // /s Use this switch to execute whatever file attribute display or changes you're making on the subfolders within whatever drive and/or path you've specified, or those within the folder you're executing from if you don't specify a drive or path.
+            // /d This attrib option includes directories, not only files, to whatever you're executing. You can only use /d with /s.
+            // /l The /l option applies whatever you're doing with the attrib command to the Symbolic Link itself instead of the target of the Symbolic Link. The /l switch only works when you're also using the /s switch.
+            // /? Use the help switch with the attrib command to show details about the above options right in the Command Prompt window. Executing attrib /? is the same as using the help command to execute help attrib.
+            //sCopy = L"/c attrib -s -r -h -i -x -u +a \"" + p->cachePath + "\""; // +/-RASHIXU "file" /S/D/L
+            //ShellCommand(L"open", L"cmd.exe", sCopy.c_str(), true);
+          }
+
+          sCopy = L"/c del /Q /F \"" + p->cachePath + "\"";
           ShellCommand(L"open", L"cmd.exe", sCopy.c_str(), false);
+          //if (!ShellCommand(L"open", L"cmd.exe", sCopy.c_str(), true))
+          //  ShowMessage("failed to delete: \"" + String(sCopy) + "\"");
 
           // very important to restore original URL and dequeue this!!!!
-          p->URL = sOrigUrl;
+          p->cachePath = sOrigCachePath;
           p->cacheNumber = 0;
 
           bRet = true; // return success
@@ -2879,21 +3057,217 @@ bool __fastcall TMainForm::DeleteOldestCacheFile(TPlaylistForm* f)
 //---------------------------------------------------------------------------
 String __fastcall TMainForm::GetURL(TCheckListBox* l, int idx)
 {
-  String sUrl;
+  String sCachePath;
 
   try
   {
     TPlayerURL* p = (TPlayerURL*)l->Items->Objects[idx];
 
     if (p && bFileCacheEnabled)
-      sUrl = p->URL;
+      sCachePath = p->cachePath;
     else
-      sUrl = l->Items->Strings[idx];
+      sCachePath = l->Items->Strings[idx];
   }
   catch(...) {};
 
-  return sUrl;
+  return sCachePath;
 }
+//---------------------------------------------------------------------------
+// TODO - add copy of songs from web to playlist TPlayerURL URL object and
+// temp-songs cache
+//
+int __fastcall TMainForm::WebGetData(String sUrl, String sDestFile)
+{
+  HINTERNET WEB_CONNECT = NULL;
+  HINTERNET WEB_ADDRESS = NULL;
+  int BytesWritten = 0;
+
+  int iFileHandle = 0;
+  HINSTANCE hDll = 0;
+  tInternetOpen pInternetOpen; // InternetOpenW 0x007A8F0
+  tInternetOpenUrl pInternetOpenUrl; // InternetOpenUrlW 0x0013CA40
+  tInternetCloseHandle pInternetCloseHandle; // InternetCloseHandle 0x0005ECB0
+  tInternetReadFile pInternetReadFile; // InternetReadFile 0x0007AE80
+  try
+  {
+      hDll = LoadLibrary(L"wininet.dll"); // "wininet.dll"
+
+      if (hDll == NULL)
+        return -3;
+
+      // Get custom dll's entry point
+      pInternetOpen = (tInternetOpen)LoadProcAddr(hDll, L"InternetOpenW"); // need a leading underscore????
+      pInternetOpenUrl = (tInternetOpenUrl)LoadProcAddr(hDll, L"InternetOpenUrlW"); // need a leading underscore????
+      pInternetCloseHandle = (tInternetCloseHandle)LoadProcAddr(hDll, L"InternetCloseHandle"); // need a leading underscore????
+      pInternetReadFile = (tInternetReadFile)LoadProcAddr(hDll, L"InternetReadFile"); // need a leading underscore????
+
+      if (!pInternetOpen || !pInternetOpenUrl || !pInternetCloseHandle || !pInternetReadFile)
+      {
+        //DWORD err = GetLastError();
+        //ShowMessage(String((int)pInternetOpenUrl) + ":" + String((int)err));
+        return -4;
+      }
+  }
+  catch(...)
+  {
+    return -4;
+  }
+
+//ShowMessage("here");
+//return -2;
+  try
+  {
+    try
+    {
+      iFileHandle = FileCreate(sDestFile);
+
+      if (!iFileHandle)
+        return -2;
+
+      //  LPCWSTR lpszAgent,
+      //  DWORD   dwAccessType,
+      //  LPCWSTR lpszProxy,
+      //  LPCWSTR lpszProxyBypass,
+      //  DWORD   dwFlags
+      WEB_CONNECT = pInternetOpen((LPCWSTR)L"Default_User_Agent",
+       (DWORD)INTERNET_OPEN_TYPE_PRECONFIG, (LPCWSTR)NULL,
+        (LPCWSTR)NULL, (DWORD)0);
+      if (!WEB_CONNECT)
+        return -5;
+
+      //INTERNETAPI_(HINTERNET) InternetOpenUrlW(
+      //    _In_ HINTERNET hInternet,
+      //    _In_ LPCWSTR lpszUrl,
+      //    _In_reads_opt_(dwHeadersLength) LPCWSTR lpszHeaders,
+      //    _In_ DWORD dwHeadersLength,
+      //    _In_ DWORD dwFlags,
+      //    _In_opt_ DWORD_PTR dwContext
+      //    );
+      WEB_ADDRESS = pInternetOpenUrl(WEB_CONNECT,
+       (LPCWSTR)sUrl.c_str(), (LPCWSTR)NULL, (DWORD)0,
+        (DWORD)INTERNET_FLAG_KEEP_CONNECTION, (DWORD_PTR)0);
+      if (!WEB_ADDRESS)
+      {
+         pInternetCloseHandle(WEB_CONNECT);
+         return -6;
+      }
+
+      DWORD DataSize = URL_FILEMOVE_BUFSIZE;
+      Char *Buf = new Char[DataSize];
+      DWORD BytesRead = 0;
+
+      do
+      {
+          Application->ProcessMessages(); // keep UI from hanging
+
+          if (pInternetReadFile(WEB_ADDRESS, Buf, DataSize, &BytesRead))
+          {
+              if (BytesRead == 0)
+                  break;
+
+              //ShowMessage("Read " + String(BytesRead) + " from URL: \"" + String(sUrl) + "\"");
+
+              if (BytesRead)
+              {
+                FileWrite(iFileHandle, Buf, BytesRead);
+                BytesWritten += BytesRead;
+              }
+          }
+          else
+          {
+              if (GetLastError() != ERROR_INSUFFICIENT_BUFFER)
+              {
+                  ShowMessage("Unable to read internet URL: \"" + String(sUrl) + "\"");
+                  break;
+              }
+
+              delete[] Buf;
+              DataSize += URL_FILEMOVE_BUFSIZE;
+              Buf = new Char[DataSize];
+          }
+      }
+      while (true);
+
+      return BytesWritten;
+    }
+    catch(...)
+    {
+      return -7;
+    }
+  }
+  __finally
+  {
+    if (WEB_ADDRESS)
+      pInternetCloseHandle(WEB_ADDRESS);
+
+    if (WEB_CONNECT)
+      pInternetCloseHandle(WEB_CONNECT);
+
+    if (iFileHandle)
+      FileClose(iFileHandle);
+
+    if (hDll)
+      FreeLibrary(hDll);
+  }
+
+  return 0;
+}
+//---------------------------------------------------------------------------
+FARPROC __fastcall TMainForm::LoadProcAddr(HINSTANCE hDll, String entry)
+{
+  if (entry.Length() == 0)
+    return NULL;
+
+  FARPROC addr;
+
+  // Apparently GetProcAddress is AnsiString, not wchar_t!!!!!!!!!!
+  AnsiString s = (AnsiString)entry;
+
+  try
+  {
+    addr = (FARPROC)GetProcAddress(hDll, (LPCSTR)s.c_str());
+  }
+  catch(...)
+  {
+//    ShowMessage("exception thrown in GetProcAddress()!");
+    return NULL;
+  }
+
+  return addr;
+}
+//---------------------------------------------------------------------------
+//#include <dir.h>
+//
+//void __fastcall TForm1::Button1Click(TObject *Sender)
+//{
+//  char szFileName[MAXFILE+4];
+//  int iFileHandle;
+//  int iLength;
+//  if (SaveDialog1->Execute())
+//  {
+//    if (FileExists(SaveDialog1->FileName))
+//    {
+//      fnsplit(SaveDialog1->FileName.c_str(), 0, 0, szFileName, 0);
+//      strcat(szFileName, ".BAK");
+//      RenameFile(SaveDialog1->FileName, szFileName);
+//    }
+//    iFileHandle = FileCreate(SaveDialog1->FileName);
+//    // Write out the number of rows and columns in the grid.
+//    FileWrite(iFileHandle, (char*)&(StringGrid1->ColCount), sizeof(StringGrid1->ColCount));
+//    FileWrite(iFileHandle, (char*)&(StringGrid1->RowCount), sizeof(StringGrid1->RowCount));
+//    for (int x=0;x<StringGrid1->ColCount;x++)
+//    {
+//      for (int y=0;y<StringGrid1->RowCount;y++)
+//      {
+//        // Write out the length of each string, followed by the string itself.
+//        iLength = StringGrid1->Cells[x][y].Length();
+//        FileWrite(iFileHandle, (char*)&iLength, sizeof(iLength));
+//        FileWrite(iFileHandle, StringGrid1->Cells[x][y].c_str(), StringGrid1->Cells[x][y].Length());
+//      }
+//    }
+//    FileClose(iFileHandle);
+//  }
+//}
 //---------------------------------------------------------------------------
 // UTF8 Encode/Decode
 //---------------------------------------------------------------------------
@@ -3024,126 +3398,17 @@ AnsiString __fastcall TMainForm::WideToUtf8(WideString sIn)
   return sOut;
 }
 //---------------------------------------------------------------------------
-// TODO - add copy of songs from web to playlist TPlayerURL URL object and
-// temp-songs cache
-//
-// TODO: add file-write stuff (below this are some ideas)
-//int __fastcall TMainForm::WebGetData(Char* WEB_URL)
+//void __fastcall TMainForm::WMMove(TWMMove &Msg)
 //{
-//  HINTERNET WEB_CONNECT = NULL;
-//  HINTERNET WEB_ADDRESS = NULL;
-//  int BytesWritten = 0;
-//
 //  try
 //  {
-//    try
-//    {
-//      WEB_CONNECT = InternetOpen(L"Default_User_Agent", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
-//      if (!WEB_CONNECT)
-//      {
-//         ShowMessage("Connection Failed or Syntax error");
-//         return -2;
-//      }
-//
-//      WEB_ADDRESS = InternetOpenUrl(WEB_CONNECT, WEB_URL, NULL, 0, INTERNET_FLAG_KEEP_CONNECTION, 0);
-//      if (!WEB_ADDRESS)
-//      {
-//         ShowMessage("Unable to open internet URL: \"" + String(WEB_URL) + "\"");
-//         InternetCloseHandle(WEB_CONNECT);
-//         return -3;
-//      }
-//
-//      DWORD DataSize = URL_FILEMOVE_BUFSIZE;
-//      Char *Buf = new Char[DataSize];
-//      DWORD BytesRead = 0;
-//
-//      do
-//      {
-//          if (InternetReadFile(WEB_ADDRESS, Buf, DataSize, &BytesRead))
-//          {
-//              if (BytesRead == 0)
-//                  break;
-//
-//              //ShowMessage("Read " + String(BytesRead) + " from URL: \"" + String(WEB_URL) + "\"");
-//
-//              // write to file
-//              BytesWritten += BytesRead;
-//          }
-//          else
-//          {
-//              if (GetLastError() != ERROR_INSUFFICIENT_BUFFER)
-//              {
-//                  ShowMessage("Unable to read internet URL: \"" + String(WEB_URL) + "\"");
-//                  break;
-//              }
-//
-//              delete[] Buf;
-//              DataSize += URL_FILEMOVE_BUFSIZE;
-//              Buf = new Char[DataSize];
-//          }
-//      }
-//      while (true);
-//
-//      return BytesWritten;
-//    }
-//    catch(...)
-//    {
-//      return -4;
-//    }
+//    if (MainForm->GDock != NULL)
+//        MainForm->GDock->WindowMoved(this->Handle);
+//    // call the base class handler
+//    TForm::Dispatch(&Msg);
 //  }
-//  __finally
-//  {
-//    if (WEB_ADDRESS)
-//      InternetCloseHandle(WEB_ADDRESS);
-//    if (WEB_CONNECT)
-//      InternetCloseHandle(WEB_CONNECT);
-//  }
+//  catch(...) { }
 //}
-//---------------------------------------------------------------------------
-//#include <dir.h>
-//
-//void __fastcall TForm1::Button1Click(TObject *Sender)
-//{
-//  char szFileName[MAXFILE+4];
-//  int iFileHandle;
-//  int iLength;
-//  if (SaveDialog1->Execute())
-//  {
-//    if (FileExists(SaveDialog1->FileName))
-//    {
-//      fnsplit(SaveDialog1->FileName.c_str(), 0, 0, szFileName, 0);
-//      strcat(szFileName, ".BAK");
-//      RenameFile(SaveDialog1->FileName, szFileName);
-//    }
-//    iFileHandle = FileCreate(SaveDialog1->FileName);
-//    // Write out the number of rows and columns in the grid.
-//    FileWrite(iFileHandle, (char*)&(StringGrid1->ColCount), sizeof(StringGrid1->ColCount));
-//    FileWrite(iFileHandle, (char*)&(StringGrid1->RowCount), sizeof(StringGrid1->RowCount));
-//    for (int x=0;x<StringGrid1->ColCount;x++)
-//    {
-//      for (int y=0;y<StringGrid1->RowCount;y++)
-//      {
-//        // Write out the length of each string, followed by the string itself.
-//        iLength = StringGrid1->Cells[x][y].Length();
-//        FileWrite(iFileHandle, (char*)&iLength, sizeof(iLength));
-//        FileWrite(iFileHandle, StringGrid1->Cells[x][y].c_str(), StringGrid1->Cells[x][y].Length());
-//      }
-//    }
-//    FileClose(iFileHandle);
-//  }
-//}
-//---------------------------------------------------------------------------
-void __fastcall TMainForm::WMMove(TWMMove &Msg)
-{
-  try
-  {
-    if (MainForm->GDock != NULL)
-        MainForm->GDock->WindowMoved(this->Handle);
-    // call the base class handler
-    TForm::Dispatch(&Msg);
-  }
-  catch(...) { }
-}
 //---------------------------------------------------------------------------
 #if DEBUG_ON
 // DEBUG CONSOLE!!!!!!!

@@ -73,7 +73,14 @@ public:
 #define ID_FilterCombo cmb1
 #define ID_FilterLabel stc2
 #define ID_FileNameLabel stc3
-#define ID_FileName edt1
+
+// https://www.codeproject.com/questions/40907/cfiledialog-hidecontrol-broken
+// Using Spy++ on a sample application I just built, it would seem that
+// instead of edt1, you now want to use cmb13 (0x47c). I guess they decided
+// that as that field is (now) actually a combo-box, that would be a better
+// ID to use.
+//#define ID_FileName edt1
+
 #define ID_FileList lst1
 #define ID_FileNameCombo cmb13
 
@@ -88,7 +95,12 @@ public:
 
 #define OF_BUFSIZE (MAX_PATH*10)
 
-#define BUTTON_GAP 3
+// 6/6/2019 - problem with custom buttons not appearing when program is
+// first run... until you stretch out the dialog width a few pixels.
+// Trying a simple fix to decrease the cumulative width of the buttons and
+// gaps.
+//#define BUTTON_GAP 3
+#define BUTTON_GAP 2
 
 // this is the MAKEINTRESOURCEW macro with "::" before ULONG_PTR
 // (I was having namespace conflicts...)

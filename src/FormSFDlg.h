@@ -18,7 +18,10 @@
 #define ID_FilterCombo cmb1
 #define ID_FilterLabel stc2
 #define ID_FileNameLabel stc3
-#define ID_FileName edt1
+// cmb13 is now used for edt1 and you must use
+// HWND hWndEdit = (HWND)SendMessage(hFileNameCombo, CBEM_GETEDITCONTROL, 0, 0);
+// to get a handle to the inner edit-control in it.
+//#define ID_FileName edt1
 #define ID_FileList lst1
 #define ID_FileNameCombo cmb13
 

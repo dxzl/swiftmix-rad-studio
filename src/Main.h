@@ -2,7 +2,7 @@
 #ifndef MainH
 #define MainH
 //---------------------------------------------------------------------------
-#define VERSION "1.70"
+#define VERSION "1.71"
 #define FREEWARE_EDITION true
 #define DEBUG_ON false // Include a debug console, use MainForm->CWrite("")
 //---------------------------------------------------------------------------
@@ -22,6 +22,7 @@
 #include <OleCtrls.hpp>
 #include <StdCtrls.hpp>
 #include <StrUtils.hpp>
+#include <wininet.h>
 
 #include "DefaultStrings.h"
 #include "CWindowDock.h"
@@ -52,7 +53,7 @@
 #define FILE_CACHE_PATH1 L"\\Discrete-Time Systems"
 #define FILE_CACHE_PATH2 L"\\MusicMixer"
 
-#define MAX_CACHE_FILES 2 // max disk-cache files to keep for each player
+#define MAX_CACHE_FILES 4 // max disk-cache files to keep for each player (so 8 total)
 #define URL_FILEMOVE_BUFSIZE 65536
 
 // Yahcolorize FindWindow
@@ -139,6 +140,11 @@
 //class TPlaylistForm;
 //---------------------------------------------------------------------------
 
+typedef HINTERNET WINAPI(*tInternetOpen)(LPCWSTR, DWORD, LPCWSTR, LPCWSTR, DWORD);
+typedef HINTERNET WINAPI(*tInternetOpenUrl)(HINTERNET, LPCWSTR, LPCWSTR, DWORD, DWORD, DWORD_PTR);
+typedef BOOL WINAPI(*tInternetCloseHandle)(HINTERNET);
+typedef BOOL WINAPI(*tInternetReadFile)(HINTERNET, LPVOID, DWORD, LPDWORD);
+
 class TMainForm : public TForm
 {
 __published:	// IDE-managed Components
@@ -208,11 +214,11 @@ __published:	// IDE-managed Components
   TMenuItem *MenuAutoFitToDVDCD;
     TPanel *Panel1;
     TPanel *Panel2;
-    TUpDown *UpDown1;
+  TUpDown *FRUpDown;
     TEdit *FadeRate;
-    TUpDown *UpDown2;
+  TUpDown *FPUpDown;
     TEdit *FadePoint;
-    TTrackBar *TrackBar1;
+  TTrackBar *FaderTrackBar;
   TMenuItem *MenuCacheFiles;
 
   void __fastcall File1Click(TObject *Sender);
@@ -226,7 +232,7 @@ __published:	// IDE-managed Components
   void __fastcall VB_75Click(TObject *Sender);
   void __fastcall VB_100Click(TObject *Sender);
   void __fastcall MenuFaderTypeNormalClick(TObject *Sender);
-  void __fastcall TrackBar1Change(TObject *Sender);
+  void __fastcall FaderTrackBarChange(TObject *Sender);
   void __fastcall Exit1Click(TObject *Sender);
   void __fastcall MenuAboutClick(TObject *Sender);
   void __fastcall ClearPlaylistStop1Click(TObject *Sender);
@@ -256,8 +262,6 @@ __published:	// IDE-managed Components
   void __fastcall VA_10Click(TObject *Sender);
   void __fastcall VB_10Click(TObject *Sender);
   void __fastcall MenuExportSongFilesandListsClick(TObject *Sender);
-  void __fastcall UpDown1Changing(TObject *Sender, bool &AllowChange);
-  void __fastcall UpDown2Changing(TObject *Sender, bool &AllowChange);
   void __fastcall WindowsMediaPlayer1OpenStateChange(TObject *Sender, long NewState);
   void __fastcall WindowsMediaPlayer2OpenStateChange(TObject *Sender, long NewState);
   void __fastcall WindowsMediaPlayer1PlayStateChange(TObject *Sender, long NewState);
@@ -278,6 +282,10 @@ __published:	// IDE-managed Components
   void __fastcall MenuCacheFilesClick(TObject *Sender);
   void __fastcall StatusBar1MouseDown(TObject *Sender, TMouseButton Button, TShiftState Shift,
           int X, int Y);
+  void __fastcall FRUpDownChangingEx(TObject *Sender, bool &AllowChange, int NewValue,
+          TUpDownDirection Direction);
+  void __fastcall FPUpDownChangingEx(TObject *Sender, bool &AllowChange, int NewValue,
+          TUpDownDirection Direction);
 
 private:	// User declarations
 #if DEBUG_ON
@@ -288,7 +296,6 @@ private:	// User declarations
   String __fastcall DirectoryDialogW(String sInitialDir, String sTitle);
   bool __fastcall IsWinVistaOrHigher(void);
   void __fastcall ErrorCode(int Code);
-  void __fastcall AddAllSongsToListBox(TPlaylistForm* f);
   void __fastcall RecurseFileAdd(TStringList* slFiles);
   void __fastcall AddFilesToStringList(TStringList* slFiles);
   bool __fastcall IsAudioFile(String sFile);
@@ -305,14 +312,17 @@ private:	// User declarations
   unsigned __int64 __fastcall RandomRemove(unsigned __int64 TargetBytes);
   void __fastcall WMDropFile(TWMDropFiles &Msg);
   bool __fastcall DeleteDirAndFiles(String sDir);
-  bool __fastcall InitRegistryVars(void);
+  void __fastcall InitRegistryVars(void);
   bool __fastcall InitFileCaching(void);
-  int __fastcall WebGetData(Char* WEB_URL);
+  int __fastcall WebGetData(String sUrl, String sDestFile);
+  FARPROC __fastcall LoadProcAddr(HINSTANCE hDll, String entry);
 
   // property vars (mostly!)
+  int FfadeAt;
+  int FvolA, FvolB;
+  int FcurrentVolA, FcurrentVolB; // volume as it transitions during a fade
 
-  int volA, volB, FMaxCacheFiles; // volumes set in registry
-  int currentVolA, currentVolB; // volume as it transitions during a fade
+  int FMaxCacheFiles; // volumes set in registry
 
   // Flags for registry settings
   bool bTypeCenterFade, bModeManualFade, bSendTiming, bFileCacheEnabled;
@@ -332,11 +342,11 @@ private:	// User declarations
 
   unsigned FFilesAddedCount;
 
-  CWindowDock* FDock;
+//  CWindowDock* FDock;
 
 protected:
 
-  void __fastcall WMMove(TWMMove &Msg);
+//  void __fastcall WMMove(TWMMove &Msg);
 
 //  void __fastcall WndProc(TMessage &Message);
 
@@ -346,7 +356,7 @@ BEGIN_MESSAGE_MAP
   VCL_MESSAGE_HANDLER(WM_DROPFILES, TWMDropFiles, WMDropFile)
 //  VCL_MESSAGE_HANDLER(WM_NOTIFY, TOFNotify, WMOFNotify)
   //add message handler for WM_MOVE
-  VCL_MESSAGE_HANDLER(WM_MOVE, TWMMove, WMMove)
+//  VCL_MESSAGE_HANDLER(WM_MOVE, TWMMove, WMMove)
 END_MESSAGE_MAP(TForm)
 
 public:		// User declarations
@@ -367,20 +377,21 @@ public:		// User declarations
   bool __fastcall FileDialog(TPlaylistForm* f, String &d, String t);
   void __fastcall LoadListWithDroppedFiles(TWMDropFiles &Msg, TPlaylistForm* f);
   bool __fastcall AddFileToListBox(TPlaylistForm* f, String sFile);
+  void __fastcall AddAllSongsToListBox(TPlaylistForm* f);
   AnsiString __fastcall WideToUtf8(WideString sIn);
 
   bool __fastcall WriteStringToFile(String sPath, String sInfo);
   String __fastcall GetSpecialFolder(int csidl);
   bool __fastcall ShellCommand(String sVerb, String sFile, String sCmd, bool bWaitForCompletion=true);
   bool __fastcall CopyFileToCache(TPlaylistForm* f, int idx, bool bWaitForCompletion);
-  bool __fastcall DeleteOldestCacheFile(TPlaylistForm* f);
+  bool __fastcall DeleteCacheFile(TPlaylistForm* f, unsigned cacheNumber=0);
   String __fastcall GetURL(TCheckListBox* l, int idx);
 
-  int RWM_SwiftMixPlay, RWM_SwiftMixTime, RWM_SwiftMixState, FadeAt;
+  int RWM_SwiftMixPlay, RWM_SwiftMixTime, RWM_SwiftMixState;
   bool bFadeRight, bAutoSizePrompt;
 
   // properties
-  __property CWindowDock* GDock = {read = FDock, write = FDock};
+//  __property CWindowDock* GDock = {read = FDock, write = FDock};
   __property String ImportExt = {read = FsImportExt, write = FsImportExt};
   __property String ExportExt = {read = FsExportExt, write = FsExportExt};
   __property String SaveDirA = {read = FsSaveDirA, write = FsSaveDirA};
@@ -396,8 +407,9 @@ public:		// User declarations
   __property bool ShuffleModeA = {read = bShuffleModeA};
   __property bool ShuffleModeB = {read = bShuffleModeB};
   __property bool CacheEnabled = {read = bFileCacheEnabled};
-  __property int VolA = {read = volA};
-  __property int VolB = {read = volB};
+  __property int VolA = {read = FvolA};
+  __property int VolB = {read = FvolB};
+  __property int FadeAt = {read = FfadeAt};
   __property unsigned FilesAddedCount = {read = FFilesAddedCount};
   __property int MaxCacheFiles = {read = FMaxCacheFiles};
 };

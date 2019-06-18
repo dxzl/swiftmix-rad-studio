@@ -66,9 +66,12 @@ struct STRUCT_B
 class TPlayerURL
 {
   public:
-    String URL;
+    String cachePath;
     TColor color;
+    bool bDownloaded;
     unsigned cacheNumber; // has the current count of m_NumCachedFiles from FormMain
+    TCheckBoxState state; // cbChecked indicates a playing song
+    int listIndex;
 };
 //---------------------------------------------------------------------------
 class TPlaylistForm : public TForm
@@ -99,7 +102,6 @@ __published:  // IDE-managed Components
   void __fastcall FlashTimerEvent(TObject *Sender);
   void __fastcall FormHide(TObject *Sender);
   void __fastcall CheckBoxMouseMove(TObject *Sender, TShiftState Shift, int X, int Y);
-  void __fastcall CheckBoxClick(TObject *Sender);
   void __fastcall FormActivate(TObject *Sender);
   void __fastcall FormDeactivate(TObject *Sender);
   void __fastcall FormKeyDown(TObject *Sender, WORD &Key, TShiftState Shift);
@@ -107,6 +109,7 @@ __published:  // IDE-managed Components
   void __fastcall OpenStateChange(WMPOpenState NewState);
   void __fastcall PositionChange(double oldPosition, double newPosition);
   void __fastcall PositionTimerEvent(TObject *Sender);
+  void __fastcall CheckBoxClick(TObject* Sender);
   void __fastcall CheckBoxClickCheck(TObject *Sender);
   void __fastcall CheckBoxDblClick(TObject *Sender);
   void __fastcall CheckBoxMouseDown(TObject *Sender, TMouseButton Button, TShiftState Shift, int X, int Y);
@@ -120,7 +123,6 @@ __published:  // IDE-managed Components
   void __fastcall DeleteSelected1Click(TObject *Sender);
   void __fastcall EditMode1Click(TObject *Sender);
   void __fastcall ExitEditMode1Click(TObject *Sender);
-  void __fastcall MoveSelectedClick(TObject *Sender);
   void __fastcall DeleteSelectedClick(TObject *Sender);
   void __fastcall RemoveDuplicates1Click(TObject *Sender);
   void __fastcall RandomizeList1Click(TObject *Sender);
@@ -129,13 +131,15 @@ __published:  // IDE-managed Components
   void __fastcall FormDestroy(TObject *Sender);
   void __fastcall SelectAllItemsClick(TObject *Sender);
   void __fastcall CopyLinkToClipboardClick(TObject *Sender);
+  void __fastcall MoveSelectedClick(TObject *Sender);
 
 private:  // User declarations
 
   bool __fastcall IsPlayOrPause(TPlaylistForm* f);
-  bool __fastcall InsertNewDeleteOld(TCheckListBox* SourceList,
-                TCheckListBox* DestList, int SourceIndex, int &DestIndex );
-  void __fastcall SetCheckState(int oldtag);
+  void __fastcall MyMoveSelected(TCheckListBox* DestList, TCheckListBox* SourceList, int x=-1, int y=-1);
+//  bool __fastcall InsertNewDeleteOld(TCheckListBox* SourceList,
+//                TCheckListBox* DestList, int SourceIndex, int &DestIndex );
+  void __fastcall ClearCheckState(int oldtag);
   void __fastcall QueueToIndex(int Index);
   void __fastcall UpdatePlayerStatus(void);
   bool __fastcall SendToSwiftMix(void * sms, int size, int msg);
@@ -150,10 +154,10 @@ private:  // User declarations
   void __fastcall InsertListItem(int idx, String s, TPlayerURL* p);
   void __fastcall ClearListItems(void);
 
-  int TimerMode;
+  int m_TimerMode;
   bool bInhibitFlash;
   bool bDoubleClick, bCheckClick;
-  int Duration, PrevState;
+  int m_Duration, m_PrevState;
   bool bForceNextPlay, bSkipFilePrompt, bOpening;
 
   // Properties
@@ -164,7 +168,7 @@ private:  // User declarations
   TColor FTextColor;
   bool FInEditMode;
   bool FPlayerA;
-  unsigned FCacheCount;
+  int FCacheCount;
 
   TOFMSDlgForm* pOFMSDlg;
   TExportForm* pExportDlg;
@@ -179,14 +183,14 @@ protected:
   bool __fastcall GetIsExportDlg(void);
   bool __fastcall GetIsImportDlg(void);
   bool __fastcall GetIsOpenDlg(void);
-  void __fastcall WMMove(TWMMove &Msg);
+//  void __fastcall WMMove(TWMMove &Msg);
 
   // property getters
   int __fastcall GetCount(void);
 
 BEGIN_MESSAGE_MAP
   //add message handler for WM_MOVE
-  VCL_MESSAGE_HANDLER(WM_MOVE, TWMMove, WMMove)
+//  VCL_MESSAGE_HANDLER(WM_MOVE, TWMMove, WMMove)
   //add message handler for WM_DROPFILES
   VCL_MESSAGE_HANDLER(WM_DROPFILES, TWMDropFiles, WMListDropFile)
   //add message handler for WM_SETEXT (allows UTF-8 title-bar)
@@ -210,6 +214,7 @@ public:  // User declarations
   void __fastcall GetSongInfo(STRUCT_A &sms);
   void __fastcall SetTitle(void);
   String __fastcall GetNext(bool bNoSet = false, bool bEnableRandom = false);
+  String __fastcall GetNextCheckCache(bool bNoSet = false, bool bEnableRandom = false);
   void __fastcall DestroyImportDialog(void);
   void __fastcall DestroyExportDialog(void);
   void __fastcall DestroyFileDialog(void);
@@ -218,8 +223,8 @@ public:  // User declarations
   TOFMSDlgForm* __fastcall CreateFileDialog(void);
   int __fastcall GetPlayTag(void);
 
-  void __fastcall AddListItem(String s);
-  void __fastcall DeleteListItem(int idx);
+  void __fastcall AddListItem(String s, bool bIsInternetFile=false);
+  void __fastcall DeleteListItem(int idx, bool bDeleteFromCache=true);
 
   STRUCT_A MediaInfo;
 
@@ -237,7 +242,7 @@ public:  // User declarations
   __property bool IsExportDlg = {read = GetIsExportDlg};
   __property bool IsOpenDlg = {read = GetIsOpenDlg};
   __property TColor TextColor = {read = FTextColor};
-  __property unsigned CacheCount = {read = FCacheCount, write = FCacheCount};
+  __property int CacheCount = {read = FCacheCount, write = FCacheCount};
   __property TCheckListBox* CheckBox = {read = FCheckBox};
 };
 //---------------------------------------------------------------------------

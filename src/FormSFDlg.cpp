@@ -525,13 +525,13 @@ UINT CALLBACK TSFDlgForm::SFNHookProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM
 
           // Get the file-box text and put a new filter on it...
 
-          HWND hFileName = GetDlgItem(GetParent(hDlg), ID_FileName);
+          HWND hFileNameCombo = GetDlgItem(GetParent(hDlg), ID_FileNameCombo);
 
-          if (hFileName == NULL)
+          if (hFileNameCombo == NULL)
             break;
 
           // Get the file-name box text-length
-          int len = GetWindowTextLengthW(hFileName);
+          int len = GetWindowTextLengthW(hFileNameCombo);
 
           String sText;
 
@@ -539,7 +539,7 @@ UINT CALLBACK TSFDlgForm::SFNHookProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM
           {
             // Get the text in the file-name box
             wchar_t* buf = new wchar_t[len+1];
-            GetWindowTextW(hFileName, buf, len+1);
+            GetWindowTextW(hFileNameCombo, buf, len+1);
             sText = String(buf);
             delete [] buf;
           }
@@ -567,7 +567,7 @@ UINT CALLBACK TSFDlgForm::SFNHookProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM
             sText += pThis->CurrentFilter;
 
           // write the old text (or default file-name) with the new filter to the file-name box
-          SetWindowText(hFileName, sText.w_str());
+          SetWindowText(hFileNameCombo, sText.w_str());
 
 #if DEBUG_ON
           SFDbg->CWrite("\r\nCDN_TYPECHANGE text: " + sText + "\r\n");

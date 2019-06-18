@@ -7,16 +7,16 @@
 #include <Vcl.Styles.hpp>
 #include <Vcl.Themes.hpp>
 USEFORM("Progress.cpp", ProgressForm);
-USEFORM("FormSFDlg.cpp", SFDlgForm);
 USEFORM("Main.cpp", MainForm);
 USEFORM("SMList.cpp", PlaylistForm);
+USEFORM("FormSFDlg.cpp", SFDlgForm);
 USEFORM("FormDirDlg.cpp", DirDlgForm);
-USEFORM("About.cpp", AboutForm);
 USEFORM("AutoSize.cpp", AutoSizeForm);
-USEFORM("FormImportMode.cpp", ImportModeForm);
-USEFORM("FormOFMSDlg.cpp", OFMSDlgForm);
-USEFORM("FormImport.cpp", ImportForm);
+USEFORM("About.cpp", AboutForm);
 USEFORM("FormExport.cpp", ExportForm);
+USEFORM("FormOFMSDlg.cpp", OFMSDlgForm);
+USEFORM("FormImportMode.cpp", ImportModeForm);
+USEFORM("FormImport.cpp", ImportForm);
 USEFORM("FormExportMode.cpp", ExportModeForm);
 //---------------------------------------------------------------------------
 int WINAPI _tWinMain(HINSTANCE, HINSTANCE, LPTSTR, int)

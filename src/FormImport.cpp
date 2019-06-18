@@ -232,7 +232,14 @@ int __fastcall TImportForm::NoDialog(TPlaylistForm* f, String sPath, int Mode)
 
             if (sFile.Length() == 0) continue;
 
-            if (ReplaceRelativePath(sFile, sPath)) // returns sFile as an absolute path...
+            String Ext = ExtractFileExt(sFile).LowerCase();
+
+            if (Ext.IsEmpty() && DirectoryExists(sFile))
+            {
+              SetCurrentDir(sFile);
+              MainForm->AddAllSongsToListBox(f); // recurse add folder and sub-folder's songs to list
+            }
+            else if (ReplaceRelativePath(sFile, sPath)) // returns sFile as an absolute path...
               if (MainForm->AddFileToListBox(f, sFile))
                 Count++;
           }
@@ -258,7 +265,14 @@ int __fastcall TImportForm::NoDialog(TPlaylistForm* f, String sPath, int Mode)
 
               if (sFile.Length() == 0 || sFile[1] == '#') continue; // Filter out .m3u info tags...
 
-              if (ReplaceRelativePath(sFile, sPath)) // returns sFile as an absolute path...
+              String Ext = ExtractFileExt(sFile).LowerCase();
+
+              if (Ext.IsEmpty() && DirectoryExists(sFile))
+              {
+                SetCurrentDir(sFile);
+                MainForm->AddAllSongsToListBox(f); // recurse add folder and sub-folder's songs to list
+              }
+              else if (ReplaceRelativePath(sFile, sPath)) // returns sFile as an absolute path...
                 if (MainForm->AddFileToListBox(f, sFile))
                   Count++;
             }
@@ -299,7 +313,8 @@ int __fastcall TImportForm::GetMode(String Ext, int Mode)
 //---------------------------------------------------------------------------
 int __fastcall TImportForm::XmlParser(TPlaylistForm* f, String sExt, String sIn, String sPath)
 // sType has "href" "location" or "source", sIn has the raw file data...
-// sl is the listbox we output to, Returns Count of files added, 0 if error or no files
+// f has the form of the playlist we add files to.
+// Returns Count of files added, 0 if error or no files
 {
   String sType;
 
@@ -381,6 +396,13 @@ int __fastcall TImportForm::XmlParser(TPlaylistForm* f, String sExt, String sIn,
                   if (bDecodeXmlCodes)
                     sUrl = ReplaceXmlCodes(sUrl);
 
+                  String Ext = ExtractFileExt(sUrl).LowerCase();
+
+                  if (Ext.IsEmpty() && DirectoryExists(sUrl))
+                  {
+                    SetCurrentDir(sUrl);
+                    MainForm->AddAllSongsToListBox(f); // recurse add folder and sub-folder's songs to list
+                  }
                   if (ReplaceRelativePath(sUrl, sPath)) // returns sUrl as an absolute path...
                     if (MainForm->AddFileToListBox(f, sUrl))
                       Count++;
@@ -487,11 +509,11 @@ bool __fastcall TImportForm::ReplaceRelativePath(String &sFile, String sPath)
   try
   {
     bool bIsFileUri = MainForm->IsFileUri(sFile);
-    
+
     // If it's a non-file URL like HTTP://, just return it as-is...
     if (MainForm->IsUri(sFile) && !bIsFileUri)
       return true;
-    
+
     // Save old path
     WideString sTemp = GetCurrentDir();
 
