@@ -42,6 +42,7 @@ void __fastcall TPlaylistForm::FormCreate(TObject* Sender)
   bCheckClick = false;
   m_Duration = 0;
   m_PrevState = 0;
+  m_failSafeCounter = 0;
   m_TimerMode = TM_NULL;
   bForceNextPlay = false;
   bSkipFilePrompt = false;
@@ -1280,13 +1281,6 @@ void __fastcall TPlaylistForm::OpenStateChange(WMPOpenState NewState)
       else
         TimeDisplay(m_Duration, 4);
 
-      // if Duration is less than the point where we would normally start the
-      // fade (FadeAt) plus the time required to complete the fade, then we
-      // have a problem.
-      if (m_Duration > 0)
-      {
-
-      }
       // Green
 
 #if DEBUG_ON
@@ -1325,15 +1319,32 @@ void __fastcall TPlaylistForm::OpenStateChange(WMPOpenState NewState)
         TPlayerURL* p = (TPlayerURL*)FCheckBox->Items->Objects[Tag];
         if (p)
         {
-          p->color = clRed;
-
           // failsafe
-          p->cacheNumber = 0;
-          p->cachePath = FCheckBox->Items->Strings[Tag];
-          Wmp->URL = p->cachePath; // THIS DOES WORK!
+          if (m_failSafeCounter > 2)
+          {
+            if (p->cacheNumber > 0)
+            {
+              p->cacheNumber = 0;
+              p->cachePath = FCheckBox->Items->Strings[Tag];
+              Wmp->URL = p->cachePath; // THIS DOES WORK!
 #if DEBUG_ON
-          MainForm->CWrite( "\r\nFailsafe media load: \"" + String(p->cachePath) + "\"\r\n");
+              MainForm->CWrite( "\r\nFailsafe: Restoring original path: \"" + String(p->cachePath) + "\"\r\n");
 #endif
+            }
+            else if (m_failSafeCounter > 4)
+            {
+#if DEBUG_ON
+              MainForm->CWrite( "\r\nFailsafe: SONG " + String(Tag) +
+                " ABANDONED!!!!!!!!!!!: " \"" + FCheckBox->Items->Strings[Tag] + "\"\r\n");
+#endif
+              FCheckBox->State[Tag] = cbUnchecked; // bad item
+              p->state = cbUnchecked;
+              p->color = clRed;
+              FNextIndex = Tag + 1;
+              Wmp->URL = GetNextCheckCache();
+            }
+          }
+          m_failSafeCounter++;
         }
       }
 
@@ -1493,7 +1504,9 @@ void __fastcall TPlaylistForm::PlayStateChange(WMPPlayState NewState)
     if (NewState == WMPPlayState::wmppsReady) // song ready to play...
     {
 #if DEBUG_ON
-      MainForm->CWrite( "\r\WMPPlayState::wmppsReady " + String(PlayerA ? "A" : "B") + ": Tag=" + String(Tag) + "\r\n");
+      MainForm->CWrite( "\r\nWMPPlayState::wmppsReady " + String(PlayerA ? "A" : "B") + ": Tag=" + String(Tag) + "\r\n");
+      if (TargetIndex < 0)
+        MainForm->CWrite( "(Good place to prompt for more music files via timer???\r\n");
 #endif
     }
     else if (NewState == WMPPlayState::wmppsPaused) // pause?
@@ -1558,6 +1571,7 @@ void __fastcall TPlaylistForm::PlayStateChange(WMPPlayState NewState)
         }
 
         FCheckBox->State[Tag] = cbChecked;
+        m_failSafeCounter = 0; // reset failsafe counter
 
         // Need to update target index without affecting TAG if
         // we just started a manually queued (by single-click) song.

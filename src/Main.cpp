@@ -1603,7 +1603,7 @@ void __fastcall TMainForm::AutoFadeTimerEvent(TObject* Sender)
         // Queue next song
         WindowsMediaPlayer1->URL = ListA->GetNextCheckCache();
 
-        if (ListA->Count == 0)
+        if (ListA->TargetIndex < 0)
           if (FileDialog(ListA, SaveDirA, ADD_A_TITLE))
             ListA->QueueFirst();
       }
@@ -1632,7 +1632,7 @@ void __fastcall TMainForm::AutoFadeTimerEvent(TObject* Sender)
         // Queue next song
         WindowsMediaPlayer2->URL = ListB->GetNextCheckCache();
 
-        if (ListB->Count == 0)
+        if (ListB->TargetIndex < 0)
           if (FileDialog(ListB, SaveDirB, ADD_B_TITLE))
             ListB->QueueFirst();
       }

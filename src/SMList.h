@@ -154,7 +154,7 @@ private:  // User declarations
   void __fastcall InsertListItem(int idx, String s, TPlayerURL* p);
   void __fastcall ClearListItems(void);
 
-  int m_TimerMode;
+  int m_TimerMode, m_failSafeCounter;
   bool bInhibitFlash;
   bool bDoubleClick, bCheckClick;
   int m_Duration, m_PrevState;
