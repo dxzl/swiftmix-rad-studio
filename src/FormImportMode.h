@@ -27,11 +27,17 @@ __published:	// IDE-managed Components
   void __fastcall ButtonCancelClick(TObject *Sender);
   void __fastcall FormDestroy(TObject *Sender);
 private:	// User declarations
+
   int FMode;
+  String FTitle;
+
+  void __fastcall SetTitle(String sTitle);
+
 public:		// User declarations
   __fastcall TImportModeForm(TComponent* Owner);
 
   __property int Mode = {read = FMode, write = FMode};
+  __property String OurTitle = {read = FTitle, write = SetTitle};
 };
 //---------------------------------------------------------------------------
 extern PACKAGE TImportModeForm *ImportModeForm;

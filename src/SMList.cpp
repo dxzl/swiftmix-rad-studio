@@ -126,6 +126,11 @@ void __fastcall TPlaylistForm::Timer1Timer(TObject* Sender)
   {
     case TM_START_PLAYER:
       Timer1->Enabled = false;
+      StartPlayer(Wmp);
+    break;
+
+    case TM_NEXT_PLAYER:
+      Timer1->Enabled = false;
       NextPlayer(true);
     break;
 
@@ -262,7 +267,7 @@ void __fastcall TPlaylistForm::Timer1Timer(TObject* Sender)
 
           // Copy the clicked file to the cache - (however, we still might be
           // drag-dropping it someplace...)
-          MainForm->CopyFileToCache(this, FCheckBox->Tag, true);
+          MainForm->CopyFileToCache(this, FCheckBox->Tag);
 
           // This will trigger a copy to cache also - but of the song
           // after this one...
@@ -455,8 +460,11 @@ void __fastcall TPlaylistForm::MyMoveSelected(TCheckListBox* DestList, TCheckLis
 
     sl = new TStringList();
 
+    int iCount = SourceList->Count;
+    ProgressForm->Init(iCount);
+
     // add selected items to sl
-    for (int ii = 0 ; ii < SourceList->Count ; ii++)
+    for (int ii = 0; ii < iCount; ii++)
     {
       if (SourceList->Selected[ii])
       {
@@ -473,6 +481,8 @@ void __fastcall TPlaylistForm::MyMoveSelected(TCheckListBox* DestList, TCheckLis
 
         sl->AddObject(SourceList->Items->Strings[ii], (TObject*)p);
       }
+
+      ProgressForm->Move(ii);
     }
 
     // delete selected items (have to go in reverse order!)
@@ -536,12 +546,12 @@ void __fastcall TPlaylistForm::MyMoveSelected(TCheckListBox* DestList, TCheckLis
       // Queue a song in the source list and add the file(s) to the cache
       if (SourceForm != DestForm)
       {
-        MainForm->CopyFileToCache(SourceForm, SourceForm->Tag, true);
+        MainForm->CopyFileToCache(SourceForm, SourceForm->Tag);
         SourceForm->QueueToIndex(SourceForm->Tag);
       }
       else
       {
-        MainForm->CopyFileToCache(SourceForm, DestIndex, true);
+        MainForm->CopyFileToCache(SourceForm, DestIndex);
         SourceForm->QueueToIndex(DestIndex);
       }
     }
@@ -569,7 +579,7 @@ void __fastcall TPlaylistForm::MyMoveSelected(TCheckListBox* DestList, TCheckLis
       // Queue a song in the destination list and add the file(s) to the cache
       if (DestIndex >= 0)
       {
-        MainForm->CopyFileToCache(DestForm, DestIndex, true);
+        MainForm->CopyFileToCache(DestForm, DestIndex);
         DestForm->QueueToIndex(DestIndex);
       }
 
@@ -582,6 +592,10 @@ void __fastcall TPlaylistForm::MyMoveSelected(TCheckListBox* DestList, TCheckLis
   {
     if (sl)
       delete sl;
+
+    // set flag true if this is the "top-level" method in the overall progress-chain...
+    // (it deletes all the history of prior progressbar nestings)
+    ProgressForm->UnInit(true);
   }
 }
 //---------------------------------------------------------------------------
@@ -863,18 +877,12 @@ void __fastcall TPlaylistForm::DeleteListItem(int idx, bool bDeleteFromCache)
   catch(...) { ShowMessage("Error deleting list index: " + String(idx)); }
 }
 //---------------------------------------------------------------------------
+// overloaded...
+
 void __fastcall TPlaylistForm::AddListItem(String s, bool bDownloaded)
 {
-  TPlayerURL* p = new TPlayerURL();
-  p->color = this->TextColor;
-  p->bDownloaded = bDownloaded;
-  p->cacheNumber = 0; // 0 = not yet cached
-  // NOTE: p->URL will eventually be changed to the path of the temporary file after
-  // the file is moved to the temp area in GetNext().
-  p->cachePath = s;
-  p->state = cbGrayed;
-  p->listIndex = FCheckBox->Count;
-
+  TPlayerURL* p = InitTPlayerURL(s, bDownloaded);
+  p->listIndex = CheckBox->Count;
   AddListItem(s, p);
 }
 
@@ -890,7 +898,42 @@ void __fastcall TPlaylistForm::InsertListItem(int idx, String s, TPlayerURL* p)
   FCheckBox->State[idx] = cbGrayed;
 }
 //---------------------------------------------------------------------------
-void __fastcall TPlaylistForm::CheckBoxDragOver(TObject* Sender, TObject* Source, int X, int Y, TDragState State, bool &Accept)
+bool __fastcall TPlaylistForm::RestoreCache(void)
+{
+  // reset/restore all song-file TPlayerURL structs
+  for (int ii = 0; ii < CheckBox->Count; ii++)
+  {
+    // delete old object
+    try
+    {
+      TPlayerURL* pOld = (TPlayerURL*)CheckBox->Items->Objects[ii];
+      if (pOld) delete pOld;
+    }
+    catch(...){}
+
+    TPlayerURL* p = InitTPlayerURL(CheckBox->Items->Strings[ii], false);
+    p->listIndex = ii;
+    CheckBox->Items->Objects[ii] = (TObject*)p;
+  }
+  FCacheCount = 0;
+  return true;
+}
+//---------------------------------------------------------------------------
+TPlayerURL* __fastcall TPlaylistForm::InitTPlayerURL(String s, bool bDownloaded)
+{
+  TPlayerURL* p = new TPlayerURL();
+  p->color = this->TextColor;
+  p->bDownloaded = bDownloaded;
+  p->cacheNumber = 0; // 0 = not yet cached
+  // NOTE: p->URL will eventually be changed to the path of the temporary file after
+  // the file is moved to the temp area in GetNext().
+  p->cachePath = s;
+  p->state = cbGrayed;
+  return p;
+}
+//---------------------------------------------------------------------------
+void __fastcall TPlaylistForm::CheckBoxDragOver(TObject* Sender,
+          TObject* Source, int X, int Y, TDragState State, bool &Accept)
 {
   // Accept the item if its from a TCheckListBox
   Accept = Source->ClassNameIs("TCheckListBox");
@@ -1029,7 +1072,7 @@ void __fastcall TPlaylistForm::NextPlayer(bool bForceStartPlay)
 
     int oldtag = Tag;
 
-    if (NextIndex < 0)
+    if (FNextIndex < 0)
       FNextIndex = Tag + 1;
 
     String sFile = GetNextCheckCache(false, true); // enable random
@@ -1172,7 +1215,7 @@ String __fastcall TPlaylistForm::GetNext(bool bNoSet, bool bEnableRandom)
           {
             if (bListReset)
               // prefetch the next file into our temporary cache directory
-              MainForm->CopyFileToCache(this, FNextIndex, true);
+              MainForm->CopyFileToCache(this, FNextIndex);
 
             sFile = MainForm->GetURL(FCheckBox, FNextIndex);
           }
@@ -1202,7 +1245,7 @@ String __fastcall TPlaylistForm::GetNext(bool bNoSet, bool bEnableRandom)
           FTargetIndex = FNextIndex;
 
           // prefetch the next file into our temporary cache directory
-          MainForm->CopyFileToCache(this, FTargetIndex, false);
+          MainForm->CopyFileToCache(this, FTargetIndex);
         }
       }
       else
@@ -1289,7 +1332,8 @@ void __fastcall TPlaylistForm::OpenStateChange(WMPOpenState NewState)
       if (bOpening && Tag >= 0 && Tag < FCheckBox->Count)
       {
         TPlayerURL* p = (TPlayerURL*)FCheckBox->Items->Objects[Tag];
-        if (p) p->color = clGreen;
+        if (p)
+          p->color = clGreen;
       }
 
       bOpening = false;
@@ -1314,40 +1358,6 @@ void __fastcall TPlaylistForm::OpenStateChange(WMPOpenState NewState)
 #if DEBUG_ON
       MainForm->CWrite( "\r\nwmposPlaylistOpenNoMedia: Tag:" + String(Tag) + " Target:" + String(TargetIndex) + "\r\n");
 #endif
-      if (bOpening && Tag >= 0 && Tag < FCheckBox->Count)
-      {
-        TPlayerURL* p = (TPlayerURL*)FCheckBox->Items->Objects[Tag];
-        if (p)
-        {
-          // failsafe
-          if (m_failSafeCounter > 2)
-          {
-            if (p->cacheNumber > 0)
-            {
-              p->cacheNumber = 0;
-              p->cachePath = FCheckBox->Items->Strings[Tag];
-              Wmp->URL = p->cachePath; // THIS DOES WORK!
-#if DEBUG_ON
-              MainForm->CWrite( "\r\nFailsafe: Restoring original path: \"" + String(p->cachePath) + "\"\r\n");
-#endif
-            }
-            else if (m_failSafeCounter > 4)
-            {
-#if DEBUG_ON
-              MainForm->CWrite( "\r\nFailsafe: SONG " + String(Tag) +
-                " ABANDONED!!!!!!!!!!!: " \"" + FCheckBox->Items->Strings[Tag] + "\"\r\n");
-#endif
-              FCheckBox->State[Tag] = cbUnchecked; // bad item
-              p->state = cbUnchecked;
-              p->color = clRed;
-              FNextIndex = Tag + 1;
-              Wmp->URL = GetNextCheckCache();
-            }
-          }
-          m_failSafeCounter++;
-        }
-      }
-
       bOpening = false;
     }
 #if DEBUG_ON
@@ -1360,6 +1370,60 @@ void __fastcall TPlaylistForm::OpenStateChange(WMPOpenState NewState)
   catch(...) {}
 
   MainForm->SetCurrentPlayer(); // Set CurrentPlayer variable (used for color-coding)
+}
+//---------------------------------------------------------------------------
+// Called from WindowsMediaPlayer1MediaError and WindowsMediaPlayer2MediaError
+// hooks in Main.cpp
+void __fastcall TPlaylistForm::MediaError(LPDISPATCH Item)
+{
+  if (Tag < 0 || Tag >= FCheckBox->Count)
+    return;
+
+  if (m_failSafeCounter < 4)
+  {
+    String sPath = FCheckBox->Items->Strings[Tag];
+
+    if (MainForm->CacheEnabled)
+    {
+      TPlayerURL* p = (TPlayerURL*)FCheckBox->Items->Objects[Tag];
+
+      if (p && p->cacheNumber > 0)
+      {
+        if (FileExists(p->cachePath))
+        {
+          sPath = p->cachePath;
+#if DEBUG_ON
+          MainForm->CWrite("\r\nMediaError(" + String(Tag) + "): Retrying cache-file path: \"" +
+                  String(sPath) + "\"\r\n");
+#endif
+        }
+        else
+        {
+          p->cachePath = sPath;
+          p->cacheNumber = 0;
+#if DEBUG_ON
+          MainForm->CWrite("\r\nMediaError(" + String(Tag) + "): Restoring original path: \"" +
+                  String(sPath) + "\"\r\n");
+#endif
+        }
+      }
+    }
+
+    Wmp->URL = sPath;
+    SetTimer(TM_START_PLAYER, TIME_100);
+
+    m_failSafeCounter++;
+  }
+  else if (m_failSafeCounter < 6)
+  {
+#if DEBUG_ON
+    MainForm->CWrite("\r\nMediaError(" + String(Tag) + "): Gave up on this song... running NextPlayer: \"" +
+                  String(Wmp->URL) + "\"\r\n");
+#endif
+    FNextIndex = -1; // this will clear song at Tag and queue up Tag+1
+    SetTimer(TM_NEXT_PLAYER, TIME_100); // NextPlayer
+    m_failSafeCounter++;
+  }
 }
 //---------------------------------------------------------------------------
 void __fastcall TPlaylistForm::PositionTimerEvent(TObject* Sender)
@@ -1606,7 +1670,7 @@ void __fastcall TPlaylistForm::PlayStateChange(WMPPlayState NewState)
 
       if (bForceNextPlay) // set when NewState == wmppsMediaEnded
       {
-        SetTimer(TM_START_PLAYER, TIME_100);
+        SetTimer(TM_NEXT_PLAYER, TIME_100);
         bForceNextPlay = false;
       }
       else
@@ -2129,7 +2193,7 @@ void __fastcall TPlaylistForm::RandomizeList1Click(TObject* Sender)
         l->Add((void*)ii);
 
     Count = l->Count;
-    TProgressForm::Init(Count);
+    ProgressForm->Init(Count);
 
     // now randomize only the unplayed songs
     for(int ii = 0; ii < Count; ii++)
@@ -2137,8 +2201,10 @@ void __fastcall TPlaylistForm::RandomizeList1Click(TObject* Sender)
       int srcIdx = (int)l->Items[ii];
       int dstIdx = (int)l->Items[random(Count)];
       FCheckBox->Items->Move(srcIdx, dstIdx);
-      TProgressForm::Move(ii);
+      ProgressForm->Move(ii);
     }
+
+    ProgressForm->UnInit();
 
     Tag = -1;
     FTargetIndex = -1;
@@ -2152,7 +2218,6 @@ void __fastcall TPlaylistForm::RandomizeList1Click(TObject* Sender)
   {
     if (l) delete l;
     FCheckBox->Enabled = true;
-    TProgressForm::UnInit();
   }
 }
 //---------------------------------------------------------------------------
@@ -2160,19 +2225,19 @@ void __fastcall TPlaylistForm::SelectAllItemsClick(TObject *Sender)
 {
   int Count = FCheckBox->Count;
 
-  TProgressForm::Init(Count);
+  ProgressForm->Init(Count);
 
   FCheckBox->Enabled = false;
 
   for (int ii = 0; ii < Count; ii++)
   {
     FCheckBox->Selected[ii] = true;
-    TProgressForm::Move(ii);
+    ProgressForm->Move(ii);
   }
 
-  FCheckBox->Enabled = true;
+  ProgressForm->UnInit();
 
-  TProgressForm::UnInit();
+  FCheckBox->Enabled = true;
 }
 //---------------------------------------------------------------------------
 void __fastcall TPlaylistForm::CopySelectedClick(TObject* Sender)

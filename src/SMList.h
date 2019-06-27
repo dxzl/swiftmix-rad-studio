@@ -23,8 +23,9 @@
 // Timer modes
 #define TM_NULL                 0
 #define TM_START_PLAYER         1
-#define TM_STOP_PLAYER          2
-#define TM_CHECKBOX_CLICK       3
+#define TM_NEXT_PLAYER          2
+#define TM_STOP_PLAYER          3
+#define TM_CHECKBOX_CLICK       4
 //---------------------------------------------------------------------------
 
 #define SONG_PATH_SIZE 4096
@@ -105,9 +106,6 @@ __published:  // IDE-managed Components
   void __fastcall FormActivate(TObject *Sender);
   void __fastcall FormDeactivate(TObject *Sender);
   void __fastcall FormKeyDown(TObject *Sender, WORD &Key, TShiftState Shift);
-  void __fastcall PlayStateChange(WMPPlayState NewState);
-  void __fastcall OpenStateChange(WMPOpenState NewState);
-  void __fastcall PositionChange(double oldPosition, double newPosition);
   void __fastcall PositionTimerEvent(TObject *Sender);
   void __fastcall CheckBoxClick(TObject* Sender);
   void __fastcall CheckBoxClickCheck(TObject *Sender);
@@ -132,6 +130,10 @@ __published:  // IDE-managed Components
   void __fastcall SelectAllItemsClick(TObject *Sender);
   void __fastcall CopyLinkToClipboardClick(TObject *Sender);
   void __fastcall MoveSelectedClick(TObject *Sender);
+  void __fastcall OpenStateChange(WMPOpenState NewState);
+  void __fastcall PlayStateChange(WMPPlayState NewState);
+  void __fastcall PositionChange(double oldPosition, double newPosition);
+  void __fastcall MediaError(LPDISPATCH Item);
 
 private:  // User declarations
 
@@ -222,9 +224,10 @@ public:  // User declarations
   TExportForm* __fastcall CreateExportDialog(void);
   TOFMSDlgForm* __fastcall CreateFileDialog(void);
   int __fastcall GetPlayTag(void);
-
-  void __fastcall AddListItem(String s, bool bIsInternetFile=false);
+  void __fastcall AddListItem(String s, bool bDownloased=false);
+  TPlayerURL* __fastcall InitTPlayerURL(String s, bool bDownloaded=false);
   void __fastcall DeleteListItem(int idx, bool bDeleteFromCache=true);
+  bool __fastcall RestoreCache(void);
 
   STRUCT_A MediaInfo;
 

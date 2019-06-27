@@ -16,7 +16,6 @@ class TImportForm : public TForm
 {
 __published:	// IDE-managed Components
   void __fastcall FormClose(TObject *Sender, TCloseAction &Action);
-  void __fastcall FormCreate(TObject *Sender);
   void __fastcall FormDestroy(TObject *Sender);
 
 private:	// User declarations
@@ -38,9 +37,6 @@ private:	// User declarations
   bool __fastcall IsUri(String sIn);
 
   int XMLCHARSLEN;
-
-  TOFMSDlgForm* pOFMSDlg;
-  TImportModeForm* pImpModeDlg;
 
 public:		// User declarations
   __fastcall TImportForm(TComponent* Owner);

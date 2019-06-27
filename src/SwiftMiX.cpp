@@ -26,7 +26,8 @@ int WINAPI _tWinMain(HINSTANCE, HINSTANCE, LPTSTR, int)
          Application->Initialize();
          Application->MainFormOnTaskBar = true;
          TStyleManager::TrySetStyle("Golden Graphite");
-     Application->CreateForm(__classid(TMainForm), &MainForm);
+         Application->CreateForm(__classid(TMainForm), &MainForm);
+     Application->CreateForm(__classid(TProgressForm), &ProgressForm);
      Application->Run();
     }
     catch (Exception &exception)

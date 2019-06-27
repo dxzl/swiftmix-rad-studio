@@ -97,9 +97,6 @@ void __fastcall TMainForm::FormCreate(TObject* Sender)
   // to set bFileCacheEnabled
   InitRegistryVars();
 
-  if (bFileCacheEnabled) // if it's enabled in registry...
-    bFileCacheEnabled = InitFileCaching();
-
   Caption = "SwiftMiX " + String(VERSION);
   Color = TColor(0xF5CFB8);
 
@@ -179,6 +176,9 @@ void __fastcall TMainForm::FormCreate(TObject* Sender)
 //  if (FDock == NULL)
 //    ShowMessage("Unable to create docking manager!");
 
+  pTMyFileCopyList = new TList();
+  pTFailedToCopyList = new TList();
+
   //enable drag/drop files
   ::DragAcceptFiles(this->Handle, true);
 }
@@ -208,6 +208,10 @@ void __fastcall TMainForm::FormShow(TObject *Sender)
   ListB->OtherWmp = WindowsMediaPlayer1;
   ListB->OtherForm = ListA;
   ListB->PlayerA = false; // this list is not for the A player
+
+  // need ListA and ListB to InitFileCacheing()
+  if (bFileCacheEnabled) // if it's enabled in registry...
+    bFileCacheEnabled = InitFileCaching();
 
   //-----------------
   // Add the windows to the docking system
@@ -364,7 +368,15 @@ bool __fastcall TMainForm::InitFileCaching(void)
           try { CreateDirectory(FsCacheDir.c_str(), NULL); } catch(...) {}
     }
 
-    return DirectoryExists(FsCacheDir) ? true : false;
+    if (!DirectoryExists(FsCacheDir))
+      return false;
+
+    // need to scan both song-lists, create TPlayerURL objects if missing
+    // and restore the main cache-counters and count to 0;
+    ListA->RestoreCache();
+    ListB->RestoreCache();
+
+    return true;
   }
   else
     return false;
@@ -383,6 +395,23 @@ void __fastcall TMainForm::FormDestroy(TObject *Sender)
   // delete file-cache directory and files
   if (DirectoryExists(FsCacheDir))
     DeleteDirAndFiles(FsCacheDir);
+
+  if (pTMyFileCopyList)
+  {
+    if (pTMyFileCopyList->Count)
+    {
+      // have to go backward...
+      for(int ii = pTMyFileCopyList->Count-1; ii >= 0 ; ii--)
+      {
+        TMyFileCopy* p = (TMyFileCopy*)pTMyFileCopyList->Items[ii];
+        if (p) delete p; // delete each instantiated object of TFileCopy
+      }
+    }
+    delete pTMyFileCopyList;
+  }
+
+  ClearFailedToCopyList();
+  delete pTFailedToCopyList;
 
 #if DEBUG_ON
   MainForm->CWrite("\r\nFormDestroy() in FormMain()\r\n");
@@ -421,11 +450,6 @@ void __fastcall TMainForm::FormClose(TObject* Sender, TCloseAction &Action)
   {
     OFMSDlgForm->Close();
     OFMSDlgForm->Release();
-  }
-  if (DirDlgForm != NULL)
-  {
-    DirDlgForm->Close();
-    DirDlgForm->Release();
   }
   if (ListA != NULL)
   {
@@ -477,7 +501,8 @@ void __fastcall TMainForm::FormClose(TObject* Sender, TCloseAction &Action)
 bool __fastcall TMainForm::DeleteDirAndFiles(String sDir)
 {
   // could use "runas" instead of "open"
-  return ShellCommand(L"open", L"cmd.exe", L"/c cd ..\\ \& rd /s /q \"" + sDir + "\"");
+  return ShellCommand(L"open", L"cmd.exe",
+           L"/c cd ..\\ \& rd /s /q \"" + sDir + "\"", true);
 }
 //---------------------------------------------------------------------------
 bool __fastcall TMainForm::ShellCommand(String sVerb, String sFile,
@@ -638,7 +663,12 @@ bool __fastcall TMainForm::FileDialog(TPlaylistForm* f, String &d, String t)
 
             String s1 = "";
 
-            for (int ii = 0; ii < fd->FileNameObjects->Count; ii++)
+            int iCount = fd->FileNameObjects->Count;
+
+            ProgressForm->ShowCancelButton = true;
+            ProgressForm->Init(iCount);
+
+            for (int ii = 0; ii < iCount; ii++)
             {
               TWideItem* pWI = (TWideItem*)fd->FileNameObjects->Items[ii];
 
@@ -648,6 +678,11 @@ bool __fastcall TMainForm::FileDialog(TPlaylistForm* f, String &d, String t)
                 String sDir = pWI->IsDirectory ? "true" : "false";
                 s1 += s + " (IsDirectory: " +  sDir + ")\n";
               }
+
+              ProgressForm->Move(ii);
+
+              if (ProgressForm->Canceled)
+                return false;
             }
 
             if (!s1.IsEmpty())
@@ -666,13 +701,13 @@ bool __fastcall TMainForm::FileDialog(TPlaylistForm* f, String &d, String t)
             else
               SaveDirB = fd->CurrentFolder;
 
-            int Count = fd->FileNameObjects->Count;
+            int iCount = fd->FileNameObjects->Count;
 
-            TProgressForm::Init(Count);
+            ProgressForm->ShowCancelButton = true;
+            ProgressForm->Init(iCount);
 
-            for (int ii = 0; ii < Count ; ii++)
+            for (int ii = 0; ii < iCount ; ii++)
             {
-              Application->ProcessMessages();
               if (Application->Terminated || (int)GetAsyncKeyState(VK_ESCAPE) < 0)
                 break;
 
@@ -683,20 +718,17 @@ bool __fastcall TMainForm::FileDialog(TPlaylistForm* f, String &d, String t)
                 if (pWI->IsDirectory)
                 {
                   if (SetCurrentDirectory(pWI->s.w_str()))
-                  {
-                    AddAllSongsToListBox(f);
-                    TProgressForm::Move(ii);
-                  }
+                    FFilesAddedCount += AddAllSongsToListBox(f);
                 }
-                else
-                {
-                  if (AddFileToListBox(f, pWI->s))
-                    TProgressForm::Move(ii);
-                }
+                else if (AddFileToListBox(f, pWI->s))
+                  FFilesAddedCount++;
               }
-            }
 
-            TProgressForm::UnInit();
+              ProgressForm->Move(ii);
+
+              if (ProgressForm->Canceled)
+                return false;
+            }
           }
 
           // Show the listbox
@@ -726,6 +758,7 @@ bool __fastcall TMainForm::FileDialog(TPlaylistForm* f, String &d, String t)
   __finally
   {
     f->DestroyFileDialog();
+    ProgressForm->UnInit(true);
   }
 
   if (bRet)
@@ -799,14 +832,14 @@ void __fastcall TMainForm::LoadListWithDroppedFiles(TWMDropFiles &Msg, TPlaylist
     Save_Cursor = Screen->Cursor;
     Screen->Cursor = crHourGlass;    // Show hourglass cursor
 
-    TProgressForm::Init(DroppedCount);
-
     if (ImportForm == NULL)
       Application->CreateForm(__classid(TImportForm), &ImportForm);
 
     pBuf = new wchar_t[MAX_PATH];
     sl = new TStringList();
 //    sl->Sorted = true; // don't want to mess up a user-chosen order...
+
+    ProgressForm->Init(DroppedCount);
 
     for (int ii = 0; ii < DroppedCount; ii++)
     {
@@ -815,7 +848,7 @@ void __fastcall TMainForm::LoadListWithDroppedFiles(TWMDropFiles &Msg, TPlaylist
       if (*pBuf != L'\0')
         sl->Add(pBuf);
 
-      TProgressForm::Move(ii);
+      ProgressForm->Move(ii);
     }
 
     // Repair a quirky list-system... (not needed after the first item has been added to a listbox!)
@@ -825,14 +858,12 @@ void __fastcall TMainForm::LoadListWithDroppedFiles(TWMDropFiles &Msg, TPlaylist
     // Press and hold Shift to bypass the file-extention filtering
     this->GBypassFilters = (GetKeyState(VK_SHIFT) & 0x8000);
 
-    TProgressForm::Init(sl->Count);
-
     String SaveDir = GetCurrentDir(); // Save
+
+    ProgressForm->Init(sl->Count);
 
     for (int ii = 0; ii < sl->Count; ii++)
     {
-      Application->ProcessMessages();
-
       if (Application->Terminated || (int)GetAsyncKeyState(VK_ESCAPE) < 0)
         break;
 
@@ -843,7 +874,7 @@ void __fastcall TMainForm::LoadListWithDroppedFiles(TWMDropFiles &Msg, TPlaylist
       if (Ext.IsEmpty() && DirectoryExists(sFile))
       {
         SetCurrentDir(sFile);
-        AddAllSongsToListBox(f); // recurse add folder and sub-folder's songs to list
+        FFilesAddedCount += AddAllSongsToListBox(f); // recurse add folder and sub-folder's songs to list
       }
       else if (this->GBypassFilters || Ext == ".wpl" || Ext == ".m3u8" || Ext == ".m3u" ||
                             Ext == ".asx" || Ext == ".xspf" || Ext == ".wax" ||
@@ -853,7 +884,7 @@ void __fastcall TMainForm::LoadListWithDroppedFiles(TWMDropFiles &Msg, TPlaylist
       else if (AddFileToListBox(f, sFile))
         FFilesAddedCount++;
 
-      TProgressForm::Move(ii);
+      ProgressForm->Move(ii);
     }
 
     SetCurrentDir(SaveDir); // Restore
@@ -869,21 +900,22 @@ void __fastcall TMainForm::LoadListWithDroppedFiles(TWMDropFiles &Msg, TPlaylist
   }
   __finally
   {
-    try { TProgressForm::UnInit(); } catch(...) {}
-
     try { if (ImportForm != NULL) ImportForm->Release(); } catch(...) {}
     try { if (pBuf != NULL) delete [] pBuf; } catch(...) {}
     try { if (sl != NULL) delete sl; } catch(...) {}
+
+    ProgressForm->UnInit(true);
 
     // Restore the previous cursor.
     Screen->Cursor = Save_Cursor;
   }
 }
 //---------------------------------------------------------------------------
-void __fastcall TMainForm::AddAllSongsToListBox(TPlaylistForm* f)
+int __fastcall TMainForm::AddAllSongsToListBox(TPlaylistForm* f)
 // Strings are in UTF-8 format!
 {
   TStringList* sl = NULL;
+  int originalListCount = f->Count;
 
   try
   {
@@ -891,33 +923,33 @@ void __fastcall TMainForm::AddAllSongsToListBox(TPlaylistForm* f)
 
     RecurseFileAdd(sl);
 
-    int Count = sl->Count;
+    int slCount = sl->Count;
 
-    if (Count > 1)
+    if (slCount > 1)
     {
-      TProgressForm::Init(Count);
+      ProgressForm->Init(slCount);
 
-      for (int ii = 0 ; ii < Count ; ii++)
+      for (int ii = 0 ; ii < slCount ; ii++)
       {
-        Application->ProcessMessages();
-
         if (Application->Terminated || (int)GetAsyncKeyState(VK_ESCAPE) < 0)
           break;
 
-        if (AddFileToListBox(f, sl->Strings[ii]))
-          TProgressForm::Move(ii);
+        AddFileToListBox(f, sl->Strings[ii]);
+
+        ProgressForm->Move(ii);
       }
 
-      TProgressForm::UnInit();
+      ProgressForm->UnInit();
 
-      if (FFilesAddedCount > 0)
-        ShowPlaylist(f);
+      ShowPlaylist(f);
     }
   }
   __finally
   {
     try { if (sl != NULL) delete sl; } catch(...) {}
   }
+
+  return f->Count-originalListCount; // return # songs added to list
 }
 //---------------------------------------------------------------------------
 bool __fastcall TMainForm::AddFileToListBox(TPlaylistForm* f, String sFile)
@@ -933,10 +965,8 @@ bool __fastcall TMainForm::AddFileToListBox(TPlaylistForm* f, String sFile)
     f->AddListItem(sFile, IsUri(sFile));
 
     // move the first file to the cache
-    if (f->Count == 0)
-      CopyFileToCache(f, -1, false);
-
-    FFilesAddedCount++;
+    if (f->Count == 1)
+      CopyFileToCache(f, -1);
 
     return true;
   }
@@ -970,6 +1000,8 @@ void __fastcall TMainForm::RecurseFileAdd(TStringList* slFiles)
     {
       do
       {
+        Application->ProcessMessages();
+
         if ((sr.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0)
         {
           int len = wcslen(sr.cFileName);
@@ -981,6 +1013,7 @@ void __fastcall TMainForm::RecurseFileAdd(TStringList* slFiles)
 
           slSubDirs->Add(sr.cFileName);
         }
+
       } while (FindNextFile(hFind, &sr) == TRUE);
     }
   }
@@ -991,12 +1024,11 @@ void __fastcall TMainForm::RecurseFileAdd(TStringList* slFiles)
 
   AddFilesToStringList(slFiles);
 
-  TProgressForm::Init(slSubDirs->Count);
+  ProgressForm->Init(slSubDirs->Count);
 
   // Get songs in all subdirectories
   for (int ii = 0; ii < slSubDirs->Count; ii++)
   {
-    Application->ProcessMessages();
     if (Application->Terminated || (int)GetAsyncKeyState(VK_ESCAPE) < 0)
       break;
 
@@ -1007,8 +1039,10 @@ void __fastcall TMainForm::RecurseFileAdd(TStringList* slFiles)
     }
 
     // Move Progress bar if it exists
-    TProgressForm::Move(ii);
+    ProgressForm->Move(ii);
   }
+
+  ProgressForm->UnInit();
 
   delete slSubDirs;
 }
@@ -1043,6 +1077,9 @@ void __fastcall TMainForm::AddFilesToStringList(TStringList* slFiles)
           ws = wdir + L"\\" + String(sr.cFileName);
           slFiles->Add(ws);
         }
+
+        Application->ProcessMessages();
+
       } while (FindNextFileW(hFind, &sr) == TRUE);
     }
   }
@@ -2006,40 +2043,47 @@ void __fastcall TMainForm::MenuHighPriorityClick(TObject* Sender)
   }
 }
 //---------------------------------------------------------------------------
+// Copy all song-list files to directory user selects
 void __fastcall TMainForm::MenuExportSongFilesandListsClick(TObject* Sender)
 {
-  if (DirDlgForm != NULL)
-    return;
-
-   // Copy all song-list files to directory user selects
-  if ((ListA != NULL && ListA->Count != 0) ||
-                    (ListB != NULL && ListB->Count != 0))
+  if (ListA == NULL || ListB == NULL || (!ListA->Count && !ListB->Count))
   {
-    MenuAutoFitToDVDCDClick(NULL);
+    ShowMessage("Both lists are empty!");
+    return;
+  }
 
-    // Return if user needs to modify the lists due to the
-    // cumulative size of the music files
-    if (ComputeDiskSpace(DISKSPACE_MESSAGEBOX_YESNO) <= 0)
-      return;
+  TDirDlgForm* pDirDlgForm = NULL;
 
-    Application->CreateForm(__classid(TDirDlgForm), &DirDlgForm);
+  ClearFailedToCopyList();
 
-    if (DirDlgForm == NULL)
-      return;
-
-    DirDlgForm->AutoScroll = false; // turn off autoscroll
-
-    // Setting CSIDL_MYMUSIC works but the user can't go up from there!
-    String wUserDir = DirDlgForm->Execute(CSIDL_DESKTOPDIRECTORY);
-
-    DirDlgForm->Close();
-    DirDlgForm->Release();
-
-    if (wUserDir.IsEmpty())
-      return;
-
+  try
+  {
     try
     {
+      // Return if user needs to modify the lists due to the
+      // cumulative size of the music files
+      __int64 lBytesNeeded = ComputeDiskSpace(DISKSPACE_MESSAGEBOX_YESNO);
+
+      if (lBytesNeeded <= 0)
+        return;
+
+      AutoFitToDVD(lBytesNeeded);
+
+      Application->CreateForm(__classid(TDirDlgForm), &pDirDlgForm);
+
+      if (pDirDlgForm == NULL)
+        return;
+
+      pDirDlgForm->AutoScroll = false; // turn off autoscroll
+
+      // Setting CSIDL_MYMUSIC works but the user can't go up from there!
+      String wUserDir = pDirDlgForm->Execute(CSIDL_DESKTOPDIRECTORY);
+
+      pDirDlgForm->Close();
+
+      if (wUserDir.IsEmpty())
+        return;
+
       wUserDir += "\\SwiftMiX";
 
       if (DirectoryExists(wUserDir))
@@ -2073,69 +2117,87 @@ void __fastcall TMainForm::MenuExportSongFilesandListsClick(TObject* Sender)
 
       CopyMusicFiles(ListA, wUserDir);
       CopyMusicFiles(ListB, wUserDir);
-      TProgressForm::UnInit();
     }
-    catch (...) { }
+    catch(...)
+    {
+    }
   }
-  else
-    ShowMessage("Both lists are empty!");
+  __finally
+  {
+    if (pDirDlgForm)
+      pDirDlgForm->Release();
+
+    // Take some action on failures
+    PromptRetry();
+    ShowFailures(); // show what's left after retries
+    ClearFailedToCopyList();
+  }
 }
 //---------------------------------------------------------------------------
 void __fastcall TMainForm::CopyMusicFiles(TPlaylistForm* f, String uUserDir)
 {
+  String sWmpUrl;
+
   try
   {
     int count = f->Count;
 
-    TProgressForm::Init(count, 5);
+    ProgressForm->ShowCancelButton = true;
+    ProgressForm->Init(count, 5);
 
-    String uSourcePath, uFileName, uDestPath;
-
-    // Copy ListA files
-    for (int ii = 0; ii < count; ii++)
+    try
     {
-      Application->ProcessMessages();
-      if (Application->Terminated || (int)GetAsyncKeyState(VK_ESCAPE) < 0)
+      String uSourcePath, uFileName, uDestPath;
+
+      // Copy ListA or ListB files
+      for (int ii = 0; ii < count; ii++)
       {
-        TProgressForm::UnInit();
-        return;
+        Application->ProcessMessages();
+
+        if (ProgressForm->Canceled || Application->Terminated || (int)GetAsyncKeyState(VK_ESCAPE) < 0)
+          return;
+
+        uSourcePath = f->CheckBox->Items->Strings[ii];
+
+        // Note that we use the old UTF-8 string "ListA->CheckBox->Items[ii]"
+        // to run the Ansi ExtractFileName() on and path should be UTF-8 too...
+        // THEN we convert to wide!
+        uFileName = ExtractFileName(uSourcePath);
+
+        // Found that we can't copy a file that is open in Wmp->URL!!!!!!!!!!!!!!!!!!
+        sWmpUrl = f->Wmp->URL; // release the file from the player
+        if (sWmpUrl.Length() > 0)
+        {
+          String sWmpFile = ExtractFileName(sWmpUrl);
+          if (sWmpFile == uFileName)
+            f->Wmp->URL = "dummy.mp3";
+        }
+
+        if (uFileName.Length() > 0)
+        {
+          uDestPath = uUserDir + String("\\") + uFileName;
+
+          int list = (f == ListA) ? 0 : 1;
+          if (!MyFileCopy(uSourcePath, uDestPath, ii, list))
+          {
+            ShowMessage("copy failed or cancelled, source:\"" +
+              uSourcePath + "\"\r\n" + "dest:\"" + uDestPath + "\"\r\n");
+          }
+        }
+
+        ProgressForm->Move(ii);
       }
-
-      uSourcePath = GetURL(f->CheckBox, ii);
-
-      // Note that we use the old UTF-8 string "ListA->CheckBox->Items[ii]"
-      // to run the Ansi ExtractFileName() on and path should be UTF-8 too...
-      // THEN we convert to wide!
-      uFileName = ExtractFileName(uSourcePath);
-
-      if (uFileName.Length() > 0)
-      {
-        uDestPath = uUserDir + String("\\") + uFileName;
-
-        if (CopyFile(uSourcePath.w_str(), uDestPath.w_str(), FALSE) == 0)
-          if (PromptAbort(uSourcePath))
-            return;
-      }
-
-      TProgressForm::Move(ii);
     }
+    catch(...) {}
   }
-  catch(...) {}
-}
-//---------------------------------------------------------------------------
-bool __fastcall TMainForm::PromptAbort(String s)
-{
-  String sMsg = String("Unable to copy file:\n\n") + s +
-                                                String("\n\nAbort?");
-
-  if (MessageBox(Handle, sMsg.w_str(), L"File Copy Error", MB_ICONQUESTION +
-                                          MB_YESNO + MB_DEFBUTTON1) == IDYES)
+  __finally
   {
-    TProgressForm::UnInit();
-    return true;
-  }
+    // restore song file had to disconnect from the player to copy it...
+    if (sWmpUrl.Length() && f->Wmp->URL == "dummy.mp3")
+      f->Wmp->URL = sWmpUrl;
 
-  return false;
+    ProgressForm->UnInit(true);
+  }
 }
 //---------------------------------------------------------------------------
 void __fastcall TMainForm::MenuViewDiscSpaceRequiredClick(TObject* Sender)
@@ -2145,50 +2207,75 @@ void __fastcall TMainForm::MenuViewDiscSpaceRequiredClick(TObject* Sender)
 //---------------------------------------------------------------------------
 void __fastcall TMainForm::MenuAutoFitToDVDCDClick(TObject* Sender)
 {
-  if (AutoSizeForm != NULL) return;
-  Application->CreateForm(__classid(TAutoSizeForm), &AutoSizeForm);
-  if (AutoSizeForm == NULL) return;
+  __int64 lBytesNeeded = ComputeDiskSpace(DISKSPACE_MESSAGEBOX_NONE);
 
-  if (AutoSizeForm->ShowModal() == mrOk)
-  {
-    __int64 val = ComputeDiskSpace(DISKSPACE_MESSAGEBOX_NONE);
-    __int64 temp;
-
-    if (val > AutoSizeForm->DiskSize)
-    {
-      temp = val-AutoSizeForm->DiskSize;
-
-      // Call function to randomly remove at least "diff" bytes
-      // alternating between lists
-      __int64 newval = RandomRemove(temp);
-
-      if (newval == temp)
-        ShowMessage("User abort before operation was compleated!");
-      else
-      {
-        String SizeStr = FormatFloat("#,##0", (double)newval);
-
-        ShowMessage("Successfully removed songs in order to fit\n"
-          "the target media...\n\n"
-          "Now under media size-limit by: " + SizeStr + " Bytes");
-      }
-    }
-//    else
-//    {
-//      temp = AutoSizeForm->DiskSize-val;
-//      String SizeStr = FormatFloat("#,##0", (double)temp);
-//      ShowMessage("Under media size-limit by: " + SizeStr + " Bytes");
-//    }
-}
-
-  // Release the resources
-  AutoSizeForm->Close();
-  AutoSizeForm->Release();
-  AutoSizeForm = NULL;
+  if (lBytesNeeded >= 0)
+    AutoFitToDVD(lBytesNeeded);
 }
 //---------------------------------------------------------------------------
-__int64 __fastcall TMainForm::ComputeDiskSpace(int Mode)
-// Add up # bytes needed
+void __fastcall TMainForm::AutoFitToDVD(__int64 lBytesNeeded)
+{
+  TAutoSizeForm* pAutoSizeForm = NULL;
+
+  try
+  {
+    try
+    {
+      Application->CreateForm(__classid(TAutoSizeForm), &pAutoSizeForm);
+
+      if (pAutoSizeForm == NULL) return;
+
+      if (pAutoSizeForm->ShowModal() == mrOk)
+      {
+        if (lBytesNeeded > pAutoSizeForm->BytesOnMedia)
+        {
+          __int64 lBytesOver = lBytesNeeded-pAutoSizeForm->BytesOnMedia;
+
+          // Call function to randomly remove at least "lBytesOver" bytes
+          // alternating between lists
+          __int64 lBytesUnused = RandomRemove(lBytesOver);
+
+          if (lBytesUnused == lBytesOver)
+            ShowMessage("User abort before operation was compleated!");
+          else
+          {
+            String SizeStr;
+
+            try
+            {
+              SizeStr = FormatFloat("#,##0", (double)lBytesUnused);
+            }
+            catch(...)
+            {
+              SizeStr = "(error)";
+            }
+
+            ShowMessage("Successfully removed songs in order to fit\n"
+              "the target media...\n\n"
+              "Now under media size-limit by: " + SizeStr + " Bytes");
+          }
+        }
+  //    else
+  //    {
+  //      temp = AutoSizeForm->DiskSize-val;
+  //      String SizeStr = FormatFloat("#,##0", (double)temp);
+  //      ShowMessage("Under media size-limit by: " + SizeStr + " Bytes");
+  //    }
+      }
+    }
+    catch(...)
+    {
+    }
+  }
+  __finally
+  {
+    // Release the resources
+    if (pAutoSizeForm)
+      pAutoSizeForm->Release();
+  }
+}
+//---------------------------------------------------------------------------
+// Add up # bytes needed by songs on both lists
 //
 // Returns -1 if user wants to quit...
 // otherwise returns the total # bytes required for
@@ -2198,82 +2285,82 @@ __int64 __fastcall TMainForm::ComputeDiskSpace(int Mode)
 // DISKSPACE_MESSAGEBOX_NONE  0 // no box...
 // DISKSPACE_MESSAGEBOX_YESNO 1
 // DISKSPACE_MESSAGEBOX_OK    2
+__int64 __fastcall TMainForm::ComputeDiskSpace(int Mode)
 {
-  String temp;
-
+  unsigned __int64 total_size_B = 0;
   unsigned __int64 total_size_A = 0;
-
+  unsigned __int64 total_size = 0;
   int cA = ListA->Count;
   int cB = ListB->Count;
 //  int total = cA + cB;
 
-  TProgressForm::Init(cA+cB);
-
-  // Total size for list A
-  for (int ii = 0; ii < cA; ii++)
+  try
   {
-    Application->ProcessMessages();
-    if (Application->Terminated || (int)GetAsyncKeyState(VK_ESCAPE) < 0)
-      return -1;
+    String sPath;
 
-    temp = GetURL(ListA->CheckBox, ii);
+    ProgressForm->ShowCancelButton = true;
+    ProgressForm->Init(cA);
+    ClearFailedToCopyList();
 
-    if (FileExists(temp))
+    // Total size for list A
+    for (int ii = 0; ii < cA; ii++)
     {
-      // Open file to get size
-      HANDLE h = CreateFile(temp.w_str(),
-                         GENERIC_READ,
-                         0,
-                         NULL,
-                         OPEN_EXISTING,
-                         FILE_ATTRIBUTE_NORMAL,
-                         NULL);
+      Application->ProcessMessages();
+      if (ProgressForm->Canceled || Application->Terminated || (int)GetAsyncKeyState(VK_ESCAPE) < 0)
+        return -1;
 
-      if (h != INVALID_HANDLE_VALUE)
+      sPath = ListA->CheckBox->Items->Strings[ii];
+
+      if (FileExists(sPath))
       {
-        total_size_A += GetFileSize(h, NULL);
-        CloseHandle(h);
+        long file_size = MyGetFileSize(sPath);
+
+        if (file_size > 0)
+          total_size_A += file_size;
+        else
+          AddFailure(sPath, ii);
       }
+
+      ProgressForm->Move(ii);
     }
 
-    TProgressForm::Move(ii);
-  }
+    ProgressForm->UnInit();
 
-  unsigned __int64 total_size_B = 0;
+    ProgressForm->ShowCancelButton = true;
+    ProgressForm->Init(cB);
 
-  // Total size for list B
-  for (int ii = 0; ii < cB; ii++)
-  {
-    Application->ProcessMessages();
-    if (Application->Terminated || (int)GetAsyncKeyState(VK_ESCAPE) < 0)
-      return -1;
-
-    temp = GetURL(ListB->CheckBox, ii);
-
-    if (FileExists(temp))
+    // Total size for list B
+    for (int ii = 0; ii < cB; ii++)
     {
-      // Open file to get size
-      HANDLE h = CreateFile(temp.w_str(),
-                         GENERIC_READ,
-                         0,
-                         NULL,
-                         OPEN_EXISTING,
-                         FILE_ATTRIBUTE_NORMAL,
-                         NULL);
+      Application->ProcessMessages();
+      if (ProgressForm->Canceled || Application->Terminated || (int)GetAsyncKeyState(VK_ESCAPE) < 0)
+        return -1;
 
-      if (h != INVALID_HANDLE_VALUE)
+      sPath = ListB->CheckBox->Items->Strings[ii];
+
+      if (FileExists(sPath))
       {
-        total_size_B += GetFileSize(h, NULL);
-        CloseHandle(h);
+        long file_size = MyGetFileSize(sPath);
+
+        if (file_size > 0)
+          total_size_B += file_size;
+        else
+          AddFailure(sPath, ii);
       }
+
+      ProgressForm->Move(ii);
     }
 
-    TProgressForm::Move(ii);
+    ProgressForm->UnInit();
+
+    total_size = total_size_A + total_size_B;
   }
-
-  TProgressForm::UnInit();
-
-  unsigned __int64 total_size = total_size_A + total_size_B;
+  __finally
+  {
+    // Show list of files that failed to copy
+    ShowFailures();
+    ClearFailedToCopyList();
+  }
 
   // Quit now if not displaying a lot of info
   if (Mode == 0)
@@ -2400,13 +2487,13 @@ __int64 __fastcall TMainForm::ComputeDiskSpace(int Mode)
   return((__int64)total_size);
 }
 //---------------------------------------------------------------------------
+// removes at least TargetBytes worth of song-files from the most populated
+// list and returns TargetBytes if user-cancel or the # excess bytes we have now.
 unsigned __int64 __fastcall TMainForm::RandomRemove(unsigned __int64 TargetBytes)
 {
   unsigned __int64 acc = 0;
 
   TPlaylistForm* fp;
-
-  String temp;
 
   while(ListA->Count > 0 || ListB->Count > 0)
   {
@@ -2417,32 +2504,24 @@ unsigned __int64 __fastcall TMainForm::RandomRemove(unsigned __int64 TargetBytes
     {
       int rand_idx = random(fp->Count);
 
-      temp = GetURL(fp->CheckBox, rand_idx);
+      String sUrl = fp->CheckBox->Items->Strings[rand_idx];
 
-      if (FileExists(temp))
+      if (FileExists(sUrl))
       {
-        // Open file to get size
-        HANDLE h = CreateFile(temp.w_str(),
-                           GENERIC_READ,
-                           0,
-                           NULL,
-                           OPEN_EXISTING,
-                           FILE_ATTRIBUTE_NORMAL,
-                           NULL);
+        long file_size = MyGetFileSize(sUrl);
 
-        if (h != INVALID_HANDLE_VALUE)
+        if (file_size > 0)
         {
-          int file_size = GetFileSize(h, NULL);
-
           int button = IDYES;
 
           if (bAutoSizePrompt)
           {
-            String S_Player = fp == ListA ? L"A" : L"B";
-            String s = String("Remove: \"") + temp + String("\" (") + String(file_size) +
+            String S_Player = (fp == ListA) ? L"A" : L"B";
+            String s = String("Remove: \"") + sUrl + String("\" (") + String(file_size) +
                   String(" bytes) from Player ") + S_Player + String("'s list?");
 
-            button = MessageBox(Handle, s.w_str(), L"Remove Song?", MB_ICONQUESTION + MB_YESNOCANCEL + MB_DEFBUTTON2);
+            button = MessageBox(Handle, s.w_str(), L"Remove Song?",
+                      MB_ICONQUESTION + MB_YESNOCANCEL + MB_DEFBUTTON2);
           }
 
           if (button == IDYES)
@@ -2452,19 +2531,76 @@ unsigned __int64 __fastcall TMainForm::RandomRemove(unsigned __int64 TargetBytes
             fp->DeleteListItem(rand_idx);
           }
 
-          CloseHandle(h);
-
-          if (button == IDCANCEL) return(TargetBytes);
+          if (button == IDCANCEL)
+            return TargetBytes;
         }
       }
 
       if (acc >= TargetBytes)
-        return(acc-TargetBytes);
+        return acc-TargetBytes;
     }
   }
 
   // Error
   return 0;
+}
+//---------------------------------------------------------------------------
+long __fastcall TMainForm::MyGetFileSize(String sPath)
+{
+  long lSize = MyGFS(sPath);
+
+  if (lSize <= 0)
+  {
+    String sSaveAUrl, sSaveBUrl;
+
+    // save Wmp URLs
+    if (ListA->Wmp->URL == sPath)
+    {
+      sSaveAUrl = ListA->Wmp->URL;
+      ListA->Wmp->URL = "dummy.mp3";
+    }
+    if (ListB->Wmp->URL == sPath)
+    {
+      sSaveBUrl = ListB->Wmp->URL;
+      ListB->Wmp->URL = "dummy.mp3";
+    }
+
+    // retry
+    lSize = MyGFS(sPath);
+
+    // restore saved Wmp URLs
+    if (sSaveAUrl.Length() > 0)
+      ListA->Wmp->URL = sSaveAUrl;
+    if (sSaveBUrl.Length() > 0)
+      ListB->Wmp->URL = sSaveBUrl;
+  }
+
+  return lSize;
+}
+//---------------------------------------------------------------------------
+long __fastcall TMainForm::MyGFS(String sPath)
+{
+  HANDLE h = NULL;
+  long lSize = -1;
+
+  try
+  {
+    // Open file to get size (allow shared read access)
+    h = CreateFile(sPath.c_str(), GENERIC_READ,
+//       0,
+//      FILE_SHARE_READ|FILE_SHARE_WRITE|FILE_SHARE_DELETE,
+      FILE_SHARE_READ,
+     NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (h && h != INVALID_HANDLE_VALUE)
+      lSize = ::GetFileSize(h, NULL);
+  }
+  __finally
+  {
+    if (h)
+      CloseHandle(h);
+  }
+
+  return lSize;
 }
 //---------------------------------------------------------------------------
 void __fastcall TMainForm::FPUpDownChangingEx(TObject *Sender, bool &AllowChange,
@@ -2507,24 +2643,6 @@ void __fastcall TMainForm::FRUpDownChangingEx(TObject *Sender, bool &AllowChange
   }
 }
 //---------------------------------------------------------------------------
-void __fastcall TMainForm::WindowsMediaPlayerError(TObject *Sender)
-{
-  TWindowsMediaPlayer* wmp = dynamic_cast<TWindowsMediaPlayer*>(Sender);
-  if (wmp == NULL) return;
-  //TPlaylistForm* pl = wmp->Tag == PLAYER_1 ? ListA : ListB;
-  //if (pl == NULL) return;
-
-//  String sPlayer = (wmp->Tag == PLAYER_1) ? "A" : "B";
-//  int errCount = wmp->Error->get_errorCount();
-//
-//  if (errCount)
-//  {
-//    int err;
-//    wmp->Error->get_item(0, &err);
-//    ShowMessage("Error in player " + sPlayer + ":" + String(err));
-//  }
-}
-//---------------------------------------------------------------------------
 void __fastcall TMainForm::WindowsMediaPlayer1OpenStateChange(TObject* Sender, long NewState)
 {
   if (ListA != NULL)
@@ -2550,6 +2668,12 @@ void __fastcall TMainForm::WindowsMediaPlayer1MediaChange(TObject* Sender, LPDIS
     ListA->GetSongInfo();
 }
 //---------------------------------------------------------------------------
+void __fastcall TMainForm::WindowsMediaPlayer1MediaError(TObject *Sender, LPDISPATCH Item)
+{
+  if (ListA != NULL)
+    ListA->MediaError(Item);
+}
+//---------------------------------------------------------------------------
 void __fastcall TMainForm::WindowsMediaPlayer2OpenStateChange(TObject* Sender, long NewState)
 {
   if (ListB != NULL)
@@ -2573,6 +2697,12 @@ void __fastcall TMainForm::WindowsMediaPlayer2MediaChange(TObject* Sender, LPDIS
   // Populate MediaInfo struct
   if (ListB != NULL)
     ListB->GetSongInfo();
+}
+//---------------------------------------------------------------------------
+void __fastcall TMainForm::WindowsMediaPlayer2MediaError(TObject *Sender, LPDISPATCH Item)
+{
+  if (ListB != NULL)
+    ListB->MediaError(Item);
 }
 //---------------------------------------------------------------------------
 bool __fastcall TMainForm::WriteStringToFile(String wPath, String sInfo)
@@ -2635,170 +2765,9 @@ String __fastcall TMainForm::GetSpecialFolder(int csidl)
   return sOut;
 }
 //---------------------------------------------------------------------------
-//URLDownloadToFile function
-//
-//    07/12/2016
-//    2 minutes to read
-//
-//Downloads bits from the Internet and saves them to a file.
-//Syntax
-//C++
-//
-//HRESULT URLDownloadToFile(
-//             LPUNKNOWN            pCaller,
-//             LPCTSTR              szURL,
-//             LPCTSTR              szFileName,
-//  _Reserved_ DWORD                dwReserved,
-//             LPBINDSTATUSCALLBACK lpfnCB
-//);
-//
-//Parameters
-//
-//    pCaller
-//    A pointer to the controlling IUnknown interface of the calling ActiveX component, if the caller is an ActiveX component. If the calling application is not an ActiveX component, this value can be set to NULL. Otherwise, the caller is a COM object that is contained in another component, such as an ActiveX control in the context of an HTML page. This parameter represents the outermost IUnknown of the calling component. The function attempts the download in the context of the ActiveX client framework, and allows the caller container to receive callbacks on the progress of the download.
-//
-//    szURL
-//    A pointer to a string value that contains the URL to download. Cannot be set to NULL. If the URL is invalid, INET_E_DOWNLOAD_FAILURE is returned.
-//
-//    szFileName
-//    A pointer to a string value containing the name or full path of the file to create for the download. If szFileName includes a path, the target directory must already exist.
-//
-//    dwReserved
-//    Reserved. Must be set to 0.
-//
-//    lpfnCB
-//    A pointer to the IBindStatusCallback interface of the caller. By using IBindStatusCallback::OnProgress, a caller can receive download status. URLDownloadToFile calls the IBindStatusCallback::OnProgress and IBindStatusCallback::OnDataAvailable methods as data is received. The download operation can be canceled by returning E_ABORT from any callback. This parameter can be set to NULL if status is not required.
-//
-//Return value
-//
-//This function can return one of these values.
-//Return code 	Description
-//S_OK
-//
-//The download started successfully.
-//E_OUTOFMEMORY
-//
-//The buffer length is invalid, or there is insufficient memory to complete the operation.
-//INET_E_DOWNLOAD_FAILURE
-//
-//The specified resource or callback interface was invalid.
-//Remarks
-//
-//URLDownloadToFile binds to a host that supports IBindHost to perform the download. To do this, it first queries the controlling IUnknown passed as pCaller for IServiceProvider, then calls IServiceProvider::QueryService with SID_SBindHost. If pCaller does not support IServiceProvider, IOleObject or IObjectWithSite is used to query the object's host container. If no IBindHost interface is supported, or pCaller is NULL, URLDownloadToFile creates its own bind context to intercept download notifications.
-//
-//URLDownloadToFile returns S_OK even if the file cannot be created and the download is canceled. If the szFileName parameter contains a file path, ensure that the destination directory exists before calling URLDownloadToFile. For best control over the download and its progress, an IBindStatusCallback interface is recommended.
-//
-//Windows Internet Explorer 8. URLDownloadToFile does not support IBindStatusCallbackEx and cannot be used to download files over 4 gigabytes (GB) in size. Refer instead to IBindStatusCallbackEx::GetBindInfoEx for a code example.
-//Requirements
-//
-//Minimum supported client
-//
-//
-//Windows XP
-//
-//Minimum supported server
-//
-//
-//Windows 2000 Server
-//
-//Product
-//
-//
-//Internet Explorer 3.0
-//
-//Header
-//	Urlmon.h
-//
-//Library
-//	Urlmon.lib
-//
-//DLL
-//	Urlmon.dll
-//
-//Unicode and ANSI names
-//URLDownloadToFileW (Unicode) and URLDownloadToFileA (ANSI)  // fetch TargetIndex into the temp-file queue
-
-//function DownloadFile( Source, Dest: string ) : Boolean;
-//type
-//  TURLDownloadToFile = function( p1: IUnknown; p2: PAnsiChar; p3: PAnsiChar;
-//p4: DWORD; p5: pointer ) : HResult; stdcall;
-//file://function URLDownloadToFile(p1: IUnknown; p2: PAnsiChar; p3:
-//PAnsiChar; p4: DWORD; p5: pointer): HResult; stdcall;external 'urlmon.dll'
-//name 'URLDownloadToFileA';
-//var
-//  URLDownloadToFile: tURLDownloadToFile;
-//  h: thandle;
-//begin
-//  Result := False;
-//  h := LoadLibrary( 'urlmon.dll' ) ;
-//  if h = 0 then
-//    exit;
-//  try
-//    URLDownloadToFile := GetProcAddress( h, 'URLDownloadToFileA' ) ;
-//    if @URLDownloadToFile = nil then
-//      exit;
-//    try
-//      Result := UrlDownloadToFile( nil, PChar( source ) , PChar( Dest ) , 0,
-//nil ) = 0;
-//    except
-//      Result := False;
-//    end;
-//  finally
-//    FreeLibrary( h ) ;
-//  end;
-//end;
-//
-//example:
-//if DownloadFile('http://www......','c:\file.dat') then showmessage('download
-//OK');
-//
-//function Get-Web($url, [switch]$self, $credential, $toFile, [switch]$bytes)
-//{
-//    #.Synopsis
-//    #    Downloads a file from the web
-//    #.Description
-//    #    Uses System.Net.Webclient (not the browser) to download data
-//    #    from the web.
-//    #.Parameter self
-//    #    Uses the default credentials when downloading that page (for downloading intranet pages)
-//    #.Parameter credential
-//    #    The credentials to use to download the web data
-//    #.Parameter url
-//    #    The page to download (e.g. www.msn.com)
-//    #.Parameter toFile
-//    #    The file to save the web data to
-//    #.Parameter bytes
-//    #    Download the data as bytes
-//    #.Example
-//    #    # Downloads www.live.com and outputs it as a string
-//    #    Get-Web http://www.live.com/
-//    #.Example
-//    #    # Downloads www.live.com and saves it to a file
-//    #    Get-Web http://wwww.msn.com/ -toFile www.msn.com.html
-//    $webclient = New-Object Net.Webclient
-//    if ($credential) {
-//        $webClient.Credential = $credential
-//    }
-//    if ($self) {
-//        $webClient.UseDefaultCredentials = $true
-//    }
-//    if ($toFile) {
-//        if (-not "$toFile".Contains(":")) {
-//            $toFile = Join-Path $pwd $toFile
-//        }
-//        $webClient.DownloadFile($url, $toFile)
-//    } else {
-//        if ($bytes) {
-//            $webClient.DownloadData($url)
-//        } else {
-//            $webClient.DownloadString($url)
-//        }
-//    }
-//}
-//---------------------------------------------------------------------------
 // set idx -1 to reference the last item in the list
 // returns false if list empty or error
-bool __fastcall TMainForm::CopyFileToCache(TPlaylistForm* f, int idx, bool bWaitForCompletion)
+bool __fastcall TMainForm::CopyFileToCache(TPlaylistForm* f, int idx)
 {
   bool bRet = false;
 
@@ -2817,7 +2786,7 @@ bool __fastcall TMainForm::CopyFileToCache(TPlaylistForm* f, int idx, bool bWait
     {
       // add a new file to the cache
 
-      String sFile = GetURL(f->CheckBox, idx);
+      String sFile = f->CheckBox->Items->Strings[idx];
       TPlayerURL* p = (TPlayerURL*)f->CheckBox->Items->Objects[idx];
       if (!p) return false;
 
@@ -2898,16 +2867,11 @@ bool __fastcall TMainForm::CopyFileToCache(TPlaylistForm* f, int idx, bool bWait
         sDestFile = CacheDir + "\\" + ExtractFileName(sFile);
         if (!FileExists(sDestFile))
         {
-          if (bWaitForCompletion)
+          int list = (f == ListA) ? 0 : 1;
+          if (!MyFileCopy(sFile, sDestFile, idx, list))
           {
-            if (CopyFile(sFile.c_str(), sDestFile.c_str(), FALSE) == 0)
-              return false;
-          }
-          else
-          {
-            // copy new file to cache
-            String sCopy = L"/c copy \"" + sFile + "\" \"" + sDestFile + "\"";
-            ShellCommand(L"open", L"cmd.exe", sCopy.c_str(), false);
+            ShowMessage("copy failed or cancelled, source:\"" +
+              sFile + "\"\r\n" + "dest:\"" + sDestFile + "\"\r\n");
           }
         }
 
@@ -3057,20 +3021,48 @@ bool __fastcall TMainForm::DeleteCacheFile(TPlaylistForm* f, unsigned cacheNumbe
 //---------------------------------------------------------------------------
 String __fastcall TMainForm::GetURL(TCheckListBox* l, int idx)
 {
-  String sCachePath;
+  String sPath;
 
   try
   {
-    TPlayerURL* p = (TPlayerURL*)l->Items->Objects[idx];
+    if (bFileCacheEnabled)
+    {
+      TPlayerURL* p = (TPlayerURL*)l->Items->Objects[idx];
 
-    if (p && bFileCacheEnabled)
-      sCachePath = p->cachePath;
+      if (p && p->cacheNumber > 0)
+        sPath = p->cachePath;
+      else
+        sPath = l->Items->Strings[idx];
+    }
     else
-      sCachePath = l->Items->Strings[idx];
+      sPath = l->Items->Strings[idx];
   }
   catch(...) {};
 
-  return sCachePath;
+  return sPath;
+}
+//---------------------------------------------------------------------------
+// this will instantiate an object of TMyFileCopy() which copies a
+// file or times out - and automatically deletes itself
+bool __fastcall TMainForm::MyFileCopy(String sSource, String sDest, int idx, int list)
+{
+  if (!pTMyFileCopyList)
+    return false;
+
+  // this bit of code limits the max # of simultaneous TMyFileCopy objects
+  if (MyFileCopyList->Count > MAX_TMyFileCopy_OBJECTS)
+  {
+    do
+    {
+      Sleep(20);
+      Application->ProcessMessages();
+    } while (MyFileCopyList->Count > MAX_TMyFileCopy_OBJECTS);
+  }
+
+  // non-blocking file-copy
+  new TMyFileCopy(this, sSource, sDest, idx, list);
+
+  return true;
 }
 //---------------------------------------------------------------------------
 // TODO - add copy of songs from web to playlist TPlayerURL URL object and
@@ -3236,38 +3228,108 @@ FARPROC __fastcall TMainForm::LoadProcAddr(HINSTANCE hDll, String entry)
   return addr;
 }
 //---------------------------------------------------------------------------
-//#include <dir.h>
-//
-//void __fastcall TForm1::Button1Click(TObject *Sender)
-//{
-//  char szFileName[MAXFILE+4];
-//  int iFileHandle;
-//  int iLength;
-//  if (SaveDialog1->Execute())
-//  {
-//    if (FileExists(SaveDialog1->FileName))
-//    {
-//      fnsplit(SaveDialog1->FileName.c_str(), 0, 0, szFileName, 0);
-//      strcat(szFileName, ".BAK");
-//      RenameFile(SaveDialog1->FileName, szFileName);
-//    }
-//    iFileHandle = FileCreate(SaveDialog1->FileName);
-//    // Write out the number of rows and columns in the grid.
-//    FileWrite(iFileHandle, (char*)&(StringGrid1->ColCount), sizeof(StringGrid1->ColCount));
-//    FileWrite(iFileHandle, (char*)&(StringGrid1->RowCount), sizeof(StringGrid1->RowCount));
-//    for (int x=0;x<StringGrid1->ColCount;x++)
-//    {
-//      for (int y=0;y<StringGrid1->RowCount;y++)
-//      {
-//        // Write out the length of each string, followed by the string itself.
-//        iLength = StringGrid1->Cells[x][y].Length();
-//        FileWrite(iFileHandle, (char*)&iLength, sizeof(iLength));
-//        FileWrite(iFileHandle, StringGrid1->Cells[x][y].c_str(), StringGrid1->Cells[x][y].Length());
-//      }
-//    }
-//    FileClose(iFileHandle);
-//  }
-//}
+void __fastcall TMainForm::AddFailure(String sPath, int iIndex)
+{
+  AddFailure(sPath, "", iIndex, 0);
+}
+
+void __fastcall TMainForm::AddFailure(String sSource, String sDest, int iSource, int iList)
+{
+  TFailVars* p = new TFailVars();
+  if (p)
+  {
+    p->m_sSource = sSource;
+    p->m_sDest = sDest;
+    p->m_iSource = iSource;
+    p->m_iList = iList;
+    pTFailedToCopyList->Add((void*)p);
+  }
+}
+//---------------------------------------------------------------------------
+void __fastcall TMainForm::ShowFailures(void)
+{
+  int iFailCount = pTFailedToCopyList->Count;
+  if (iFailCount)
+  {
+    String sFailed = "Failed to copy " + String(iFailCount) + " songs!\n\n";
+
+    if (iFailCount > 10)
+    {
+      sFailed += "(truncating list shown to the first 10...)\n\n";
+      iFailCount = 10;
+    }
+
+    for (int ii = 0; ii < iFailCount; ii++)
+    {
+      TFailVars* p = (TFailVars*)pTFailedToCopyList->Items[ii];
+      if (p)
+      {
+        if (p->m_sDest.IsEmpty())
+          sFailed += "Path: \"" + p->m_sSource + "\" : " + String(p->m_iSource) + "\n";
+        else
+        {
+          sFailed += "Source: \"" + p->m_sSource + "\" index: " + String(p->m_iSource) +
+                        ", " + String(p->m_iList ? "list B" : "list A") + "\n";
+          sFailed += "Dest: \"" + p->m_sDest + "\"\n\n";
+        }
+      }
+    }
+    ShowMessage(sFailed);
+  }
+}
+//---------------------------------------------------------------------------
+// deletes TFailVars objects in the pTFailedToCopyList (TList)
+void __fastcall TMainForm::ClearFailedToCopyList(void)
+{
+  if (pTFailedToCopyList && pTFailedToCopyList->Count)
+  {
+    // have to go backward...
+    for(int ii = pTFailedToCopyList->Count-1; ii >= 0 ; ii--)
+    {
+      TFailVars* p = (TFailVars*)pTFailedToCopyList->Items[ii];
+      if (p) delete p; // delete each instantiated object of TFileCopy
+      pTFailedToCopyList->Delete(ii); // delete list-entry
+    }
+  }
+}
+//---------------------------------------------------------------------------
+// retry file copy
+void __fastcall TMainForm::PromptRetry(void)
+{
+  if (pTFailedToCopyList)
+  {
+    if (pTFailedToCopyList->Count)
+    {
+      // have to go backward...
+      for(int ii = pTFailedToCopyList->Count-1; ii >= 0 ; ii--)
+      {
+        TFailVars* p = (TFailVars*)pTFailedToCopyList->Items[ii];
+
+        if (p)
+        {
+          String sMsg = "Retry copy of file:\n\n\"" + p->m_sSource + "\"?";
+
+          int button = MessageBox(Handle, sMsg.w_str(), L"File Copy Retry", MB_ICONQUESTION +
+                                             MB_YESNOCANCEL + MB_DEFBUTTON1);
+          if (button == IDCANCEL)
+            break;
+
+          if (button == IDNO)
+            continue;
+
+          // copy and overwrite (failed should have been deleted)
+          // this will delete successfully copied files from the fail-list - then,
+          // you can call ShowFailures and it should show nothing!
+          if (CopyFile(p->m_sSource.c_str(), p->m_sDest.c_str(), false))
+          {
+            delete p;
+            pTFailedToCopyList->Delete(ii);
+          }
+        }
+      }
+    }
+  }
+}
 //---------------------------------------------------------------------------
 // UTF8 Encode/Decode
 //---------------------------------------------------------------------------

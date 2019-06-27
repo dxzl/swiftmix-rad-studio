@@ -29,6 +29,7 @@ __published:	// IDE-managed Components
   TCheckBox *UncPathCheckBox;
   TCheckBox *WriteBOMCheckBox;
   TRadioGroup *RGEncoding;
+  TLabel *LabelHint;
   void __fastcall FormCreate(TObject *Sender);
   void __fastcall FormShow(TObject *Sender);
   void __fastcall FormClose(TObject *Sender, TCloseAction &Action);

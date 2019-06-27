@@ -24,6 +24,7 @@ void __fastcall TImportModeForm::FormCreate(TObject *Sender)
 {
   Left = MainForm->Left + MainForm->Width/2 - Width/2;
   Top = MainForm->Top + MainForm->Height/2 - Height/2;
+  OurTitle = "Import Mode";
 }
 //---------------------------------------------------------------------------
 void __fastcall TImportModeForm::FormShow(TObject *Sender)
@@ -43,6 +44,12 @@ void __fastcall TImportModeForm::FormClose(TObject *Sender,
 void __fastcall TImportModeForm::ButtonCancelClick(TObject *Sender)
 {
   Close();
+}
+//---------------------------------------------------------------------------
+void __fastcall TImportModeForm::SetTitle(String sTitle)
+{
+  FTitle = sTitle;
+  this->Caption = FTitle;
 }
 //---------------------------------------------------------------------------
 

@@ -9,7 +9,6 @@
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
 #pragma resource "*.dfm"
-TDirDlgForm *DirDlgForm;
 //---------------------------------------------------------------------------
 void __fastcall TDirDlgForm::FormCreate(TObject *Sender)
 {
@@ -46,7 +45,7 @@ WideString __fastcall TDirDlgForm::Execute(int nCSIDL)
   bi.pidlRoot = pidlRoot;
   bi.lpfn = FAutoScroll ? BrowseCallbackProc : NULL;
   bi.lpszTitle = pszPath;
-  bi.ulFlags = BIF_NEWDIALOGSTYLE | BIF_SHAREABLE;
+  bi.ulFlags = BIF_USENEWUI | BIF_SHAREABLE;
   LPITEMIDLIST stId = SHBrowseForFolderW(&bi);
 
   if (stId != 0)

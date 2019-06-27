@@ -7,7 +7,6 @@
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
 #pragma resource "*.dfm"
-TAutoSizeForm *AutoSizeForm = NULL;
 //---------------------------------------------------------------------------
 __fastcall TAutoSizeForm::TAutoSizeForm(TComponent* Owner)
   : TForm(Owner)

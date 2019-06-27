@@ -12,20 +12,11 @@ TImportForm *ImportForm;
 __fastcall TImportForm::TImportForm(TComponent* Owner)
   : TForm(Owner)
 {
-  pOFMSDlg = NULL;
-  pImpModeDlg = NULL;
-
   XMLCHARSLEN = StrLen(XMLCHARS); // do this once for speed!
 }
 //---------------------------------------------------------------------------
 __fastcall TImportForm::~TImportForm()
 {
-}
-//---------------------------------------------------------------------------
-void __fastcall TImportForm::FormCreate(TObject *Sender)
-{
-  Application->CreateForm(__classid(TOFMSDlgForm), &pOFMSDlg);
-  Application->CreateForm(__classid(TImportModeForm), &pImpModeDlg);
 }
 //---------------------------------------------------------------------------
 void __fastcall TImportForm::FormDestroy(TObject *Sender)
@@ -38,18 +29,6 @@ void __fastcall TImportForm::FormDestroy(TObject *Sender)
 void __fastcall TImportForm::FormClose(TObject *Sender,
       TCloseAction &Action)
 {
-  if (pOFMSDlg != NULL)
-  {
-    pOFMSDlg->Close();
-    pOFMSDlg->Release();
-  }
-
-  if (pImpModeDlg != NULL)
-  {
-    pImpModeDlg->Close();
-    pImpModeDlg->Release();
-  }
-
 #if DEBUG_ON
   MainForm->CWrite( "\r\nFormClose() in TImportForm()!\r\n");
 #endif
@@ -67,53 +46,94 @@ int __fastcall TImportForm::Dialog(TPlaylistForm* f, String d, String t)
   }
 #endif
 
+  if (f == NULL)
+    return 0;
+
+  TOFMSDlgForm* pOFMSDlg = NULL;
+  TImportModeForm* pImpModeDlg = NULL;
+
   try
   {
-    if (f == NULL || pOFMSDlg == NULL)
-      return 0;
-
-    pOFMSDlg->SingleSelect = true;
-
-    // NOTE: It's critical to use WideString() to wrap the following string!
-    pOFMSDlg->Filters = WideString("All Files (*.*)|*.*|"
-                  "Windows Media (wpl)|*.wpl|"
-                  "MPEG UTF-8 (m3u8)|*.m3u8|"
-                  "MPEG ANSI (m3u)|*.m3u|"
-                  "Adv Stream XML (asx)|*.asx|"
-                  "XML Shareable (xspf)|*.xspf|"
-                  "Win Audio XML (wax)|*.wax|"
-                  "Windows XML (wmx)|*.wmx|"
-                  "Windows Video (wvx)|*.wvx|"
-                  "Winamp (pls)|*.pls|"
-                  "Text (txt)|*.txt");
-
-    if (pOFMSDlg->Execute(IMPORT_EXT, d, t))
+    try
     {
-      try
+      Application->CreateForm(__classid(TOFMSDlgForm), &pOFMSDlg);
+      Application->CreateForm(__classid(TImportModeForm), &pImpModeDlg);
+
+      if (pOFMSDlg == NULL || pImpModeDlg == NULL)
+        return -2;
+
+      pOFMSDlg->SingleSelect = true;
+
+      // NOTE: It's critical to use WideString() to wrap the following string!
+      pOFMSDlg->Filters = WideString("All Files (*.*)|*.*|"
+                    "Windows Media (wpl)|*.wpl|"
+                    "MPEG UTF-8 (m3u8)|*.m3u8|"
+                    "MPEG ANSI (m3u)|*.m3u|"
+                    "Adv Stream XML (asx)|*.asx|"
+                    "XML Shareable (xspf)|*.xspf|"
+                    "Win Audio XML (wax)|*.wax|"
+                    "Windows XML (wmx)|*.wmx|"
+                    "Windows Video (wvx)|*.wvx|"
+                    "Winamp (pls)|*.pls|"
+                    "Text (txt)|*.txt");
+
+      if (pOFMSDlg->Execute(IMPORT_EXT, d, t))
       {
         String Ext = ExtractFileExt(pOFMSDlg->FileName).LowerCase();
 
         // Set the "suggested" mode when the dialog opens...
         pImpModeDlg->Mode = this->GetMode(Ext, IMPORT_MODE_AUTO);
+        pImpModeDlg->OurTitle = "File-type: \"" + Ext + "\"";
 
         if (pImpModeDlg->ShowModal() == mrCancel)
-          return -1;
+          return -1; // -1 is cancel
 
         return NoDialog(f, pOFMSDlg->FileName, pImpModeDlg->Mode);
       }
-      catch(...)
-      {
-        return -1; // canceled;
-      }
+    }
+    catch(...)
+    {
+      return -3; // error
     }
   }
   __finally
   {
+    if (pOFMSDlg != NULL)
+      pOFMSDlg->Release();
+
+    if (pImpModeDlg != NULL)
+      pImpModeDlg->Release();
   }
 
   return -1; // canceled
 }
 //---------------------------------------------------------------------------
+int __fastcall TImportForm::GetMode(String Ext, int Mode)
+// Return Mode as-is unless it's Auto - if it's Auto, try to pick a mode
+// based on sExt. sExt is lowercase and has the "." on entry...
+//
+// Modes:
+// IMPORT_MODE_NONE     (-1)
+// IMPORT_MODE_AUTO      0
+// IMPORT_MODE_UTF8      1
+// IMPORT_MODE_ANSI      2
+// IMPORT_MODE_UTF16     3
+// IMPORT_MODE_UTF16BE   4
+{
+  if (Mode != IMPORT_MODE_AUTO)
+    return Mode;
+
+  if (Ext == ".m3u8" || Ext == ".wpl" || Ext == ".asx" || Ext == ".wax" ||
+                        Ext == ".wmx" || Ext == ".wvx" || Ext == ".xspf")
+    return IMPORT_MODE_UTF8;
+
+  if (Ext == ".m3u" || Ext == ".pls")
+    return IMPORT_MODE_ANSI;
+
+  return Mode;
+}
+//---------------------------------------------------------------------------
+// returns the # of songs added
 int __fastcall TImportForm::NoDialog(TPlaylistForm* f, String sPath, int Mode)
 //
 // sPath is utf-8!
@@ -160,7 +180,7 @@ int __fastcall TImportForm::NoDialog(TPlaylistForm* f, String sPath, int Mode)
   if (f == NULL || sPath.IsEmpty())
     return 0;
 
-  int Count = 0;
+  int originalListCount = f->Count;
 
   TStringList* sl = NULL;
 
@@ -220,6 +240,8 @@ int __fastcall TImportForm::NoDialog(TPlaylistForm* f, String sPath, int Mode)
 
       if (Ext == "pls")
       {
+        ProgressForm->Init(sl->Count);
+
         // Read as plain-text, one file or URL per line
         for (int ii = 0; ii < sl->Count; ii++)
         {
@@ -240,19 +262,22 @@ int __fastcall TImportForm::NoDialog(TPlaylistForm* f, String sPath, int Mode)
               MainForm->AddAllSongsToListBox(f); // recurse add folder and sub-folder's songs to list
             }
             else if (ReplaceRelativePath(sFile, sPath)) // returns sFile as an absolute path...
-              if (MainForm->AddFileToListBox(f, sFile))
-                Count++;
+              MainForm->AddFileToListBox(f, sFile);
+
+            ProgressForm->Move(ii);
           }
           catch(...) { }
         }
       }
       else
       {
-        // Returns Count == 0 if not an XML file-extension
-        Count = XmlParser(f, Ext, sl->Text, sPath);
+        // Returns iCount == 0 if not an XML file-extension
+        int iCount = XmlParser(f, Ext, sl->Text, sPath);
 
-        if (Count == 0)
+        if (iCount == 0)
         {
+          ProgressForm->Init(sl->Count);
+
           // Read as plain-text, one file or URL per line
           for (int ii = 0; ii < sl->Count; ii++)
           {
@@ -273,8 +298,9 @@ int __fastcall TImportForm::NoDialog(TPlaylistForm* f, String sPath, int Mode)
                 MainForm->AddAllSongsToListBox(f); // recurse add folder and sub-folder's songs to list
               }
               else if (ReplaceRelativePath(sFile, sPath)) // returns sFile as an absolute path...
-                if (MainForm->AddFileToListBox(f, sFile))
-                  Count++;
+                MainForm->AddFileToListBox(f, sFile);
+
+              ProgressForm->Move(ii);
             }
             catch(...) { }
           }
@@ -284,31 +310,13 @@ int __fastcall TImportForm::NoDialog(TPlaylistForm* f, String sPath, int Mode)
     catch(...) { ShowMessage("Unable to Import list!"); }
   }
   // NOTE: Unlike C#, __finally does NOT get called if we execute a return!!!
-  __finally { try { if (sl != NULL) delete sl; } catch(...) {} }
+  __finally
+  {
+    try { if (sl != NULL) delete sl; } catch(...) {}
+    ProgressForm->UnInit(true);
+  }
 
-  return Count;
-}
-//---------------------------------------------------------------------------
-int __fastcall TImportForm::GetMode(String Ext, int Mode)
-// Return Mode as-is unless it's Auto - if it's Auto, try to pick a mode
-// based on sExt. sExt is lowercase and has the "." on entry...
-//
-// Modes:
-// IMPORT_MODE_AUTO   0
-// IMPORT_MODE_UTF8   1
-// IMPORT_MODE_ANSI   2
-{
-  if (Mode != IMPORT_MODE_AUTO)
-    return Mode;
-
-  if (Ext == ".m3u8" || Ext == ".wpl" || Ext == ".asx" || Ext == ".wax" ||
-                        Ext == ".wmx" || Ext == ".wvx" || Ext == ".xspf")
-    return IMPORT_MODE_UTF8;
-
-  if (Ext == ".m3u" || Ext == ".pls")
-    return IMPORT_MODE_ANSI;
-
-  return Mode;
+  return f->Count-originalListCount;
 }
 //---------------------------------------------------------------------------
 int __fastcall TImportForm::XmlParser(TPlaylistForm* f, String sExt, String sIn, String sPath)
@@ -330,115 +338,143 @@ int __fastcall TImportForm::XmlParser(TPlaylistForm* f, String sExt, String sIn,
   bool bDecodePercentCodes = sExt == "xspf" ? true : false;
   bool bDecodeXmlCodes = sType == "href" || sExt == "wpl" ? true : false;
 
-  int Count = 0;
+  TStringList* sl = NULL;
+  int originalListCount = f->Count;
 
   try
   {
-    // parse out control chars and line terminators (result will be in s)
-    String s;
-    for (int ii = 1; ii <= sIn.Length(); ii++)
-      if ((unsigned int)sIn[ii] >= SPACE)
-        s += sIn[ii];
-
-    int OriginalLength = s.Length();
-
-    String sTag, sUrl;
-
-    bool bTagParse = false;
-    bool bUrlParse = false;
-
-    // Use sIn as a temp string to see if we are UTF-8.... if we are, don't need to convert
-    int iTemp = s.Length();
-    iTemp = iTemp >= 500 ? 500 : iTemp;
-    sIn = s.SubString(1, iTemp).LowerCase();
-
-    TProgressForm::Init(OriginalLength);
-
-    for (int ii = 1; ii <= OriginalLength; ii++)
+    try
     {
-      if (bTagParse)
+      // parse out control chars and line terminators (result will be in s)
+      String s;
+      for (int ii = 1; ii <= sIn.Length(); ii++)
+        if ((unsigned int)sIn[ii] >= SPACE)
+          s += sIn[ii];
+
+      int OriginalLength = s.Length();
+
+      String sTag, sUrl;
+
+      bool bTagParse = false;
+      bool bUrlParse = false;
+
+      // Use sIn as a temp string to see if we are UTF-8.... if we are, don't need to convert
+      int iTemp = s.Length();
+      iTemp = iTemp >= 500 ? 500 : iTemp;
+      sIn = s.SubString(1, iTemp).LowerCase();
+
+      sl = new TStringList();
+
+      ProgressForm->Init(OriginalLength);
+
+      for (int ii = 1; ii <= OriginalLength; ii++)
       {
-        if (s[ii] == '>')
+        if (bTagParse)
         {
-          // we have some sort of complete tag...
-
-          sTag = sTag.Trim();
-          int len = sTag.Length();
-
-          if (len > 0)
+          if (s[ii] == '>')
           {
-            String sTagLower = sTag.LowerCase();
+            // we have some sort of complete tag...
 
-            // tag is <xxx href> or <xxx location> or <xxx source>
-            if (sTagLower.Pos(sType) > 0)
+            sTag = sTag.Trim();
+            int len = sTag.Length();
+
+            if (len > 0)
             {
-              // come here for both an opening or a closing tag!
-              bool bTagHasUrl = (!bUrlParse && sTag[len] == '/');
-              bool bClosingTag = sTag[1] == '/'; // S.S. 7/21/16 add bClosingTag
+              String sTagLower = sTag.LowerCase();
 
-              if (bTagHasUrl || (bUrlParse && bClosingTag)) // S.S. 7/21/16 change to !bClosingTag
+              // tag is <xxx href> or <xxx location> or <xxx source>
+              if (sTagLower.Pos(sType) > 0)
               {
-                if (bTagHasUrl)
-                  sUrl = sTag;
+                // come here for both an opening or a closing tag!
+                bool bTagHasUrl = (!bUrlParse && sTag[len] == '/');
+                bool bClosingTag = sTag[1] == '/'; // S.S. 7/21/16 add bClosingTag
 
-                // can be "<media source = "this &amp; file" />"
-                // or "<ref href = "this file" />"
-                // or "<location = 'this file'/>"
-                // or "<location>this file</location>"
-                // or "<source> "this file" </source>"
-                // or "<ref HREF> 'this file' </href>"
-                if (ParseFileLine(sUrl, bTagHasUrl)) // returns sUrl by-reference, cleaned-up...
+                if (bTagHasUrl || (bUrlParse && bClosingTag)) // S.S. 7/21/16 change to !bClosingTag
                 {
-                  sUrl = StripCrLfAndTrim(sUrl);
+                  if (bTagHasUrl)
+                    sUrl = sTag;
 
-                  if (bDecodePercentCodes)
-                    sUrl = ReplacePercentCodes(sUrl);
-                  if (bDecodeXmlCodes)
-                    sUrl = ReplaceXmlCodes(sUrl);
-
-                  String Ext = ExtractFileExt(sUrl).LowerCase();
-
-                  if (Ext.IsEmpty() && DirectoryExists(sUrl))
+                  // can be "<media source = "this &amp; file" />"
+                  // or "<ref href = "this file" />"
+                  // or "<location = 'this file'/>"
+                  // or "<location>this file</location>"
+                  // or "<source> "this file" </source>"
+                  // or "<ref HREF> 'this file' </href>"
+                  if (ParseFileLine(sUrl, bTagHasUrl)) // returns sUrl by-reference, cleaned-up...
                   {
-                    SetCurrentDir(sUrl);
-                    MainForm->AddAllSongsToListBox(f); // recurse add folder and sub-folder's songs to list
-                  }
-                  if (ReplaceRelativePath(sUrl, sPath)) // returns sUrl as an absolute path...
-                    if (MainForm->AddFileToListBox(f, sUrl))
-                      Count++;
-                }
+                    sUrl = StripCrLfAndTrim(sUrl);
 
-                bUrlParse = false;
-              }
-              else if (!bUrlParse && !bClosingTag) // S.S. 7/21/16 add !bClosingTag
-              {
-                sUrl = "";
-                bUrlParse = true; // start of url string next char
+                    if (bDecodePercentCodes)
+                      sUrl = ReplacePercentCodes(sUrl);
+                    if (bDecodeXmlCodes)
+                      sUrl = ReplaceXmlCodes(sUrl);
+
+                    sl->Add(sUrl); // add to string-list
+                  }
+
+                  bUrlParse = false;
+                }
+                else if (!bUrlParse && !bClosingTag) // S.S. 7/21/16 add !bClosingTag
+                {
+                  sUrl = "";
+                  bUrlParse = true; // start of url string next char
+                }
               }
             }
+
+            bTagParse = false;
+          }
+          else
+            sTag += s[ii];
+        }
+        else if (s[ii] == '<')
+        {
+          sTag = "";
+          bTagParse = true;
+        }
+        else if (bUrlParse)
+          sUrl += s[ii]; // accumulate Url in Tag string
+
+        ProgressForm->Move(ii-1);
+      }
+
+      if (sl->Count)
+      {
+        ProgressForm->Init(sl->Count);
+
+        for (int ii = 0; ii < sl->Count; ii++)
+        {
+          sUrl = sl->Strings[ii];
+          String Ext = ExtractFileExt(sUrl).LowerCase();
+
+          if (Ext.IsEmpty() && DirectoryExists(sUrl))
+          {
+            SetCurrentDir(sUrl);
+            MainForm->AddAllSongsToListBox(f); // recurse add folder and sub-folder's songs to list
+          }
+          else
+          {
+            if (ReplaceRelativePath(sUrl, sPath)) // returns sUrl as an absolute path...
+              MainForm->AddFileToListBox(f, sUrl);
           }
 
-          bTagParse = false;
+          ProgressForm->Move(ii);
         }
-        else
-          sTag += s[ii];
       }
-      else if (s[ii] == '<')
-      {
-        sTag = "";
-        bTagParse = true;
-      }
-      else if (bUrlParse)
-        sUrl += s[ii]; // accumulate Url in Tag string
-
-      TProgressForm::Move(ii);
+    }
+    catch(...)
+    {
     }
   }
-  catch(...) { }
+  __finally
+  {
+    if (sl)
+      delete sl;
 
-  TProgressForm::UnInit();
+    ProgressForm->UnInit(true);
+  }
 
-  return Count;
+  return f->Count-originalListCount;
 }
 //---------------------------------------------------------------------------
 bool __fastcall TImportForm::ParseFileLine(String &sRef, bool bTagHasUrl)

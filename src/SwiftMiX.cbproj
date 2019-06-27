@@ -53,7 +53,7 @@
         <ProjectType>CppVCLApplication</ProjectType>
         <PackageImports>inet;$(PackageImports)</PackageImports>
         <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;Vcl;Vcl.Imaging;Vcl.Touch;Vcl.Samples;Vcl.Shell;$(DCC_Namespace)</DCC_Namespace>
-        <AllPackageLibs>rtl.lib;vcl.lib;vclx.lib;MyControls.lib</AllPackageLibs>
+        <AllPackageLibs>rtl.lib;vcl.lib;vclx.lib;MyControls.lib;User.lib</AllPackageLibs>
         <_TCHARMapping>char</_TCHARMapping>
         <Multithreaded>true</Multithreaded>
         <Icon_MainIcon>$(BDS)\bin\cbuilder_PROJECTICON.ico</Icon_MainIcon>
@@ -92,7 +92,7 @@
         <BCC_DisableFramePtrElimOpt>true</BCC_DisableFramePtrElimOpt>
         <BCC_DisableSpellChecking>true</BCC_DisableSpellChecking>
         <CLANG_UnwindTables>true</CLANG_UnwindTables>
-        <ILINK_LibraryPath>$(BDSLIB)\$(PLATFORM)\debug;$(ILINK_LibraryPath)</ILINK_LibraryPath>
+        <ILINK_LibraryPath>$(BDSLIB)\$(PLATFORM)\debug;..\MyControls\;$(ILINK_LibraryPath)</ILINK_LibraryPath>
         <ILINK_TranslatedLibraryPath>$(BDSLIB)\$(PLATFORM)\debug\$(LANGDIR);$(ILINK_TranslatedLibraryPath)</ILINK_TranslatedLibraryPath>
         <VerInfo_Locale>1033</VerInfo_Locale>
         <VerInfo_Keys>CompanyName=Discrete-Time Systems;FileDescription=$(MSBuildProjectName);FileVersion=1.56.0.0;InternalName=;LegalCopyright=2017;LegalTrademarks=;OriginalFilename=SwiftMiXeR.exe;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.56.0.0;Comments=</VerInfo_Keys>
@@ -105,11 +105,12 @@
         <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=1.67.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.67.0.0;Comments=</VerInfo_Keys>
         <Icon_MainIcon>SwiftMiX.ico</Icon_MainIcon>
         <DynamicRTL>false</DynamicRTL>
-        <LinkPackageStatics>rtl.lib;vcl.lib</LinkPackageStatics>
+        <LinkPackageStatics>rtl.lib;vcl.lib;vclx.lib;MyControls.lib</LinkPackageStatics>
         <UsePackages>false</UsePackages>
         <_TCHARMapping>wchar_t</_TCHARMapping>
         <BRCC_IncludePath>$(BDSINCLUDE)\windows\sdk;$(BRCC_IncludePath)</BRCC_IncludePath>
         <AppDPIAwarenessMode>PerMonitor</AppDPIAwarenessMode>
+        <BT_BuildType>Debug</BT_BuildType>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2)'!=''">
         <Defines>NDEBUG;$(Defines)</Defines>
@@ -122,10 +123,10 @@
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <VerInfo_Locale>1033</VerInfo_Locale>
         <Icon_MainIcon>SwiftMiX.ico</Icon_MainIcon>
-        <LinkPackageStatics>rtl.lib;vcl.lib;vclx.lib;MyControls.lib</LinkPackageStatics>
+        <LinkPackageStatics>rtl.lib;vcl.lib;vclx.lib;MyControls.lib;User.lib</LinkPackageStatics>
         <_TCHARMapping>wchar_t</_TCHARMapping>
-        <VerInfo_MinorVer>72</VerInfo_MinorVer>
-        <VerInfo_Keys>CompanyName=Discrete-Time Systems;FileDescription=$(MSBuildProjectName);FileVersion=1.72.0.0;InternalName=;LegalCopyright=2019;LegalTrademarks=;OriginalFilename=SwiftMiXeR.exe;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.72.0.0;Comments=</VerInfo_Keys>
+        <VerInfo_MinorVer>73</VerInfo_MinorVer>
+        <VerInfo_Keys>CompanyName=Discrete-Time Systems;FileDescription=$(MSBuildProjectName);FileVersion=1.73.0.0;InternalName=;LegalCopyright=2019;LegalTrademarks=;OriginalFilename=SwiftMiXeR.exe;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.73.0.0;Comments=</VerInfo_Keys>
         <BRCC_IncludePath>$(BDSINCLUDE)\windows\sdk;$(BRCC_IncludePath)</BRCC_IncludePath>
         <AppDPIAwarenessMode>PerMonitor</AppDPIAwarenessMode>
         <ILINK_LibraryPath>..\MyControls\;$(ILINK_LibraryPath)</ILINK_LibraryPath>
@@ -197,6 +198,10 @@
             <DependentOn>Main.h</DependentOn>
             <BuildOrder>2</BuildOrder>
         </CppCompile>
+        <CppCompile Include="MoveFiles.cpp">
+            <DependentOn>MoveFiles.h</DependentOn>
+            <BuildOrder>19</BuildOrder>
+        </CppCompile>
         <CppCompile Include="Progress.cpp">
             <Form>ProgressForm</Form>
             <FormType>dfm</FormType>
@@ -234,15 +239,15 @@
         <FormResources Include="Progress.dfm"/>
         <FormResources Include="Main.dfm"/>
         <FormResources Include="SMList.dfm"/>
-        <FormResources Include="FormSFDlg.dfm"/>
         <FormResources Include="FormDirDlg.dfm"/>
-        <FormResources Include="AutoSize.dfm"/>
-        <FormResources Include="About.dfm"/>
         <FormResources Include="FormExport.dfm"/>
+        <FormResources Include="About.dfm"/>
+        <FormResources Include="AutoSize.dfm"/>
         <FormResources Include="FormOFMSDlg.dfm"/>
+        <FormResources Include="FormSFDlg.dfm"/>
         <FormResources Include="FormImportMode.dfm"/>
-        <FormResources Include="FormImport.dfm"/>
         <FormResources Include="FormExportMode.dfm"/>
+        <FormResources Include="FormImport.dfm"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>

@@ -26,7 +26,5 @@ public:
   __property bool AutoScroll = {read = FAutoScroll, write = FAutoScroll};
 };
 //---------------------------------------------------------------------------
-extern PACKAGE TDirDlgForm *DirDlgForm;
-//---------------------------------------------------------------------------
 #endif
 

@@ -2,7 +2,7 @@
 #ifndef MainH
 #define MainH
 //---------------------------------------------------------------------------
-#define VERSION "1.72"
+#define VERSION "1.73"
 #define FREEWARE_EDITION true
 #define DEBUG_ON false // Include a debug console, use MainForm->CWrite("")
 //---------------------------------------------------------------------------
@@ -29,6 +29,7 @@
 #include "XmlTable.h"
 #include "RegHelper.h"
 #include "Progress.h"
+#include "MoveFiles.h"
 //#include "EnterKey.h"
 //#include "LicenseKey.h"
 #include "AutoSize.h"
@@ -130,7 +131,7 @@
 #define ADD_A_TITLE U"Player A"
 #define ADD_B_TITLE U"Player B"
 
-#define EXPORT_FILE L"MyList."
+#define EXPORT_FILE L"SwiftMiX"
 #define EXPORT_EXT L"wpl"
 #define IMPORT_EXT L"wpl"
 
@@ -278,7 +279,6 @@ __published:	// IDE-managed Components
   void __fastcall MenuAutoFitToDVDCDClick(TObject *Sender);
   void __fastcall FormDestroy(TObject *Sender);
   void __fastcall FormShow(TObject *Sender);
-  void __fastcall WindowsMediaPlayerError(TObject *Sender);
   void __fastcall MenuCacheFilesClick(TObject *Sender);
   void __fastcall StatusBar1MouseDown(TObject *Sender, TMouseButton Button, TShiftState Shift,
           int X, int Y);
@@ -286,13 +286,18 @@ __published:	// IDE-managed Components
           TUpDownDirection Direction);
   void __fastcall FPUpDownChangingEx(TObject *Sender, bool &AllowChange, int NewValue,
           TUpDownDirection Direction);
+  void __fastcall WindowsMediaPlayer2MediaError(TObject *Sender, LPDISPATCH Item);
+  void __fastcall WindowsMediaPlayer1MediaError(TObject *Sender, LPDISPATCH Item);
 
 private:	// User declarations
 #if DEBUG_ON
   void __fastcall CInit(void);
 #endif
+  bool __fastcall MyFileCopy(String sSource, String sDest, int idx, int list);
+  void __fastcall PromptRetry(void);
   void __fastcall CopyMusicFiles(TPlaylistForm* f, String wUserDir);
-  bool __fastcall PromptAbort(String s);
+  long __fastcall MyGFS(String sPath); // MyGetFileSize retry-portion
+  void __fastcall AutoFitToDVD(__int64 lBytesNeeded);
   String __fastcall DirectoryDialogW(String sInitialDir, String sTitle);
   bool __fastcall IsWinVistaOrHigher(void);
   void __fastcall ErrorCode(int Code);
@@ -339,8 +344,11 @@ private:	// User declarations
   String FsSaveDirA, FsSaveDirB; // open/save directory (UTF-8)
 
   bool FBypassFilters;
-
   unsigned FFilesAddedCount;
+
+  // used for MoveFiles.cpp
+  TList* pTMyFileCopyList; // list of TMyFileCopyList objects currently active
+  TList* pTFailedToCopyList; // list of TMyFileCopyList objects that failed to copy
 
 //  CWindowDock* FDock;
 
@@ -367,6 +375,11 @@ public:		// User declarations
   void __fastcall CWrite(String S);
 #endif
 
+  long __fastcall MyGetFileSize(String sPath);
+  void __fastcall ShowFailures(void);
+  void __fastcall ClearFailedToCopyList(void);
+  void __fastcall AddFailure(String sPath, int iIndex);
+  void __fastcall AddFailure(String sSource, String sDest, int iSource, int iList);
   bool __fastcall IsUri(String wIn);
   bool __fastcall IsFileUri(String wIn);
   void __fastcall ShowPlaylist(TPlaylistForm* f);
@@ -377,13 +390,13 @@ public:		// User declarations
   bool __fastcall FileDialog(TPlaylistForm* f, String &d, String t);
   void __fastcall LoadListWithDroppedFiles(TWMDropFiles &Msg, TPlaylistForm* f);
   bool __fastcall AddFileToListBox(TPlaylistForm* f, String sFile);
-  void __fastcall AddAllSongsToListBox(TPlaylistForm* f);
+  int __fastcall AddAllSongsToListBox(TPlaylistForm* f);
   AnsiString __fastcall WideToUtf8(WideString sIn);
 
   bool __fastcall WriteStringToFile(String sPath, String sInfo);
   String __fastcall GetSpecialFolder(int csidl);
-  bool __fastcall ShellCommand(String sVerb, String sFile, String sCmd, bool bWaitForCompletion=true);
-  bool __fastcall CopyFileToCache(TPlaylistForm* f, int idx, bool bWaitForCompletion);
+  bool __fastcall ShellCommand(String sVerb, String sFile, String sCmd, bool bWaitForCompletion);
+  bool __fastcall CopyFileToCache(TPlaylistForm* f, int idx);
   bool __fastcall DeleteCacheFile(TPlaylistForm* f, unsigned cacheNumber=0);
   String __fastcall GetURL(TCheckListBox* l, int idx);
 
@@ -412,7 +425,19 @@ public:		// User declarations
   __property int FadeAt = {read = FfadeAt};
   __property unsigned FilesAddedCount = {read = FFilesAddedCount};
   __property int MaxCacheFiles = {read = FMaxCacheFiles};
+  __property TList* MyFileCopyList = {read = pTMyFileCopyList};
+  __property TList* FailedToCopyList = {read = pTFailedToCopyList};
 };
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+class TFailVars
+{
+  public:
+    String m_sSource, m_sDest;
+    int m_iSource, m_iList;
+    int m_iRetryCount;
+};
+//---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 extern PACKAGE TMainForm *MainForm;
 extern const char Trial_Key[];

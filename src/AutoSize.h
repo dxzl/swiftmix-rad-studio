@@ -31,9 +31,7 @@ private:	// User declarations
 public:		// User declarations
   __fastcall TAutoSizeForm(TComponent* Owner);
 
-  __property __int64 DiskSize = {read = m_size64};
+  __property __int64 BytesOnMedia = {read = m_size64};
 };
-//---------------------------------------------------------------------------
-extern PACKAGE TAutoSizeForm *AutoSizeForm;
 //---------------------------------------------------------------------------
 #endif

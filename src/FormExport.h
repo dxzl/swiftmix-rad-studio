@@ -16,7 +16,6 @@ class TPlaylistForm;
 class TExportForm : public TForm
 {
 __published:	// IDE-managed Components
-  void __fastcall FormCreate(TObject *Sender);
   void __fastcall FormClose(TObject *Sender, TCloseAction &Action);
   void __fastcall FormDestroy(TObject *Sender);
 
@@ -31,9 +30,6 @@ private:	// User declarations
   bool __fastcall IsUri(String sIn);
   String __fastcall ProcessFileName(String &uName, String uListFullPath,
                             int Mode, bool bUncPathFormat);
-
-  TSFDlgForm* pSFDlg;
-  TExportModeForm* pExpModeDlg;
 
 public:		// User declarations
   __fastcall TExportForm(TComponent* Owner);

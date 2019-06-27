@@ -12,18 +12,10 @@ TExportForm *ExportForm;
 __fastcall TExportForm::TExportForm(TComponent* Owner)
   : TForm(Owner)
 {
-  pSFDlg = NULL;
-  pExpModeDlg = NULL;
 }
 //---------------------------------------------------------------------------
 __fastcall TExportForm::~TExportForm()
 {
-}
-//---------------------------------------------------------------------------
-void __fastcall TExportForm::FormCreate(TObject *Sender)
-{
-  Application->CreateForm(__classid(TSFDlgForm), &pSFDlg);
-  Application->CreateForm(__classid(TExportModeForm), &pExpModeDlg);
 }
 //---------------------------------------------------------------------------
 void __fastcall TExportForm::FormDestroy(TObject *Sender)
@@ -36,12 +28,6 @@ void __fastcall TExportForm::FormDestroy(TObject *Sender)
 void __fastcall TExportForm::FormClose(TObject *Sender,
       TCloseAction &Action)
 {
-  if (pSFDlg != NULL)
-    pSFDlg->Release();
-
-  if (pExpModeDlg != NULL)
-    pExpModeDlg->Release();
-
 #if DEBUG_ON
   MainForm->CWrite( "\r\nFormClose() in TExportForm()!\r\n");
 #endif
@@ -58,7 +44,7 @@ int __fastcall TExportForm::Dialog(TPlaylistForm* f, String d, String t)
   }
 #endif
 
-  if (f == NULL || pExpModeDlg == NULL || pSFDlg == NULL)
+  if (f == NULL)
     return 0;
 
   if (f->Count == 0 || f->PlayTag < 0)
@@ -66,58 +52,81 @@ int __fastcall TExportForm::Dialog(TPlaylistForm* f, String d, String t)
 
   int Count = -1;
 
+  TSFDlgForm* pSFDlg = NULL;
+  TExportModeForm* pExpModeDlg = NULL;
+
   try
   {
-    pSFDlg->Filters = String("All Files (*.*)|*.*|"
-                  "Windows Media (wpl)|*.wpl|"
-                  "MPEG UTF-8 (m3u8)|*.m3u8|"
-                  "MPEG ANSI (m3u)|*.m3u|"
-                  "Adv Stream XML (asx)|*.asx|"
-                  "XML Shareable (xspf)|*.xspf|"
-                  "Win Audio XML (wax)|*.wax|"
-                  "Windows XML (wmx)|*.wmx|"
-                  "Winamp (pls)|*.pls|"
-                  "Text (txt)|*.txt");
-
-    // Run the TSaveDialog and get a file name...
-    String uDefFile = String(EXPORT_FILE) + String(EXPORT_EXT);
-
-    if (pSFDlg->Execute(uDefFile, d, t) == FALSE)
-      return -1; // -1 will suppress an error-message
-
-    String uName = pSFDlg->FileName; // Get UTF-8 filepath
-
-    if (uName.IsEmpty())
-      return -1;
-
-    String sPlayer = f == ListA ? "A" : "B";
-    pExpModeDlg->Title = "Export Player " + sPlayer + " List";
-    pExpModeDlg->FileName = uName;
-    pExpModeDlg->Mode = EXPORT_PATH_ABSOLUTE;
-
-    if (pExpModeDlg->ShowModal() == mrCancel)
-      return -1;
-
-    String wName = pSFDlg->FileName;
-    bool bFileExists = FileExists(wName);
-
-    if (bFileExists)
+    try
     {
-      String sMsg = String("File Already Exists:\n\n\"") +  wName +
-                                            String("\"\n\nOverwrite it?");
+      Application->CreateForm(__classid(TSFDlgForm), &pSFDlg);
+      Application->CreateForm(__classid(TExportModeForm), &pExpModeDlg);
 
-      int button = MessageBox(MainForm->Handle, sMsg.w_str(),
-              L"File Exists", MB_YESNO + MB_ICONQUESTION + MB_DEFBUTTON1);
+      if (pSFDlg == NULL || pExpModeDlg == NULL)
+        return -2;
 
-      if (button == IDNO)
-        return -1; // Don't print error message
+      pSFDlg->Filters = String("All Files (*.*)|*.*|"
+                    "Windows Media (wpl)|*.wpl|"
+                    "MPEG UTF-8 (m3u8)|*.m3u8|"
+                    "MPEG ANSI (m3u)|*.m3u|"
+                    "Adv Stream XML (asx)|*.asx|"
+                    "XML Shareable (xspf)|*.xspf|"
+                    "Win Audio XML (wax)|*.wax|"
+                    "Windows XML (wmx)|*.wmx|"
+                    "Winamp (pls)|*.pls|"
+                    "Text (txt)|*.txt");
+
+      // Run the TSaveDialog and get a file name...
+      String sPlayer = (f == ListA) ? "A" : "B";
+      String uDefFile = String(EXPORT_FILE) + sPlayer + "." + String(EXPORT_EXT);
+
+      if (pSFDlg->Execute(uDefFile, d, t) == FALSE)
+        return -1; // -1 will suppress an error-message
+
+      String uName = pSFDlg->FileName; // Get UTF-8 filepath
+
+      if (uName.IsEmpty())
+        return -1;
+
+      pExpModeDlg->Title = "Export Player " + sPlayer + " List";
+      pExpModeDlg->FileName = uName;
+      pExpModeDlg->Mode = EXPORT_PATH_ABSOLUTE;
+
+      if (pExpModeDlg->ShowModal() == mrCancel)
+        return -1;
+
+      String wName = pSFDlg->FileName;
+      bool bFileExists = FileExists(wName);
+
+      if (bFileExists)
+      {
+        String sMsg = String("File Already Exists:\n\n\"") +  wName +
+                                              String("\"\n\nOverwrite it?");
+
+        int button = MessageBox(MainForm->Handle, sMsg.w_str(),
+                L"File Exists", MB_YESNO + MB_ICONQUESTION + MB_DEFBUTTON1);
+
+        if (button == IDNO)
+          return -1; // Don't print error message
+      }
+
+      // Gets the count of items exported
+      Count = NoDialog(f, wName, pExpModeDlg->Mode, pExpModeDlg->Encoding,
+                      pExpModeDlg->UncPathFmt, pExpModeDlg->WriteBOM);
     }
-
-    // Gets the count of items exported
-    Count = NoDialog(f, wName, pExpModeDlg->Mode, pExpModeDlg->Encoding,
-                    pExpModeDlg->UncPathFmt, pExpModeDlg->WriteBOM);
+    catch(...)
+    {
+      return -3;
+    }
   }
-  catch(...) {}
+  __finally
+  {
+    if (pExpModeDlg != NULL)
+      pExpModeDlg->Release();
+
+    if (pSFDlg != NULL)
+      pSFDlg->Release();
+  }
 
   return Count;
 }
@@ -153,6 +162,7 @@ int __fastcall TExportForm::NoDialog(TPlaylistForm* f, String uListFullPath,
   try
   {
     int len = f->Count;
+    ProgressForm->Init(len);
 
     String Ext = ExtractFileExt(uListFullPath).LowerCase();
 
@@ -162,8 +172,6 @@ int __fastcall TExportForm::NoDialog(TPlaylistForm* f, String uListFullPath,
     MainForm->ExportExt = Ext; // Save as UTF-8
 
     String sTemp, sSavePrefix;
-
-    TProgressForm::Init(len);
 
     String sEnc;
     if (Enc == EXPORT_MODE_ANSI)
@@ -193,7 +201,7 @@ int __fastcall TExportForm::NoDialog(TPlaylistForm* f, String uListFullPath,
       {
         try
         {
-          String sName = MainForm->GetURL(f->CheckBox, ii);
+          String sName = f->CheckBox->Items->Strings[ii];
 
           if (sName.IsEmpty()) continue;
 
@@ -214,7 +222,7 @@ int __fastcall TExportForm::NoDialog(TPlaylistForm* f, String uListFullPath,
         }
         catch(...) { }
 
-        TProgressForm::Move(ii);
+        ProgressForm->Move(ii);
       }
       sl->Add("   </seq>");
       sl->Add(" </body>");
@@ -230,7 +238,7 @@ int __fastcall TExportForm::NoDialog(TPlaylistForm* f, String uListFullPath,
       {
         try
         {
-          String sName = MainForm->GetURL(f->CheckBox, ii);
+          String sName = f->CheckBox->Items->Strings[ii];
 
           if (sName.IsEmpty()) continue;
 
@@ -257,7 +265,7 @@ int __fastcall TExportForm::NoDialog(TPlaylistForm* f, String uListFullPath,
         }
         catch(...) { }
 
-        TProgressForm::Move(ii);
+        ProgressForm->Move(ii);
       }
 
       sl->Add(" </tracklist>");
@@ -273,7 +281,7 @@ int __fastcall TExportForm::NoDialog(TPlaylistForm* f, String uListFullPath,
       {
         try
         {
-          String sName = MainForm->GetURL(f->CheckBox, ii);
+          String sName = f->CheckBox->Items->Strings[ii];
 
           if (sName.IsEmpty()) continue;
 
@@ -295,7 +303,7 @@ int __fastcall TExportForm::NoDialog(TPlaylistForm* f, String uListFullPath,
         }
         catch(...) { }
 
-        TProgressForm::Move(ii);
+        ProgressForm->Move(ii);
       }
 
       sl->Add("</ASX>");
@@ -308,7 +316,7 @@ int __fastcall TExportForm::NoDialog(TPlaylistForm* f, String uListFullPath,
       {
         try
         {
-          String sName = MainForm->GetURL(f->CheckBox, ii);
+          String sName = f->CheckBox->Items->Strings[ii];
 
           if (sName.IsEmpty()) continue;
 
@@ -333,7 +341,7 @@ int __fastcall TExportForm::NoDialog(TPlaylistForm* f, String uListFullPath,
         }
         catch(...) { }
 
-        TProgressForm::Move(ii);
+        ProgressForm->Move(ii);
       }
 
       sl->Add("NumberOfEntries=" + String(Count));
@@ -346,7 +354,7 @@ int __fastcall TExportForm::NoDialog(TPlaylistForm* f, String uListFullPath,
       {
         try
         {
-          String sName = MainForm->GetURL(f->CheckBox, ii);
+          String sName = f->CheckBox->Items->Strings[ii];
 
           if (sName.IsEmpty()) continue;
 
@@ -368,7 +376,7 @@ int __fastcall TExportForm::NoDialog(TPlaylistForm* f, String uListFullPath,
         }
         catch(...) { }
 
-        TProgressForm::Move(ii);
+        ProgressForm->Move(ii);
       }
     }
 
@@ -389,7 +397,7 @@ int __fastcall TExportForm::NoDialog(TPlaylistForm* f, String uListFullPath,
       sl->SaveToFile(uListFullPath, enc);
     }
 
-    TProgressForm::UnInit();
+    ProgressForm->UnInit();
   }
   catch(...) { ShowMessage("Error In NoDialog()"); }
 

@@ -21,6 +21,19 @@ void __fastcall TExportModeForm::FormCreate(TObject *Sender)
 {
   Left = MainForm->Left + MainForm->Width/2 - Width/2;
   Top = MainForm->Top + MainForm->Height/2 - Height/2;
+
+  LabelHint->Hint = "Hint: Use the top option if you intend to make a DVD.\n"
+                     "For example: Create a folder called Root on your desktop.\n"
+                     "Now create a folder in Root called Music.\n"
+                     "Copy your mp3 files into Music.\n"
+                     "Drag-drop either Root or Music onto a SwiftMiX player.\n"
+                     "A playlist will pop up.\n"
+                     "In the player's menu choose Export Playlist.\n"
+                     "Choose the top option here and save your playlist in \"Root\".\n"
+                     "Now just drag Music and the playlist into your DVD burn-folder.\n"
+                     "When the DVD is burned, open it in File-Explorer and drag\n"
+                     "its playlist onto either SwiftMiX player.";
+  LabelHint->ShowHint = true;
 }
 //---------------------------------------------------------------------------
 void __fastcall TExportModeForm::FormDestroy(TObject *Sender)
