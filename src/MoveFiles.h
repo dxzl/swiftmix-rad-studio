@@ -11,10 +11,14 @@
 #define FILE_BUF_SIZE 65536
 
 // 50ms after instantiating a TMyFileCopy, a TTimer fires and calls MyFileCopy()
+// (TODO: need timer handler "mode" constants rather than checking for "different m_timerInterval values!)
 #define TIME_FILECOPY_INITIAL 50
+#define TIME_FILECOPY_DESTROY 300
 #define TIME_FILECOPY_TIMEOUT 10000 // timeout
 #define MAX_TMyFileCopy_OBJECTS 10
 //---------------------------------------------------------------------------
+class TPlaylistForm; // forward reference
+
 class TMyFileCopy
 {
   private:
@@ -27,6 +31,7 @@ class TMyFileCopy
     int m_retCode, m_idx, m_list;
     int m_timerInterval;
     bool m_bCancel, m_bTimeout;
+    TPlaylistForm* m_plForm;
 
     TTimer* pTimer;
 
@@ -35,7 +40,8 @@ class TMyFileCopy
 
   public:
 
-    __fastcall TMyFileCopy(TComponent* Owner, String sSource, String sDest, int idx, int list);
+    __fastcall TMyFileCopy(TComponent* Owner, String sSource, String sDest, int idx);
+//    __fastcall TMfFileCopy(TPlaylistForm* f, String sSource, String sDest, int idx);
     __fastcall ~TMyFileCopy(void);
 
     int __fastcall MyFileCopy(String sSource, String sDest, int idx, int list);

@@ -18,6 +18,7 @@
 #define EXPORT_PATH_RELATIVE       0
 #define EXPORT_PATH_ROOTED         1
 #define EXPORT_PATH_ABSOLUTE       2
+#define EXPORT_PATH_SWIFTMIX       100 // special mode, not in list
 //---------------------------------------------------------------------------
 class TExportModeForm : public TForm
 {

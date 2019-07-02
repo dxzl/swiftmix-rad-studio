@@ -81,9 +81,34 @@ int __fastcall TImportForm::Dialog(TPlaylistForm* f, String d, String t)
       {
         String Ext = ExtractFileExt(pOFMSDlg->FileName).LowerCase();
 
-        // Set the "suggested" mode when the dialog opens...
-        pImpModeDlg->Mode = this->GetMode(Ext, IMPORT_MODE_AUTO);
-        pImpModeDlg->OurTitle = "File-type: \"" + Ext + "\"";
+        int iTempMode = GetMode(Ext);
+
+        //  IMPORT_MODE_NONE     (-1)
+        //  IMPORT_MODE_AUTO      0
+        //  IMPORT_MODE_UTF8      1
+        //  IMPORT_MODE_ANSI      2
+        //  IMPORT_MODE_UTF16     3
+        //  IMPORT_MODE_UTF16BE   4
+        String sMode;
+        switch(iTempMode)
+        {
+          case IMPORT_MODE_UTF8:
+            sMode = "UTF-8";
+          break;
+          case IMPORT_MODE_ANSI:
+            sMode = "ANSI";
+          break;
+          case IMPORT_MODE_UTF16:
+            sMode = "UTF-16";
+          break;
+          case IMPORT_MODE_UTF16BE:
+            sMode = "UTF-16BE";
+          break;
+          default:
+          break;
+        }
+
+        pImpModeDlg->OurTitle = "File-type: \"" + Ext + "\" " + sMode;
 
         if (pImpModeDlg->ShowModal() == mrCancel)
           return -1; // -1 is cancel
@@ -108,9 +133,8 @@ int __fastcall TImportForm::Dialog(TPlaylistForm* f, String d, String t)
   return -1; // canceled
 }
 //---------------------------------------------------------------------------
-int __fastcall TImportForm::GetMode(String Ext, int Mode)
-// Return Mode as-is unless it's Auto - if it's Auto, try to pick a mode
-// based on sExt. sExt is lowercase and has the "." on entry...
+int __fastcall TImportForm::GetMode(String Ext)
+// Return Mode a mode based on sExt. sExt is lowercase and has the "." on entry...
 //
 // Modes:
 // IMPORT_MODE_NONE     (-1)
@@ -120,17 +144,14 @@ int __fastcall TImportForm::GetMode(String Ext, int Mode)
 // IMPORT_MODE_UTF16     3
 // IMPORT_MODE_UTF16BE   4
 {
-  if (Mode != IMPORT_MODE_AUTO)
-    return Mode;
-
-  if (Ext == ".m3u8" || Ext == ".wpl" || Ext == ".asx" || Ext == ".wax" ||
-                        Ext == ".wmx" || Ext == ".wvx" || Ext == ".xspf")
-    return IMPORT_MODE_UTF8;
+//  if (Ext == ".m3u8" || Ext == ".wpl" || Ext == ".asx" || Ext == ".wax" ||
+//                        Ext == ".wmx" || Ext == ".wvx" || Ext == ".xspf")
+//    return IMPORT_MODE_UTF8;
 
   if (Ext == ".m3u" || Ext == ".pls")
     return IMPORT_MODE_ANSI;
 
-  return Mode;
+  return IMPORT_MODE_UTF8;
 }
 //---------------------------------------------------------------------------
 // returns the # of songs added
@@ -213,26 +234,20 @@ int __fastcall TImportForm::NoDialog(TPlaylistForm* f, String sPath, int Mode)
       {
         TEncoding* enc;
 
+        // auto-set mode
         if (Mode == IMPORT_MODE_AUTO)
-        {
-          if (Ext == "m3u8")
-            sl->LoadFromFile(sPath, TEncoding::UTF8);
-          else
-            sl->LoadFromFile(sPath); // auto, uses BOM if present or ANSI if not
-        }
-        else
-        {
-          if (Mode == IMPORT_MODE_ANSI)
-            enc = TEncoding::ANSI;
-          else if (Mode == IMPORT_MODE_UTF16)
-            enc = TEncoding::Unicode;
-          else if (Mode == IMPORT_MODE_UTF16BE)
-            enc = TEncoding::BigEndianUnicode;
-          else
-            enc = TEncoding::UTF8;
+          Mode = this->GetMode(Ext);
 
-          sl->LoadFromFile(sPath, enc);
-        }
+        if (Mode == IMPORT_MODE_ANSI)
+          enc = TEncoding::ANSI;
+        else if (Mode == IMPORT_MODE_UTF16)
+          enc = TEncoding::Unicode;
+        else if (Mode == IMPORT_MODE_UTF16BE)
+          enc = TEncoding::BigEndianUnicode;
+        else
+          enc = TEncoding::UTF8;
+
+        sl->LoadFromFile(sPath, enc);
       }
 
       if (sl->Count == 0)
@@ -264,9 +279,10 @@ int __fastcall TImportForm::NoDialog(TPlaylistForm* f, String sPath, int Mode)
             else if (ReplaceRelativePath(sFile, sPath)) // returns sFile as an absolute path...
               MainForm->AddFileToListBox(f, sFile);
 
-            ProgressForm->Move(ii);
+            if (ProgressForm->Move(ii))
+              break;
           }
-          catch(...) { }
+          catch(...) { ShowMessage("Exception thrown in TImportForm::NoDialog()! (1)"); }
         }
       }
       else
@@ -300,19 +316,22 @@ int __fastcall TImportForm::NoDialog(TPlaylistForm* f, String sPath, int Mode)
               else if (ReplaceRelativePath(sFile, sPath)) // returns sFile as an absolute path...
                 MainForm->AddFileToListBox(f, sFile);
 
-              ProgressForm->Move(ii);
+              if (ProgressForm->Move(ii))
+                break;
             }
-            catch(...) { }
+            catch(...) { ShowMessage("Exception thrown in TImportForm::NoDialog()! (2)"); }
           }
         }
       }
     }
-    catch(...) { ShowMessage("Unable to Import list!"); }
+    catch(...) { ShowMessage("Exception thrown in TImportForm::NoDialog()!"); }
   }
   // NOTE: Unlike C#, __finally does NOT get called if we execute a return!!!
   __finally
   {
-    try { if (sl != NULL) delete sl; } catch(...) {}
+    if (sl)
+      delete sl;
+
     ProgressForm->UnInit(true);
   }
 
@@ -338,7 +357,7 @@ int __fastcall TImportForm::XmlParser(TPlaylistForm* f, String sExt, String sIn,
   bool bDecodePercentCodes = sExt == "xspf" ? true : false;
   bool bDecodeXmlCodes = sType == "href" || sExt == "wpl" ? true : false;
 
-  TStringList* sl = NULL;
+  TStringList* xsl = NULL;
   int originalListCount = f->Count;
 
   try
@@ -363,7 +382,7 @@ int __fastcall TImportForm::XmlParser(TPlaylistForm* f, String sExt, String sIn,
       iTemp = iTemp >= 500 ? 500 : iTemp;
       sIn = s.SubString(1, iTemp).LowerCase();
 
-      sl = new TStringList();
+      xsl = new TStringList();
 
       ProgressForm->Init(OriginalLength);
 
@@ -409,7 +428,7 @@ int __fastcall TImportForm::XmlParser(TPlaylistForm* f, String sExt, String sIn,
                     if (bDecodeXmlCodes)
                       sUrl = ReplaceXmlCodes(sUrl);
 
-                    sl->Add(sUrl); // add to string-list
+                    xsl->Add(sUrl); // add to string-list
                   }
 
                   bUrlParse = false;
@@ -435,16 +454,17 @@ int __fastcall TImportForm::XmlParser(TPlaylistForm* f, String sExt, String sIn,
         else if (bUrlParse)
           sUrl += s[ii]; // accumulate Url in Tag string
 
-        ProgressForm->Move(ii-1);
+        if (ProgressForm->Move(ii-1))
+          break;
       }
 
-      if (sl->Count)
+      if (xsl->Count)
       {
-        ProgressForm->Init(sl->Count);
+        ProgressForm->Init(xsl->Count);
 
-        for (int ii = 0; ii < sl->Count; ii++)
+        for (int ii = 0; ii < xsl->Count; ii++)
         {
-          sUrl = sl->Strings[ii];
+          sUrl = xsl->Strings[ii];
           String Ext = ExtractFileExt(sUrl).LowerCase();
 
           if (Ext.IsEmpty() && DirectoryExists(sUrl))
@@ -458,20 +478,19 @@ int __fastcall TImportForm::XmlParser(TPlaylistForm* f, String sExt, String sIn,
               MainForm->AddFileToListBox(f, sUrl);
           }
 
-          ProgressForm->Move(ii);
+          if (ProgressForm->Move(ii))
+            break;
         }
       }
     }
-    catch(...)
-    {
-    }
+    catch(...){ ShowMessage("Exception thrown in TImportForm::XmlParser()!"); }
   }
   __finally
   {
-    if (sl)
-      delete sl;
+    if (xsl)
+      delete xsl;
 
-    ProgressForm->UnInit(true);
+    ProgressForm->UnInit();
   }
 
   return f->Count-originalListCount;
@@ -532,7 +551,11 @@ bool __fastcall TImportForm::ParseFileLine(String &sRef, bool bTagHasUrl)
 
     return true;
   }
-  catch(...) { return false; }
+  catch(...)
+  {
+    ShowMessage("Exception thrown in TImportForm::ParseFileLine()!");
+    return false;
+  }
 }
 //---------------------------------------------------------------------------
 bool __fastcall TImportForm::ReplaceRelativePath(String &sFile, String sPath)
@@ -584,7 +607,11 @@ bool __fastcall TImportForm::ReplaceRelativePath(String &sFile, String sPath)
     SetCurrentDir(sTemp);
     return true;
   }
-  catch(...) { return false; }
+  catch(...)
+  {
+    ShowMessage("Exception thrown in TImportForm::ReplaceRelativePath()!");
+    return false;
+  }
 }
 //---------------------------------------------------------------------------
 String __fastcall TImportForm::StripCrLfAndTrim(String sIn)
@@ -680,7 +707,7 @@ bool __fastcall TImportForm::ReadIniFile(String sIniPath, TStringList* sl)
     catch(const std::exception& e)
     {
 #if DEBUG_ON
-      MainForm->CWrite("\r\nReadIniFile() Exception:\r\n" + String(e.what()) + "\r\n");
+      MainForm->CWrite("\r\nException thrown in TImportForm::ReadIniFile():\r\n" + String(e.what()) + "\r\n");
 #endif
     }
   }

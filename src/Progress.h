@@ -8,7 +8,7 @@
 #include <Forms.hpp>
 #include <ComCtrls.hpp>
 
-#define DEFAULT_MIN 5 // progress bar shows up only if >= 5 items to process
+#define DEFAULT_MIN 20 // progress bar shows up only if >= 20 items to process
 
 #define PROGRESS_MODE_NORMAL     0
 #define PROGRESS_MODE_CUMULATIVE 1
@@ -49,7 +49,7 @@ public:		// User declarations
 
   int __fastcall Init(int maxIterations);
   int __fastcall Init(int maxIterations, int minLimit);
-  void __fastcall Move(int newVal);
+  bool __fastcall Move(int newVal);
   void __fastcall UnInit(bool bReset=false);
 
   __property int ProgressMode = {read = FProgressMode, write = FProgressMode};

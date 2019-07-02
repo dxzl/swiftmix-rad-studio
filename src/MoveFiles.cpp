@@ -4,14 +4,21 @@
 #pragma hdrstop
 
 #include "MoveFiles.h"
+#include "SMList.h"
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
 //---------------------------------------------------------------------------
 // NOTE: TProgressForm creates and manages TMyFileCopy objects!
-__fastcall TMyFileCopy::TMyFileCopy(TComponent* Owner, String sSource, String sDest, int idx, int list)
+
+// Pass in a TPlaylistForm* as Owner!
+__fastcall TMyFileCopy::TMyFileCopy(TComponent* Owner, String sSource, String sDest, int idx)
+//__fastcall TMyFileCopy::TMyFileCopy(TPlaylistForm* f, String sSource, String sDest, int idx)
 {
-  if (!MainForm->MyFileCopyList)
+  if (!Owner || !MainForm->MyFileCopyList)
     return;
+
+  m_plForm = (TPlaylistForm*)Owner;
+  m_list = (m_plForm == ListA) ? 0 : 1;
 
   // add ourself's object-pointer to TList in the parent form (TProgress)
   MainForm->MyFileCopyList->Add(this);
@@ -19,7 +26,6 @@ __fastcall TMyFileCopy::TMyFileCopy(TComponent* Owner, String sSource, String sD
   m_sSource = sSource;
   m_sDest = sDest;
   m_idx = idx;
-  m_list = idx;
 
   // file handles
   m_fr = NULL;
@@ -71,40 +77,46 @@ __fastcall TMyFileCopy::~TMyFileCopy(void)
   }
   catch(...)
   {
-    ShowMessage("Exception in TMyFileCopy destructor!");
+#if DEBUG_ON
+    MainForm->CWrite( "\r\nTMyFileCopy::~TMyFileCopy(): Exception in TMyFileCopy destructor!: \"" + m_sSource +"\"\r\n");
+#endif
   }
 }
 //---------------------------------------------------------------------------
 int __fastcall TMyFileCopy::MyFileCopy(String sSource, String sDest, int idx, int list)
 {
-  String sSaveAUrl, sSaveBUrl;
+//  String sSaveAUrl, sSaveBUrl;
   Byte* pBuf = NULL;
 
   try
   {
     try
     {
-      pTimer->Enabled = false; // don't wand any timeouts while opening files
+      // this timeout will keep resetting in the file read/write loop...
+      pTimer->Enabled = false;
+      m_timerInterval = TIME_FILECOPY_TIMEOUT;
+      pTimer->Interval = m_timerInterval;
+      pTimer->Enabled = true;
 
       long lFileLength = MainForm->MyGetFileSize(sSource);
       m_lTotalWritten = 0;
 
-      m_timerInterval = TIME_FILECOPY_TIMEOUT;
-
       m_bCancel = false;
       m_bTimeout = false;
 
+// NOTE: don't need this since I discovered the problem was actually the file-sharing mode
+// being opened for MyGetFileSize() in FormMain.cpp!
       // save Wmp URLs - we can't copy the files if Windows Media Player has them locked!!!
-      if (ListA->Wmp->URL == sSource)
-      {
-        sSaveAUrl = ListA->Wmp->URL;
-        ListA->Wmp->URL = "dummy.mp3";
-      }
-      if (ListB->Wmp->URL == sSource)
-      {
-        sSaveBUrl = ListB->Wmp->URL;
-        ListB->Wmp->URL = "dummy.mp3";
-      }
+//      if (ListA->Wmp->URL == sSource)
+//      {
+//        sSaveAUrl = ListA->Wmp->URL;
+//        ListA->Wmp->URL = "dummy.mp3";
+//      }
+//      if (ListB->Wmp->URL == sSource)
+//      {
+//        sSaveBUrl = ListB->Wmp->URL;
+//        ListB->Wmp->URL = "dummy.mp3";
+//      }
 
       if (m_fr)
         FileClose(m_fr);
@@ -127,12 +139,10 @@ int __fastcall TMyFileCopy::MyFileCopy(String sSource, String sDest, int idx, in
 
       for(;;)
       {
-        Application->ProcessMessages();
-
-        // start a failsafe timeout between 64K buffer-writes
+        // stop failsafe timeout
         pTimer->Enabled = false;
-        pTimer->Interval = m_timerInterval;
-        pTimer->Enabled = true;
+
+        Application->ProcessMessages();
 
         if (this->m_bCancel)
         {
@@ -149,6 +159,10 @@ int __fastcall TMyFileCopy::MyFileCopy(String sSource, String sDest, int idx, in
 #endif
           return -4;
         }
+
+        // restart the main timeout timer
+        pTimer->Interval = m_timerInterval;
+        pTimer->Enabled = true;
 
         long br = FileRead(m_fr, pBuf, iBufSize);
 
@@ -168,12 +182,12 @@ int __fastcall TMyFileCopy::MyFileCopy(String sSource, String sDest, int idx, in
     }
     catch(...)
     {
-      return -5;
+      return -6;
     }
   }
   __finally
   {
-    pTimer->Enabled = false; // cancel timeout
+    pTimer->Enabled = false;
 
     if (m_fr)
     {
@@ -190,27 +204,16 @@ int __fastcall TMyFileCopy::MyFileCopy(String sSource, String sDest, int idx, in
       delete [] pBuf;
 
     // restore saved Wmp URLs
-    if (sSaveAUrl.Length() > 0)
-      ListA->Wmp->URL = sSaveAUrl;
-    if (sSaveBUrl.Length() > 0)
-      ListB->Wmp->URL = sSaveBUrl;
+//    if (sSaveAUrl.Length() > 0)
+//      ListA->Wmp->URL = sSaveAUrl;
+//    if (sSaveBUrl.Length() > 0)
+//      ListB->Wmp->URL = sSaveBUrl;
 
     // clean up failure
     if (this->m_bCancel || this->m_bTimeout)
     {
       if (FileExists(m_sDest))
         DeleteFile(m_sDest);
-
-      // this is kind of ballsy... daring... restarting the file-copy
-      // after it timed out !!!!!!!!!!!!!!!!!!!
-//      if (this->m_bTimeout && MainForm && FileExists(m_sSource))
-//      {
-//#if DEBUG_ON
-//    MainForm->CWrite( "\r\nTMyFileCopy::MyFileCopy(): RETRY AFTER TIMEOUT OF: \"" +
-//                    m_sSource + "\"\r\nTO:\"" + m_sDest + "\"\r\n");
-//#endif
-//        MainForm->MyFileCopy(m_sSource, m_sDest);
-//      }
     }
   }
 
@@ -224,30 +227,89 @@ void __fastcall TMyFileCopy::TimerEvent(TObject* Sender)
 
   Application->ProcessMessages();
 
-  // m_timerInterval
-  if (pTimer->Interval == TIME_FILECOPY_TIMEOUT)
+  if (m_timerInterval == TIME_FILECOPY_INITIAL)
   {
+    // MyFileCopy, sets a timeout also - which will re-enter TimerEvent()
+    // and take the TIME_FILECOPY_TIMEOUT path
+    m_retCode = this->MyFileCopy(m_sSource, m_sDest, m_idx, m_list);
+
+    // do a retry retry if error and not user-cancel
+    if (m_retCode != -1 && m_retCode != 0)
+    {
+      // copy and overwrite (failed should have been deleted)
+      // this will delete successfully copied files from the fail-list - then,
+      // you can call ShowFailures and it should show nothing!
+      if (!CopyFile(this->m_sSource.c_str(), this->m_sDest.c_str(), false))
+        if (MainForm->FailedToCopyList)
+          MainForm->AddFailure(this->m_sSource, this->m_sDest, this->m_idx, this->m_list);
+
 #if DEBUG_ON
-    MainForm->CWrite( "\r\nTMyFileCopy::TimerEvent(): setting m_bTimeout 10-sec timeout: \"" + m_sSource +"\"\r\n");
-#endif
-
-    if (MainForm->FailedToCopyList)
-      MainForm->AddFailure(this->m_sSource, this->m_sDest, this->m_idx, this->m_list);
-
-    m_bTimeout = true;
-    Application->ProcessMessages();
-  }
-  else
-  {
-    m_retCode = this->MyFileCopy(this->m_sSource, this->m_sDest, this->m_idx, this->m_list);
-
-#if DEBUG_ON
-    if (m_retCode != 0)
       MainForm->CWrite( "\r\nTMyFileCopy::TimerEvent():retCode: " + String(m_retCode) +"\r\n");
 #endif
+    }
+    else // we're done! - set up to delete ourself!
+    {
+      // handle a cache-file write's special considerations...
+      if (m_idx >= 0 && m_idx < m_plForm->Count)
+      {
+        TPlayerURL* p = (TPlayerURL*)m_plForm->CheckBox->Items->Objects[m_idx];
+        if (p)
+        {
+          // was this a cache-write?
+          if (p->cacheNumber == -1 && m_plForm)
+          {
+          // set the calling TPlaylistForm's
+            p->cachePath = m_sDest;
+            p->cacheNumber = m_plForm->CacheCount+1; // all cache #s must be non-zero!
 
+            // delete the oldest file in the cache...
+            MainForm->DeleteCacheFile(m_plForm);
+
+            m_plForm->CacheCount++;
+
+            // if count is 0 (unlikely) - we've exceeded the # files in a 32 bit int
+            // of continuous playback... if so, just turn off caching and the files
+            // (up to MAX_CACHE_FILES) will be deleted on exit along with the directory
+            // containing them.
+            if (m_plForm->CacheCount == 0)
+               MainForm->CacheEnabled = false;
+    #if DEBUG_ON
+            MainForm->CWrite( "\r\nCache write success! \"" + m_sDest + "\"\r\n");
+    #endif
+          }
+          else
+            p->cacheNumber = 0; // make sure we clear this from -1 (cache write in-progress)
+        }
+      }
+    }
+
+    // we're done! - set up to go away (poof!!!)
+    m_timerInterval = TIME_FILECOPY_DESTROY;
+    pTimer->Interval = m_timerInterval;
+    pTimer->Enabled = true;
+  }
+  else if (m_timerInterval == TIME_FILECOPY_TIMEOUT)
+  {
+#if DEBUG_ON
+    MainForm->CWrite( "\r\nTMyFileCopy::TimerEvent(): 10-sec timeout, setting m_bTimeout (retry using CopyFile): \"" + m_sSource +"\"\r\n");
+#endif
+    // this will cleanly jog us out of a stuck read/write loop
+    // thanks to Application->ProcessMessages() - so the __finally block will
+    // execute in MyFileCopy() and
+    m_bTimeout = true;
+  }
+  else if (m_timerInterval == TIME_FILECOPY_DESTROY)
+  {
     delete this; // delete ourself (TMyFileCopy)
   }
+#if DEBUG_ON
+  else
+  {
+    MainForm->CWrite( "\r\nTMyFileCopy::TimerEvent(): UNKNOWN TIMER EVENT!!!!!!\r\n");
+  }
+#endif
+
+  Application->ProcessMessages();
 }
 //---------------------------------------------------------------------------
 //long __fastcall TMyFileCopy::MyGetFileSize(long h)

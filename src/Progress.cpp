@@ -20,7 +20,6 @@ __fastcall TProgressForm::TProgressForm(TComponent* Owner)
 void __fastcall TProgressForm::FormCreate(TObject *Sender)
 {
   this->Color = TColor(0xF5CFB8);
-  FCanceled = false;
   FCurrentMaxIterations = 0;
   FCumulativeIterations = 0;
   FProgressMode = PROGRESS_MODE_NORMAL; // other option is PROGRESS_MODE_CUMULATIVE
@@ -31,6 +30,7 @@ void __fastcall TProgressForm::FormCreate(TObject *Sender)
 
   ProgressBar->Min = 0;
   ProgressBar->Max = 100; // 100 percent complete
+  ShowCancelButton = true;
 
 // this is'nt finished as yet... may never be - hard to predict the future!
 //  FProgressMode = PROGRESS_MODE_CUMULATIVE; // other option is PROGRESS_MODE_NORMAL
@@ -88,7 +88,8 @@ void __fastcall TProgressForm::SetShowCancelButton(int Value)
   this->ButtonCancel->Visible = Value;
 }
 //---------------------------------------------------------------------------
-void __fastcall TProgressForm::Move(int Value)
+// returns the Canceled flag
+bool __fastcall TProgressForm::Move(int Value)
 {
   int iNewPos;
 
@@ -97,10 +98,14 @@ void __fastcall TProgressForm::Move(int Value)
 
   // MUST check position or GUI processing is very S L O W!
   if (this->ProgressBar->Position != iNewPos)
-  {
     this->ProgressBar->Position = iNewPos;
-    Application->ProcessMessages();
-  }
+
+  Application->ProcessMessages();
+
+  if (Application->Terminated || (int)GetAsyncKeyState(VK_ESCAPE) < 0)
+    this->FCanceled = true;
+
+  return this->FCanceled;
 }
 //---------------------------------------------------------------------------
 // overloaded...
@@ -129,6 +134,7 @@ int __fastcall TProgressForm::Init(int maxIterations, int minLimit)
   if (maxIterations >= minLimit)
     this->Visible = true;
 
+  FCanceled = false;
   Application->ProcessMessages();
   return pTProgressVarsList->Count;
 }

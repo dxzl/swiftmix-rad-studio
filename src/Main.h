@@ -2,7 +2,7 @@
 #ifndef MainH
 #define MainH
 //---------------------------------------------------------------------------
-#define VERSION "1.73"
+#define VERSION "1.74"
 #define FREEWARE_EDITION true
 #define DEBUG_ON false // Include a debug console, use MainForm->CWrite("")
 //---------------------------------------------------------------------------
@@ -128,10 +128,11 @@
 #define PLAYER_2 1
 //---------------------------------------------------------------------------
 // String constants
-#define ADD_A_TITLE U"Player A"
-#define ADD_B_TITLE U"Player B"
+#define ADD_A_TITLE L"Player A"
+#define ADD_B_TITLE L"Player B"
 
 #define EXPORT_FILE L"SwiftMiX"
+#define EXPORT_DIR L"SwiftMiX\\"
 #define EXPORT_EXT L"wpl"
 #define IMPORT_EXT L"wpl"
 
@@ -293,9 +294,9 @@ private:	// User declarations
 #if DEBUG_ON
   void __fastcall CInit(void);
 #endif
-  bool __fastcall MyFileCopy(String sSource, String sDest, int idx, int list);
+  int __fastcall MyFileCopy(TPlaylistForm* f, String &sDestDir, int idx, bool bCopyNow=false);
   void __fastcall PromptRetry(void);
-  void __fastcall CopyMusicFiles(TPlaylistForm* f, String wUserDir);
+  int __fastcall CopyMusicFiles(TPlaylistForm* f, String sUserDir);
   long __fastcall MyGFS(String sPath); // MyGetFileSize retry-portion
   void __fastcall AutoFitToDVD(__int64 lBytesNeeded);
   String __fastcall DirectoryDialogW(String sInitialDir, String sTitle);
@@ -314,7 +315,7 @@ private:	// User declarations
   bool __fastcall SetCheckmarkA(int v);
   bool __fastcall SetCheckmarkB(int v);
   __int64 __fastcall ComputeDiskSpace(int Mode);
-  unsigned __int64 __fastcall RandomRemove(unsigned __int64 TargetBytes);
+  __int64 __fastcall RandomRemove(__int64 TargetBytes);
   void __fastcall WMDropFile(TWMDropFiles &Msg);
   bool __fastcall DeleteDirAndFiles(String sDir);
   void __fastcall InitRegistryVars(void);
@@ -330,8 +331,9 @@ private:	// User declarations
   int FMaxCacheFiles; // volumes set in registry
 
   // Flags for registry settings
-  bool bTypeCenterFade, bModeManualFade, bSendTiming, bFileCacheEnabled;
+  bool bTypeCenterFade, bModeManualFade, bSendTiming;
   bool bRepeatModeA, bShuffleModeA, bRepeatModeB, bShuffleModeB;
+  bool bFileCacheEnabled;
 
   // Globals for Trial-Version
   bool bTrialFeaturesEnabled;
@@ -376,10 +378,11 @@ public:		// User declarations
 #endif
 
   long __fastcall MyGetFileSize(String sPath);
-  void __fastcall ShowFailures(void);
+  int __fastcall ShowFailures(void);
   void __fastcall ClearFailedToCopyList(void);
   void __fastcall AddFailure(String sPath, int iIndex);
   void __fastcall AddFailure(String sSource, String sDest, int iSource, int iList);
+  bool __fastcall IsSourcePathUri(String sIn);
   bool __fastcall IsUri(String wIn);
   bool __fastcall IsFileUri(String wIn);
   void __fastcall ShowPlaylist(TPlaylistForm* f);
@@ -397,7 +400,7 @@ public:		// User declarations
   String __fastcall GetSpecialFolder(int csidl);
   bool __fastcall ShellCommand(String sVerb, String sFile, String sCmd, bool bWaitForCompletion);
   bool __fastcall CopyFileToCache(TPlaylistForm* f, int idx);
-  bool __fastcall DeleteCacheFile(TPlaylistForm* f, unsigned cacheNumber=0);
+  bool __fastcall DeleteCacheFile(TPlaylistForm* f, long cacheNumber=0);
   String __fastcall GetURL(TCheckListBox* l, int idx);
 
   int RWM_SwiftMixPlay, RWM_SwiftMixTime, RWM_SwiftMixState;
@@ -419,7 +422,7 @@ public:		// User declarations
   __property bool RepeatModeB = {read = bRepeatModeB};
   __property bool ShuffleModeA = {read = bShuffleModeA};
   __property bool ShuffleModeB = {read = bShuffleModeB};
-  __property bool CacheEnabled = {read = bFileCacheEnabled};
+  __property bool CacheEnabled = {read = bFileCacheEnabled, write = bFileCacheEnabled};
   __property int VolA = {read = FvolA};
   __property int VolB = {read = FvolB};
   __property int FadeAt = {read = FfadeAt};

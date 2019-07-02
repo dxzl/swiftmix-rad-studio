@@ -17,15 +17,18 @@
 //---------------------------------------------------------------------------
 
 // Timer times
-#define TIME_300  300  // used to sort out what kine of check-box click we got
+#define TIME_2000 1000  // used to exit edit mode after up/down/left/right scroll-keys were pressed
+#define TIME_300  300  // used to sort out what kind of check-box click we got
 #define TIME_100  100  // used to delay for start/stop player
 
 // Timer modes
 #define TM_NULL                 0
 #define TM_START_PLAYER         1
 #define TM_NEXT_PLAYER          2
-#define TM_STOP_PLAYER          3
-#define TM_CHECKBOX_CLICK       4
+#define TM_FORCE_FADE           3
+#define TM_STOP_PLAYER          4
+#define TM_CHECKBOX_CLICK       5
+#define TM_SCROLL_KEY_PRESSED   6
 //---------------------------------------------------------------------------
 
 #define SONG_PATH_SIZE 4096
@@ -70,7 +73,7 @@ class TPlayerURL
     String cachePath;
     TColor color;
     bool bDownloaded;
-    unsigned cacheNumber; // has the current count of m_NumCachedFiles from FormMain
+    long cacheNumber; // has the current count of m_NumCachedFiles from FormMain
     TCheckBoxState state; // cbChecked indicates a playing song
     int listIndex;
 };
@@ -119,8 +122,8 @@ __published:  // IDE-managed Components
   void __fastcall CheckAllClick(TObject *Sender);
   void __fastcall UncheckAllClick(TObject *Sender);
   void __fastcall DeleteSelected1Click(TObject *Sender);
-  void __fastcall EditMode1Click(TObject *Sender);
-  void __fastcall ExitEditMode1Click(TObject *Sender);
+  void __fastcall EditModeClick(TObject *Sender);
+  void __fastcall ExitEditModeClick(TObject *Sender);
   void __fastcall DeleteSelectedClick(TObject *Sender);
   void __fastcall RemoveDuplicates1Click(TObject *Sender);
   void __fastcall RandomizeList1Click(TObject *Sender);
@@ -150,6 +153,7 @@ private:  // User declarations
   void __fastcall SetTimer(int mode, int time);
   void __fastcall CheckAllItems(void);
   void __fastcall WMListDropFile(TWMDropFiles &Msg);
+//  void __fastcall WMVListScroll(TWMScroll &Msg);
   void __fastcall WMSetText(TWMSetText &Msg);
 
   void __fastcall AddListItem(String s, TPlayerURL* p);
@@ -168,9 +172,9 @@ private:  // User declarations
   TWindowsMediaPlayer *FWmp, *FOtherWmp;
   int FNextIndex, FTargetIndex;
   TColor FTextColor;
-  bool FInEditMode;
+  bool FEditMode;
   bool FPlayerA;
-  int FCacheCount;
+  long FCacheCount;
 
   TOFMSDlgForm* pOFMSDlg;
   TExportForm* pExportDlg;
@@ -195,6 +199,7 @@ BEGIN_MESSAGE_MAP
 //  VCL_MESSAGE_HANDLER(WM_MOVE, TWMMove, WMMove)
   //add message handler for WM_DROPFILES
   VCL_MESSAGE_HANDLER(WM_DROPFILES, TWMDropFiles, WMListDropFile)
+//  MESSAGE_HANDLER(WM_VSCROLL, TWMScroll, WMVListScroll)
   //add message handler for WM_SETEXT (allows UTF-8 title-bar)
   MESSAGE_HANDLER(WM_SETTEXT, TWMSetText, WMSetText)
 
@@ -240,12 +245,12 @@ public:  // User declarations
   __property int NextIndex = {read = FNextIndex, write = FNextIndex};
   __property int TargetIndex = {read = FTargetIndex, write = FTargetIndex};
   __property bool PlayerA = {read = FPlayerA, write = FPlayerA};
-  __property bool InEditMode = {read = FInEditMode, write = FInEditMode};
+  __property bool InEditMode = {read = FEditMode};
   __property bool IsImportDlg = {read = GetIsImportDlg};
   __property bool IsExportDlg = {read = GetIsExportDlg};
   __property bool IsOpenDlg = {read = GetIsOpenDlg};
   __property TColor TextColor = {read = FTextColor};
-  __property int CacheCount = {read = FCacheCount, write = FCacheCount};
+  __property long CacheCount = {read = FCacheCount, write = FCacheCount};
   __property TCheckListBox* CheckBox = {read = FCheckBox};
 };
 //---------------------------------------------------------------------------

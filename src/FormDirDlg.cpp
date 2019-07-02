@@ -22,9 +22,9 @@ void __fastcall TDirDlgForm::FormDestroy(TObject *Sender)
   OleUninitialize();
 }
 //---------------------------------------------------------------------------
-WideString __fastcall TDirDlgForm::Execute(int nCSIDL)
+String __fastcall TDirDlgForm::Execute(int nCSIDL)
 {
-  WideString sOut;
+  String sOut;
   wchar_t pszPath[MAX_PATH+1];
   pszPath[0] = L'\0';
 
@@ -53,7 +53,7 @@ WideString __fastcall TDirDlgForm::Execute(int nCSIDL)
 //    SHGetKnownFolderPath(FOLDERID_Music, 0, NULL, pszPath);
 
     if (SHGetPathFromIDListW(stId, pszPath))
-      sOut = WideString(pszPath);
+      sOut = String(pszPath);
 
     CoTaskMemFree(stId);
   }

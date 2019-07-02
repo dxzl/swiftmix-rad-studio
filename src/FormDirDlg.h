@@ -20,7 +20,7 @@ protected:
   static INT CALLBACK BrowseCallbackProc(HWND hwnd, UINT uMsg, LPARAM lParam, LPARAM pData);
   static BOOL CALLBACK FindTreeViewCallback(HWND hwnd, LPARAM lParam);
 public:
-  WideString __fastcall Execute(int nCSIDL);
+  String __fastcall Execute(int nCSIDL);
 
   __property HWND DlgHandle = {read = FDlgHandle, write = FDlgHandle};
   __property bool AutoScroll = {read = FAutoScroll, write = FAutoScroll};

@@ -5,7 +5,6 @@
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
 #pragma resource "*.dfm"
-TExportForm *ExportForm;
 //---------------------------------------------------------------------------
 // See also: _wsplitpath, _wfnsplit, _wfnmerge, _wchdir, _wgetcwd, _wgetcurdir, _wmakepath, _wfullpath
 //---------------------------------------------------------------------------
@@ -78,32 +77,31 @@ int __fastcall TExportForm::Dialog(TPlaylistForm* f, String d, String t)
 
       // Run the TSaveDialog and get a file name...
       String sPlayer = (f == ListA) ? "A" : "B";
-      String uDefFile = String(EXPORT_FILE) + sPlayer + "." + String(EXPORT_EXT);
+      String sDefFile = String(EXPORT_FILE) + sPlayer + "." + String(EXPORT_EXT);
 
-      if (pSFDlg->Execute(uDefFile, d, t) == FALSE)
+      if (pSFDlg->Execute(sDefFile, d, t) == FALSE)
         return -1; // -1 will suppress an error-message
 
-      String uName = pSFDlg->FileName; // Get UTF-8 filepath
+      String sName = pSFDlg->FileName; // Get UTF-8 filepath
 
-      if (uName.IsEmpty())
+      if (sName.IsEmpty())
         return -1;
 
       pExpModeDlg->Title = "Export Player " + sPlayer + " List";
-      pExpModeDlg->FileName = uName;
+      pExpModeDlg->FileName = sName;
       pExpModeDlg->Mode = EXPORT_PATH_ABSOLUTE;
 
       if (pExpModeDlg->ShowModal() == mrCancel)
         return -1;
 
-      String wName = pSFDlg->FileName;
-      bool bFileExists = FileExists(wName);
+      bool bFileExists = FileExists(sName);
 
       if (bFileExists)
       {
-        String sMsg = String("File Already Exists:\n\n\"") +  wName +
+        String sMsg = String("File Already Exists:\n\n\"") +  sName +
                                               String("\"\n\nOverwrite it?");
 
-        int button = MessageBox(MainForm->Handle, sMsg.w_str(),
+        int button = MessageBox(MainForm->Handle, sMsg.c_str(),
                 L"File Exists", MB_YESNO + MB_ICONQUESTION + MB_DEFBUTTON1);
 
         if (button == IDNO)
@@ -111,7 +109,7 @@ int __fastcall TExportForm::Dialog(TPlaylistForm* f, String d, String t)
       }
 
       // Gets the count of items exported
-      Count = NoDialog(f, wName, pExpModeDlg->Mode, pExpModeDlg->Encoding,
+      Count = NoDialog(f, sName, pExpModeDlg->Mode, pExpModeDlg->Encoding,
                       pExpModeDlg->UncPathFmt, pExpModeDlg->WriteBOM);
     }
     catch(...)
@@ -131,20 +129,20 @@ int __fastcall TExportForm::Dialog(TPlaylistForm* f, String d, String t)
   return Count;
 }
 //---------------------------------------------------------------------------
-int __fastcall TExportForm::NoDialog(TPlaylistForm* f, String uListFullPath,
+int __fastcall TExportForm::NoDialog(TPlaylistForm* f, String sListPath,
                   int Mode, int Enc, bool bUncPathFormat, bool bWriteBOM)
 //
-// uListFullPath must be UTF-8 (we use MainForm->WriteStringToFileW() to save the UTF-8 TStringList()...
-// (we use the vcl's ansi string-parsing functions on uListFullPath - they work on a utf-8 string
+// sListPath must be UTF-8 (we use MainForm->WriteStringToFileW() to save the UTF-8 TStringList()...
+// (we use the vcl's ansi string-parsing functions on sListPath - they work on a utf-8 string
 // but not on a WideString)
 //
 // The bSaveAsAnsi and bUncPathFormat flags pertain to the file-paths in the play-list
 //
 // Mode
+// EXPORT_PATH_NONE           (-1)
 // EXPORT_PATH_RELATIVE       0
 // EXPORT_PATH_ROOTED         1
 // EXPORT_PATH_ABSOLUTE       2
-// EXPORT_PATH_NONE           3
 {
   if (f == NULL)
     return 0;
@@ -164,7 +162,7 @@ int __fastcall TExportForm::NoDialog(TPlaylistForm* f, String uListFullPath,
     int len = f->Count;
     ProgressForm->Init(len);
 
-    String Ext = ExtractFileExt(uListFullPath).LowerCase();
+    String Ext = ExtractFileExt(sListPath).LowerCase();
 
     if (Ext.Length() > 0 && Ext.Pos(".") == 1)
       Ext.Delete(1, 1);
@@ -192,7 +190,7 @@ int __fastcall TExportForm::NoDialog(TPlaylistForm* f, String uListFullPath,
       // <meta name="Generator" content="Microsoft Windows Media Player -- 12.0.9600.17415"/>
       // <meta name="ItemCount" content="85"/>
       sl->Add("   <meta name=\"Generator\" content=\"SwiftMiX Player -- " + String(VERSION) + "\"/>");
-      sl->Add("   <title>" + ExtractFileName(uListFullPath) + "</title>");
+      sl->Add("   <title>" + ExtractFileName(sListPath) + "</title>");
       sl->Add(" </head>");
       sl->Add(" <body>");
       sl->Add("   <seq>");
@@ -210,7 +208,7 @@ int __fastcall TExportForm::NoDialog(TPlaylistForm* f, String uListFullPath,
               sName = sName.Insert("file://", 1);
 
           // Note: sName is returned as a ref with the song-title (filename)
-          sTemp = ProcessFileName(sName, uListFullPath, Mode, bUncPathFormat);
+          sTemp = ProcessFileName(sListPath, sName, Mode, bUncPathFormat);
 
           if (!sTemp.IsEmpty())
           {
@@ -222,8 +220,10 @@ int __fastcall TExportForm::NoDialog(TPlaylistForm* f, String uListFullPath,
         }
         catch(...) { }
 
-        ProgressForm->Move(ii);
+        if (ProgressForm->Move(ii))
+          break;
       }
+
       sl->Add("   </seq>");
       sl->Add(" </body>");
       sl->Add("</smil>");
@@ -247,7 +247,7 @@ int __fastcall TExportForm::NoDialog(TPlaylistForm* f, String uListFullPath,
             sName = sName.Insert("file://", 1);
 
           // Note: sName is returned as a ref with the song-title (filename)
-          sTemp = ProcessFileName(sName, uListFullPath, Mode, bUncPathFormat);
+          sTemp = ProcessFileName(sListPath, sName, Mode, bUncPathFormat);
 
           if (!sTemp.IsEmpty())
           {
@@ -265,7 +265,8 @@ int __fastcall TExportForm::NoDialog(TPlaylistForm* f, String uListFullPath,
         }
         catch(...) { }
 
-        ProgressForm->Move(ii);
+        if (ProgressForm->Move(ii))
+          break;
       }
 
       sl->Add(" </tracklist>");
@@ -275,7 +276,7 @@ int __fastcall TExportForm::NoDialog(TPlaylistForm* f, String uListFullPath,
     {
       sl->Add("<ASX version = \"3.0\">");
       sl->Add("   <PARAM name = \"encoding\" value = " + sEnc + " />");
-      sl->Add("   <TITLE>" + ExtractFileName(uListFullPath) + "</TITLE>");
+      sl->Add("   <TITLE>" + ExtractFileName(sListPath) + "</TITLE>");
 
       for (int ii = 0 ; ii < len ; ii++)
       {
@@ -290,7 +291,7 @@ int __fastcall TExportForm::NoDialog(TPlaylistForm* f, String uListFullPath,
               sName = sName.Insert("file://", 1);
 
           // sName is returned by reference with the Title (filename)
-          sTemp = ProcessFileName(sName, uListFullPath, Mode, bUncPathFormat);
+          sTemp = ProcessFileName(sListPath, sName, Mode, bUncPathFormat);
 
           if (!sTemp.IsEmpty())
           {
@@ -303,7 +304,8 @@ int __fastcall TExportForm::NoDialog(TPlaylistForm* f, String uListFullPath,
         }
         catch(...) { }
 
-        ProgressForm->Move(ii);
+        if (ProgressForm->Move(ii))
+          break;
       }
 
       sl->Add("</ASX>");
@@ -325,7 +327,7 @@ int __fastcall TExportForm::NoDialog(TPlaylistForm* f, String uListFullPath,
               sName = sName.Insert("file://", 1);
 
           // Note: sName is returned as a ref with the song-title (filename)
-          sTemp = ProcessFileName(sName, uListFullPath, Mode, bUncPathFormat);
+          sTemp = ProcessFileName(sListPath, sName, Mode, bUncPathFormat);
 
           if (!sTemp.IsEmpty())
           {
@@ -341,7 +343,8 @@ int __fastcall TExportForm::NoDialog(TPlaylistForm* f, String uListFullPath,
         }
         catch(...) { }
 
-        ProgressForm->Move(ii);
+        if (ProgressForm->Move(ii))
+          break;
       }
 
       sl->Add("NumberOfEntries=" + String(Count));
@@ -363,7 +366,7 @@ int __fastcall TExportForm::NoDialog(TPlaylistForm* f, String uListFullPath,
               sName = sName.Insert("file://", 1);
 
           // Note: sName is returned as a ref with the song-title (filename)
-          sTemp = ProcessFileName(sName, uListFullPath, Mode, bUncPathFormat);
+          sTemp = ProcessFileName(sListPath, sName, Mode, bUncPathFormat);
 
           if (!sTemp.IsEmpty())
           {
@@ -376,7 +379,8 @@ int __fastcall TExportForm::NoDialog(TPlaylistForm* f, String uListFullPath,
         }
         catch(...) { }
 
-        ProgressForm->Move(ii);
+        if (ProgressForm->Move(ii))
+          break;
       }
     }
 
@@ -394,7 +398,7 @@ int __fastcall TExportForm::NoDialog(TPlaylistForm* f, String uListFullPath,
       else if (Enc == EXPORT_MODE_UTF16BE)
         enc = TEncoding::BigEndianUnicode;
 
-      sl->SaveToFile(uListFullPath, enc);
+      sl->SaveToFile(sListPath, enc);
     }
 
     ProgressForm->UnInit();
@@ -405,48 +409,48 @@ int __fastcall TExportForm::NoDialog(TPlaylistForm* f, String uListFullPath,
   return Count;
 }
 //---------------------------------------------------------------------------
-String __fastcall TExportForm::ProcessFileName(String &uName,
-        String uListFullPath, int Mode, bool bUncPathFormat)
-// uName is the full utf-8 file path from the list-box. It can be in
+String __fastcall TExportForm::ProcessFileName(String sListPath,
+                            String &sName, int Mode, bool bUncPathFormat)
+// sName is the full utf-8 file path from the list-box. It can be in
 // "file:/localhost/drive/path/file.ext" format
 // or like "C:\path\song.wma", "relative-path\song.wma",
 // "\rooted-relative-path\song.wma"
 // ".\path\song.wma", "..\path\song.wma", "./path/song.mp3"
-// uName contains the File name only on return
+// sName contains the File name only on return
 // We return the path we want to write into to the playlist
 {
   try
   {
-    String sTemp = uName;
+    String sSongPath = sName;
 
-    // Return the title (filename) in uName
-    uName = UniversalExtractFileName(sTemp);
+    // Return the title (filename) in reference-variable sName
+    sName = UniversalExtractFileName(sSongPath);
 
     // If it's a non-file URL like HTTP://, just return it as-is...
-    if (MainForm->IsUri(sTemp) && !MainForm->IsFileUri(sTemp))
-      return sTemp;
+    if (MainForm->IsUri(sSongPath) && !MainForm->IsFileUri(sSongPath))
+      return sSongPath;
 
     // Convert to "normal" file-path we can work with
-    String sSavePrefix = StripFileUriPrefixIfAny(sTemp);
+    String sSavePrefix = StripFileUriPrefixIfAny(sSongPath);
 
     // Ok, it's a file: URI. Convert to normal Windows path if needed and apply user path options...
-    sTemp = GetFileString(uListFullPath, sTemp, Mode); // add user-selected path options
+    sSongPath = GetFileString(sListPath, sSongPath, Mode); // add user-selected path options
 
     if (bUncPathFormat)
     {
-      sTemp = ReplaceStr(sTemp, "\\", "/");
+      sSongPath = ReplaceStr(sSongPath, "\\", "/");
 
       // FYI: Looks like Microsoft metafiles that have relative links HAVE to
       // be on the local server... then you access those playlists via an ASX
       // metafile at the client which has a <ENTRYREF HREF = "" />
       // that points to the remote playlist...
       if (Mode != EXPORT_PATH_RELATIVE)
-        sTemp = sTemp.Insert(sSavePrefix, 1); // put back the "file:/localhost/" part...
-      else if (sTemp.Pos("./") != 1) // don't keep adding more!
-        sTemp = sTemp.Insert("./", 1); // this is required for UNIX paths (ok for Windows too!)
+        sSongPath = sSongPath.Insert(sSavePrefix, 1); // put back the "file:/localhost/" part...
+      else if (sSongPath.Pos("./") != 1) // don't keep adding more!
+        sSongPath = sSongPath.Insert("./", 1); // this is required for UNIX paths (ok for Windows too!)
     }
 
-    return sTemp;
+    return sSongPath;
   }
   catch(...)
   {
@@ -455,16 +459,16 @@ String __fastcall TExportForm::ProcessFileName(String &uName,
   }
 }
 //---------------------------------------------------------------------------
-String __fastcall TExportForm::GetFileString(String uListFullPath,
-                                            String sSongFullPath, int Mode)
-// uListFullPath is the path/filename of the list we are writing to.
-// sSongFullPath is the path/filename of the song.
+String __fastcall TExportForm::GetFileString(String sListPath,
+                                            String sSongPath, int Mode)
+// sListPath is the path/filename of the list we are writing to.
+// sSongPath is the path/filename of the song.
 //
 // Mode:
+// EXPORT_PATH_NONE           (-1)
 // EXPORT_PATH_RELATIVE       0
 // EXPORT_PATH_ROOTED         1
 // EXPORT_PATH_ABSOLUTE       2
-// EXPORT_PATH_NONE           3
 //
 // Only call this with a path of the form "file:/localhost/drive/path/file.ext"
 //
@@ -474,7 +478,7 @@ String __fastcall TExportForm::GetFileString(String uListFullPath,
 //
 {
   // ANSI ReplaceAll should work ok on a UTF-8 path...
-  sSongFullPath = ReplaceStr(sSongFullPath, "/", "\\");
+  sSongPath = ReplaceStr(sSongPath, "/", "\\");
 
   try
   {
@@ -486,27 +490,47 @@ String __fastcall TExportForm::GetFileString(String uListFullPath,
       // drive than the list's RootPath
       // The relative path returned has no leading backslash. "..\..\" are
       // inserted automatically to go up.
-      try { sTemp = ExtractRelativePath(ExtractFilePath(uListFullPath), sSongFullPath); }
+      try
+      {
+        String sListDir = ExtractFilePath(sListPath); // this function adds a trailing backslash!
+
+        // this gives us a path relative to the old file's location...
+        sTemp = ExtractRelativePath(sListDir, sSongPath);
+      }
       catch(...) { ShowMessage("Error 1 In GetFileString()"); }
+
+    }
+    else if (Mode == EXPORT_PATH_SWIFTMIX)
+    {
+      try
+      {
+        String sListDir = ExtractFilePath(sListPath); // this function adds a trailing backslash!
+        String sNewSongPath = sListDir + String(EXPORT_DIR) + ExtractFileName(sSongPath);
+
+        // this gives us a path relative to the new (possibly yet to be written) file's destination...
+        sTemp = ExtractRelativePath(sListDir, sNewSongPath);
+      }
+      catch(...) { ShowMessage("Error 1 In GetFileString()"); }
+
     }
     else if (Mode == EXPORT_PATH_NONE)
-      sTemp = ExtractFileName(sSongFullPath);
+      sTemp = ExtractFileName(sSongPath); // filename only
     else if (Mode == EXPORT_PATH_ROOTED)
     {
-      String sDrive = ExtractFileDrive(sSongFullPath);
+      String sDrive = ExtractFileDrive(sSongPath);
 
       if (!sDrive.IsEmpty())
       {
-        int pos = uListFullPath.Pos(sDrive);
+        int pos = sListPath.Pos(sDrive);
         if (pos > 0)
         {
           TReplaceFlags rFlags = (TReplaceFlags() << rfIgnoreCase); // set StringReplace behavior
-          sTemp = StringReplace(sSongFullPath, sDrive, "", rFlags); // strip drive
+          sTemp = StringReplace(sSongPath, sDrive, "", rFlags); // strip drive
         }
       }
     }
     else // EXPORT_PATH_ABSOLUTE
-      sTemp = sSongFullPath;
+      sTemp = sSongPath;
 
     return sTemp;
   }
