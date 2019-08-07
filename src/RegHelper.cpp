@@ -18,7 +18,7 @@ __fastcall TRegHelper::TRegHelper(bool bCreate)
 {
   MyReg = new TRegistry();
 
-  if (MyReg == NULL)
+  if (!MyReg)
   {
 #if DEBUG_ON
     MainForm->CWrite( "\r\nUnable to create TMyRegistry()!\r\n");
@@ -46,7 +46,7 @@ __fastcall TRegHelper::~TRegHelper()
 {
   try
   {
-    if (MyReg != NULL)
+    if (MyReg)
     {
       if (bOpened)
         MyReg->CloseKey();

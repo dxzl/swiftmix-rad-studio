@@ -8,9 +8,9 @@
 #include <Forms.hpp>
 //---------------------------------------------------------------------------
 // Forward class references...
-class TOFMSDlgForm;
-class TImportModeForm;
-class TPlaylistForm;
+//class TOFMSDlgForm;
+//class TImportModeForm;
+//class TPlaylistForm;
 //---------------------------------------------------------------------------
 class TImportForm : public TForm
 {

@@ -717,7 +717,8 @@ bool __fastcall TOFMSDlgForm::PositionButton(HWND hDlg, int top, int left, int r
   return FALSE;
 }
 //---------------------------------------------------------------------------
-bool __fastcall TOFMSDlgForm::GetSelectedItems(void)
+// bRaw defaults false. set it true to bypass
+bool __fastcall TOFMSDlgForm::GetSelectedItems(bool bRaw)
 {
   HWND hListView = this->m_hListView;
 
@@ -788,7 +789,7 @@ bool __fastcall TOFMSDlgForm::GetSelectedItems(void)
               bool bIsDirectory = false;
 
               // wPath, bIsDirectory are by reference...
-              if (GetShortcut(wPath, bIsDirectory))
+              if (bRaw || MainForm->GetShortcut(wPath, bIsDirectory))
                 this->AddWideItem(wPath, bIsDirectory);
             }
 #if DEBUG_ON
@@ -834,134 +835,6 @@ bool __fastcall TOFMSDlgForm::GetSelectedItems(void)
   }
 
   return bRet;
-}
-//---------------------------------------------------------------------------
-/*
- * returns true if there is a valid shortcut (that we had permission to open)
- */
-bool __fastcall TOFMSDlgForm::GetShortcut(String &wPath, bool &bIsDirectory)
-{
-  bIsDirectory = false;
-
-  if (MainForm->IsUri(wPath)) return true; // just
-
-  try
-  {
-#if DEBUG_ON
-    OFDbg->CWrite("\r\nGetShortcut() wPath: " + wPath +"\r\n");
-#endif
-
-    // Do this first because we might have a .lnk file with no extension in our list-view control.
-    if (DirectoryExists(wPath))
-    {
-      bIsDirectory = true;
-      return true;
-    }
-
-    if (FileExists(wPath))
-    {
-      if (ExtractFileExt(wPath).LowerCase() == ".lnk")
-      {
-        wPath = GetShortcutTarget(wPath);
-
-        if (FileExists(wPath))
-          return true;
-
-        if (DirectoryExists(wPath))
-        {
-          bIsDirectory = true;
-          return true;
-        }
-      }
-      else
-        return true;
-    }
-    else
-    {
-      wPath += ".lnk"; // case where the .lnk extension is not displayed in the list-view control
-
-#if DEBUG_ON
-      OFDbg->CWrite("\r\nCheck file: " + wPath + "\r\n");
-#endif
-      if (FileExists(wPath))
-      {
-        wPath = GetShortcutTarget(wPath);
-#if DEBUG_ON
-        OFDbg->CWrite("\r\nShortcut target: " + wPath + "\r\n");
-#endif
-
-        if (FileExists(wPath))
-        {
-#if DEBUG_ON
-          OFDbg->CWrite("\r\nShortcut exists: " + wPath + "\r\n");
-#endif
-          return true;
-        }
-
-        if (DirectoryExists(wPath))
-        {
-#if DEBUG_ON
-          OFDbg->CWrite("\r\nDirectory exists: " + wPath + "\r\n");
-#endif
-          bIsDirectory = true;
-          return true;
-        }
-      }
-    }
-  }
-  catch (...)
-  {
-#if DEBUG_ON
-    OFDbg->CWrite( "\r\nException in GetShortcut()\r\n");
-#endif
-  }
-
-  return false;
-}
-//---------------------------------------------------------------------------
-String __fastcall TOFMSDlgForm::GetShortcutTarget(String wPath)
-{
-  if (ExtractFileExt(wPath).LowerCase() != ".lnk")
-    return "";
-
-  String wOut = "";
-
-  CoInitialize(NULL);
-
-  try
-  {
-    IShellLinkW* psl = NULL;
-    IPersistFile* ppf = NULL;
-    TWin32FindDataW* wfs = NULL;
-
-    try
-    {
-      WideChar Info[MAX_PATH+1];
-
-      CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLinkW, (void**)&psl);
-      if (psl != NULL)
-      {
-        if (psl->QueryInterface(IID_IPersistFile, (void**)&ppf) == 0)
-        {
-          if (ppf != NULL)
-          {
-            ppf->Load(wPath.w_str(), STGM_READ);
-            psl->GetPath(Info, MAX_PATH, wfs, SLGP_UNCPRIORITY);
-            wOut = String(Info);
-          }
-        }
-      }
-    }
-    __finally
-    {
-      if (ppf) ppf->Release();
-      if (psl) psl->Release();
-      CoUninitialize();
-    }
-  }
-  catch(...) { }
-
-  return wOut;
 }
 //---------------------------------------------------------------------------
 String __fastcall TOFMSDlgForm::GetTextFromCommonDialog(HWND hDlg, UINT msg)
@@ -1559,7 +1432,7 @@ UINT CALLBACK TOFMSDlgForm::OFNHookProc(HWND hDlg, UINT msg, WPARAM wParam, LPAR
                     bool bIsDirectory = false;
 
                     // sPath, bIsDirectory are by reference...
-                    if (p->GetShortcut(sPath, bIsDirectory))
+                    if (MainForm->GetShortcut(sPath, bIsDirectory))
                       p->AddWideItem(sPath, bIsDirectory);
                   }
                 }
@@ -1720,10 +1593,13 @@ int __fastcall TOFMSDlgForm::ProcessNotifyMessage(HWND hDlg, LPOFNOTIFY p_notify
       HWND hParent = GetParent(hDlg);
 
       // Show current folder path in window-title-bar and in the file edit-box
-      String newFolder =
-                this->GetTextFromCommonDialog(hParent, CDM_GETFOLDERPATH);
+      String newFolder = this->GetTextFromCommonDialog(hParent, CDM_GETFOLDERPATH);
+      if (newFolder.IsEmpty())
+        newFolder = this->GetTextFromCommonDialog(hParent, CDM_GETFILEPATH);
+//        newFolder = MainForm->GetSpecialFolder(CSIDL_PROFILE);
 
-      if (!newFolder.IsEmpty() && this->FCurrentFolder != newFolder)
+      if (this->FCurrentFolder != newFolder)
+//      if (!newFolder.IsEmpty() && this->FCurrentFolder != newFolder)
       {
         this->FCurrentFolder = newFolder;
 

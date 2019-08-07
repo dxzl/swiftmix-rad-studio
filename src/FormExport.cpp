@@ -160,7 +160,7 @@ int __fastcall TExportForm::NoDialog(TPlaylistForm* f, String sListPath,
   try
   {
     int len = f->Count;
-    ProgressForm->Init(len);
+    f->Progress->Init(len);
 
     String Ext = ExtractFileExt(sListPath).LowerCase();
 
@@ -220,7 +220,7 @@ int __fastcall TExportForm::NoDialog(TPlaylistForm* f, String sListPath,
         }
         catch(...) { }
 
-        if (ProgressForm->Move(ii))
+        if (f->Progress->Move(ii))
           break;
       }
 
@@ -265,7 +265,7 @@ int __fastcall TExportForm::NoDialog(TPlaylistForm* f, String sListPath,
         }
         catch(...) { }
 
-        if (ProgressForm->Move(ii))
+        if (f->Progress->Move(ii))
           break;
       }
 
@@ -304,7 +304,7 @@ int __fastcall TExportForm::NoDialog(TPlaylistForm* f, String sListPath,
         }
         catch(...) { }
 
-        if (ProgressForm->Move(ii))
+        if (f->Progress->Move(ii))
           break;
       }
 
@@ -343,7 +343,7 @@ int __fastcall TExportForm::NoDialog(TPlaylistForm* f, String sListPath,
         }
         catch(...) { }
 
-        if (ProgressForm->Move(ii))
+        if (f->Progress->Move(ii))
           break;
       }
 
@@ -379,7 +379,7 @@ int __fastcall TExportForm::NoDialog(TPlaylistForm* f, String sListPath,
         }
         catch(...) { }
 
-        if (ProgressForm->Move(ii))
+        if (f->Progress->Move(ii))
           break;
       }
     }
@@ -401,7 +401,7 @@ int __fastcall TExportForm::NoDialog(TPlaylistForm* f, String sListPath,
       sl->SaveToFile(sListPath, enc);
     }
 
-    ProgressForm->UnInit();
+    f->Progress->UnInit();
   }
   catch(...) { ShowMessage("Error In NoDialog()"); }
 

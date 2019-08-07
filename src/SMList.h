@@ -25,10 +25,9 @@
 #define TM_NULL                 0
 #define TM_START_PLAYER         1
 #define TM_NEXT_PLAYER          2
-#define TM_FORCE_FADE           3
-#define TM_STOP_PLAYER          4
-#define TM_CHECKBOX_CLICK       5
-#define TM_SCROLL_KEY_PRESSED   6
+#define TM_STOP_PLAYER          3
+#define TM_CHECKBOX_CLICK       4
+#define TM_SCROLL_KEY_PRESSED   5
 //---------------------------------------------------------------------------
 
 #define SONG_PATH_SIZE 4096
@@ -72,7 +71,7 @@ class TPlayerURL
   public:
     String cachePath;
     TColor color;
-    bool bDownloaded;
+    bool bDownloaded, bIsUri;
     long cacheNumber; // has the current count of m_NumCachedFiles from FormMain
     TCheckBoxState state; // cbChecked indicates a playing song
     int listIndex;
@@ -105,7 +104,7 @@ __published:  // IDE-managed Components
   void __fastcall Timer1Timer(TObject *Sender);
   void __fastcall FlashTimerEvent(TObject *Sender);
   void __fastcall FormHide(TObject *Sender);
-  void __fastcall CheckBoxMouseMove(TObject *Sender, TShiftState Shift, int X, int Y);
+//  void __fastcall CheckBoxMouseMove(TObject *Sender, TShiftState Shift, int X, int Y);
   void __fastcall FormActivate(TObject *Sender);
   void __fastcall FormDeactivate(TObject *Sender);
   void __fastcall FormKeyDown(TObject *Sender, WORD &Key, TShiftState Shift);
@@ -116,7 +115,6 @@ __published:  // IDE-managed Components
   void __fastcall CheckBoxMouseDown(TObject *Sender, TMouseButton Button, TShiftState Shift, int X, int Y);
   void __fastcall CheckBoxDragDrop(TObject *Sender, TObject *Source, int X, int Y);
   void __fastcall CheckBoxDragOver(TObject *Sender, TObject *Source, int X, int Y, TDragState State, bool &Accept);
-  void __fastcall FormClose(TObject *Sender, TCloseAction &Action);
   void __fastcall FormCreate(TObject *Sender);
   void __fastcall ClearListClick(TObject *Sender);
   void __fastcall CheckAllClick(TObject *Sender);
@@ -137,6 +135,7 @@ __published:  // IDE-managed Components
   void __fastcall PlayStateChange(WMPPlayState NewState);
   void __fastcall PositionChange(double oldPosition, double newPosition);
   void __fastcall MediaError(LPDISPATCH Item);
+  void __fastcall FormClose(TObject *Sender, TCloseAction &Action);
 
 private:  // User declarations
 
@@ -179,6 +178,7 @@ private:  // User declarations
   TOFMSDlgForm* pOFMSDlg;
   TExportForm* pExportDlg;
   TImportForm* pImportDlg;
+  TProgressForm* pProgress;
 
   // Added to intercept a WM_SETTEXT and set unicode window captions
 //  Controls::TWndMethod OldWinProc;
@@ -213,6 +213,10 @@ END_MESSAGE_MAP(TForm)
 
 public:  // User declarations
 
+  void __fastcall DestroyImportDialog(void);
+  void __fastcall DestroyExportDialog(void);
+  void __fastcall DestroyProgressForm(void);
+  void __fastcall DestroyFileDialog(void);
   bool __fastcall QueueFirst(void);
   void __fastcall NextPlayer(bool bForceStartPlay = false);
   void __fastcall TimeDisplay(int t, int item);
@@ -222,15 +226,12 @@ public:  // User declarations
   void __fastcall SetTitle(void);
   String __fastcall GetNext(bool bNoSet = false, bool bEnableRandom = false);
   String __fastcall GetNextCheckCache(bool bNoSet = false, bool bEnableRandom = false);
-  void __fastcall DestroyImportDialog(void);
-  void __fastcall DestroyExportDialog(void);
-  void __fastcall DestroyFileDialog(void);
   TImportForm* __fastcall CreateImportDialog(void);
   TExportForm* __fastcall CreateExportDialog(void);
   TOFMSDlgForm* __fastcall CreateFileDialog(void);
   int __fastcall GetPlayTag(void);
-  void __fastcall AddListItem(String s, bool bDownloased=false);
-  TPlayerURL* __fastcall InitTPlayerURL(String s, bool bDownloaded=false);
+  void __fastcall AddListItem(String s);
+  TPlayerURL* __fastcall InitTPlayerURL(String s);
   void __fastcall DeleteListItem(int idx, bool bDeleteFromCache=true);
   bool __fastcall RestoreCache(void);
 
@@ -252,6 +253,7 @@ public:  // User declarations
   __property TColor TextColor = {read = FTextColor};
   __property long CacheCount = {read = FCacheCount, write = FCacheCount};
   __property TCheckListBox* CheckBox = {read = FCheckBox};
+  __property TProgressForm* Progress = {read = pProgress};
 };
 //---------------------------------------------------------------------------
 extern PACKAGE TPlaylistForm *ListA;

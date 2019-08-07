@@ -61,6 +61,4 @@ public:		// User declarations
   __property bool Canceled = {read = FCanceled};
 };
 //---------------------------------------------------------------------------
-extern PACKAGE TProgressForm *ProgressForm;
-//---------------------------------------------------------------------------
 #endif

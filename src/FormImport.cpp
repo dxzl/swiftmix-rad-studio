@@ -255,7 +255,7 @@ int __fastcall TImportForm::NoDialog(TPlaylistForm* f, String sPath, int Mode)
 
       if (Ext == "pls")
       {
-        ProgressForm->Init(sl->Count);
+        f->Progress->Init(sl->Count);
 
         // Read as plain-text, one file or URL per line
         for (int ii = 0; ii < sl->Count; ii++)
@@ -272,14 +272,11 @@ int __fastcall TImportForm::NoDialog(TPlaylistForm* f, String sPath, int Mode)
             String Ext = ExtractFileExt(sFile).LowerCase();
 
             if (Ext.IsEmpty() && DirectoryExists(sFile))
-            {
-              SetCurrentDir(sFile);
-              MainForm->AddAllSongsToListBox(f); // recurse add folder and sub-folder's songs to list
-            }
+              MainForm->AddAllSongsToListBox(f, sFile); // recurse add folder and sub-folder's songs to list
             else if (ReplaceRelativePath(sFile, sPath)) // returns sFile as an absolute path...
               MainForm->AddFileToListBox(f, sFile);
 
-            if (ProgressForm->Move(ii))
+            if (f->Progress->Move(ii))
               break;
           }
           catch(...) { ShowMessage("Exception thrown in TImportForm::NoDialog()! (1)"); }
@@ -292,7 +289,7 @@ int __fastcall TImportForm::NoDialog(TPlaylistForm* f, String sPath, int Mode)
 
         if (iCount == 0)
         {
-          ProgressForm->Init(sl->Count);
+          f->Progress->Init(sl->Count);
 
           // Read as plain-text, one file or URL per line
           for (int ii = 0; ii < sl->Count; ii++)
@@ -309,14 +306,11 @@ int __fastcall TImportForm::NoDialog(TPlaylistForm* f, String sPath, int Mode)
               String Ext = ExtractFileExt(sFile).LowerCase();
 
               if (Ext.IsEmpty() && DirectoryExists(sFile))
-              {
-                SetCurrentDir(sFile);
-                MainForm->AddAllSongsToListBox(f); // recurse add folder and sub-folder's songs to list
-              }
+                MainForm->AddAllSongsToListBox(f, sFile); // recurse add folder and sub-folder's songs to list
               else if (ReplaceRelativePath(sFile, sPath)) // returns sFile as an absolute path...
                 MainForm->AddFileToListBox(f, sFile);
 
-              if (ProgressForm->Move(ii))
+              if (f->Progress->Move(ii))
                 break;
             }
             catch(...) { ShowMessage("Exception thrown in TImportForm::NoDialog()! (2)"); }
@@ -332,7 +326,7 @@ int __fastcall TImportForm::NoDialog(TPlaylistForm* f, String sPath, int Mode)
     if (sl)
       delete sl;
 
-    ProgressForm->UnInit(true);
+    f->Progress->UnInit(true);
   }
 
   return f->Count-originalListCount;
@@ -384,7 +378,7 @@ int __fastcall TImportForm::XmlParser(TPlaylistForm* f, String sExt, String sIn,
 
       xsl = new TStringList();
 
-      ProgressForm->Init(OriginalLength);
+      f->Progress->Init(OriginalLength);
 
       for (int ii = 1; ii <= OriginalLength; ii++)
       {
@@ -454,13 +448,13 @@ int __fastcall TImportForm::XmlParser(TPlaylistForm* f, String sExt, String sIn,
         else if (bUrlParse)
           sUrl += s[ii]; // accumulate Url in Tag string
 
-        if (ProgressForm->Move(ii-1))
+        if (f->Progress->Move(ii-1))
           break;
       }
 
       if (xsl->Count)
       {
-        ProgressForm->Init(xsl->Count);
+        f->Progress->Init(xsl->Count);
 
         for (int ii = 0; ii < xsl->Count; ii++)
         {
@@ -468,17 +462,14 @@ int __fastcall TImportForm::XmlParser(TPlaylistForm* f, String sExt, String sIn,
           String Ext = ExtractFileExt(sUrl).LowerCase();
 
           if (Ext.IsEmpty() && DirectoryExists(sUrl))
-          {
-            SetCurrentDir(sUrl);
-            MainForm->AddAllSongsToListBox(f); // recurse add folder and sub-folder's songs to list
-          }
+            MainForm->AddAllSongsToListBox(f, sUrl); // recurse add folder and sub-folder's songs to list
           else
           {
             if (ReplaceRelativePath(sUrl, sPath)) // returns sUrl as an absolute path...
               MainForm->AddFileToListBox(f, sUrl);
           }
 
-          if (ProgressForm->Move(ii))
+          if (f->Progress->Move(ii))
             break;
         }
       }
@@ -490,7 +481,7 @@ int __fastcall TImportForm::XmlParser(TPlaylistForm* f, String sExt, String sIn,
     if (xsl)
       delete xsl;
 
-    ProgressForm->UnInit();
+    f->Progress->UnInit();
   }
 
   return f->Count-originalListCount;

@@ -7,10 +7,9 @@
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
 #pragma resource "*.dfm"
-TProgressForm *ProgressForm = NULL;
-
 //---------------------------------------------------------------------------
 // TProgressForm class methods - TMyFileCopy class methods are at the end...
+// We create a TProgressForm for each playlist, ListA and ListB!
 //---------------------------------------------------------------------------
 __fastcall TProgressForm::TProgressForm(TComponent* Owner)
   : TForm(Owner)
@@ -43,11 +42,14 @@ void __fastcall TProgressForm::FormDestroy(TObject *Sender)
     if (pTProgressVarsList->Count)
     {
       // have to go backward...
-      for(int ii = pTProgressVarsList->Count-1; ii >= 0 ; ii--)
+      while(pTProgressVarsList->Count)
       {
-        TProgressVars* p = (TProgressVars*)pTProgressVarsList->Items[ii];
+        TProgressVars* p = (TProgressVars*)pTProgressVarsList->Items[0];
+
         if (p)
           delete p;
+
+        pTProgressVarsList->Delete(0);
       }
     }
     delete pTProgressVarsList;
@@ -131,11 +133,11 @@ int __fastcall TProgressForm::Init(int maxIterations, int minLimit)
   FCurrentMaxIterations = maxIterations;
 
   // don't show the bar unless we have a worthwhile number of iterations
-  if (maxIterations >= minLimit)
+  if (maxIterations >= minLimit && !this->Visible)
     this->Visible = true;
 
   FCanceled = false;
-  Application->ProcessMessages();
+
   return pTProgressVarsList->Count;
 }
 //---------------------------------------------------------------------------

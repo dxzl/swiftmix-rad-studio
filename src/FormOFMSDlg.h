@@ -154,6 +154,7 @@ __published:	// IDE-managed Components
   void __fastcall FormCreate(TObject *Sender);
 
 private:
+  bool __fastcall UriIsDirectory(String sUri);
   WideChar* __fastcall SetFilter(void);
   wchar_t* __fastcall GetFilter(wchar_t* pFilterBuf, int iFilter, int iMax);
   int __fastcall FindFilter(wchar_t* pFilterBuf, wchar_t* pFilterToFind, int iMax);
@@ -161,10 +162,8 @@ private:
   bool __fastcall ResizeCustomControl(HWND hDlg);
   bool __fastcall PositionButton(HWND hDlg, int top, int left, int right);
   bool __fastcall LoadFontFrom(HWND hDlgDest, HWND hDlgSrc);
-  String __fastcall GetShortcutTarget(String file);
-  bool __fastcall GetShortcut(String &sPath, bool &bIsDirectory);
   bool __fastcall AddWideItem(String sPath, bool bIsDirectory);
-  bool __fastcall GetSelectedItems(void);
+  bool __fastcall GetSelectedItems(bool bRaw=false);
   String __fastcall GetTextFromCommonDialog(HWND hWnd, UINT msg);
   bool __fastcall InitDialog(HWND hDlg);
   String __fastcall GetNextFileName(void);

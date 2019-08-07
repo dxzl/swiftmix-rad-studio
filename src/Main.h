@@ -2,7 +2,7 @@
 #ifndef MainH
 #define MainH
 //---------------------------------------------------------------------------
-#define VERSION "1.74"
+#define VERSION "1.75"
 #define FREEWARE_EDITION true
 #define DEBUG_ON false // Include a debug console, use MainForm->CWrite("")
 //---------------------------------------------------------------------------
@@ -29,7 +29,8 @@
 #include "XmlTable.h"
 #include "RegHelper.h"
 #include "Progress.h"
-#include "MoveFiles.h"
+#include "CopyFiles.h"
+#include "CopyUrls.h"
 //#include "EnterKey.h"
 //#include "LicenseKey.h"
 #include "AutoSize.h"
@@ -55,7 +56,9 @@
 #define FILE_CACHE_PATH2 L"\\MusicMixer"
 
 #define MAX_CACHE_FILES 4 // max disk-cache files to keep for each player (so 8 total)
-#define URL_FILEMOVE_BUFSIZE 65536
+
+// max combination of both TMyFileCopy and TMyUrlCopy objects to allow
+#define MAX_TMyFileCopy_OBJECTS 10
 
 // Yahcolorize FindWindow
 #define YC_CLASS L"TDTSColor"
@@ -141,11 +144,6 @@
 // Forward class references
 //class TPlaylistForm;
 //---------------------------------------------------------------------------
-
-typedef HINTERNET WINAPI(*tInternetOpen)(LPCWSTR, DWORD, LPCWSTR, LPCWSTR, DWORD);
-typedef HINTERNET WINAPI(*tInternetOpenUrl)(HINTERNET, LPCWSTR, LPCWSTR, DWORD, DWORD, DWORD_PTR);
-typedef BOOL WINAPI(*tInternetCloseHandle)(HINTERNET);
-typedef BOOL WINAPI(*tInternetReadFile)(HINTERNET, LPVOID, DWORD, LPDWORD);
 
 class TMainForm : public TForm
 {
@@ -289,12 +287,16 @@ __published:	// IDE-managed Components
           TUpDownDirection Direction);
   void __fastcall WindowsMediaPlayer2MediaError(TObject *Sender, LPDISPATCH Item);
   void __fastcall WindowsMediaPlayer1MediaError(TObject *Sender, LPDISPATCH Item);
+  void __fastcall FormCloseQuery(TObject *Sender, bool &CanClose);
 
 private:	// User declarations
 #if DEBUG_ON
   void __fastcall CInit(void);
 #endif
-  int __fastcall MyFileCopy(TPlaylistForm* f, String &sDestDir, int idx, bool bCopyNow=false);
+  void __fastcall ProcessFileItem(TPlaylistForm* f, String s);
+  String __fastcall GetShortcutTarget(String file);
+  bool __fastcall UriIsDirectory(String sUri);
+  int __fastcall MyFileCopy(TPlaylistForm* f, String &sDestDir, int idx);
   void __fastcall PromptRetry(void);
   int __fastcall CopyMusicFiles(TPlaylistForm* f, String sUserDir);
   long __fastcall MyGFS(String sPath); // MyGetFileSize retry-portion
@@ -302,9 +304,11 @@ private:	// User declarations
   String __fastcall DirectoryDialogW(String sInitialDir, String sTitle);
   bool __fastcall IsWinVistaOrHigher(void);
   void __fastcall ErrorCode(int Code);
-  void __fastcall RecurseFileAdd(TStringList* slFiles);
-  void __fastcall AddFilesToStringList(TStringList* slFiles);
-  bool __fastcall IsAudioFile(String sFile);
+  void __fastcall RecurseFileAdd(TPlaylistForm* f, TStringList* slFiles);
+  void __fastcall FindFirstNextToStringLists(TStringList* slFiles, TStringList* slDirs);
+  bool __fastcall IsPlaylistPath(String sSourcePath);
+  bool __fastcall IsAudioFile(String sSourcePath);
+  bool __fastcall IsPlaylistExtension(String sExt);
   bool __fastcall SetVolumes(void);
   bool __fastcall SetVolumeA(int v);
   bool __fastcall SetVolumeA(void);
@@ -320,8 +324,6 @@ private:	// User declarations
   bool __fastcall DeleteDirAndFiles(String sDir);
   void __fastcall InitRegistryVars(void);
   bool __fastcall InitFileCaching(void);
-  int __fastcall WebGetData(String sUrl, String sDestFile);
-  FARPROC __fastcall LoadProcAddr(HINSTANCE hDll, String entry);
 
   // property vars (mostly!)
   int FfadeAt;
@@ -377,6 +379,8 @@ public:		// User declarations
   void __fastcall CWrite(String S);
 #endif
 
+  bool __fastcall GetShortcut(String &sPath, bool &bIsDirectory);
+  FARPROC __fastcall LoadProcAddr(HINSTANCE hDll, String entry);
   long __fastcall MyGetFileSize(String sPath);
   int __fastcall ShowFailures(void);
   void __fastcall ClearFailedToCopyList(void);
@@ -391,9 +395,9 @@ public:		// User declarations
   bool __fastcall SetCurrentPlayer(void);
   void __fastcall RestoreFocus(void);
   bool __fastcall FileDialog(TPlaylistForm* f, String &d, String t);
-  void __fastcall LoadListWithDroppedFiles(TWMDropFiles &Msg, TPlaylistForm* f);
+  void __fastcall LoadListWithDroppedFiles(TPlaylistForm* f, TWMDropFiles &Msg);
   bool __fastcall AddFileToListBox(TPlaylistForm* f, String sFile);
-  int __fastcall AddAllSongsToListBox(TPlaylistForm* f);
+  int __fastcall AddAllSongsToListBox(TPlaylistForm* f, String sPath);
   AnsiString __fastcall WideToUtf8(WideString sIn);
 
   bool __fastcall WriteStringToFile(String sPath, String sInfo);
