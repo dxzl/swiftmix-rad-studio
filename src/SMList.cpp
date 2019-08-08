@@ -205,14 +205,13 @@ void __fastcall TPlaylistForm::Timer1Timer(TObject* Sender)
         // but not playing), queue it up...
         if (FCheckBox->State[FCheckBox->ItemIndex] == cbGrayed)
         {
-          FNextIndex = FCheckBox->ItemIndex; // start search here
+#if DEBUG_ON
+          MainForm->CWrite("\r\nnCheckbox-click: 0 (State == cbGrayed)\r\n");
+#endif
           if (Tag < 0)
             QueueFirst();
           else
             GetNext(true);
-#if DEBUG_ON
-          MainForm->CWrite("\r\nState == cbGrayed\r\n");
-#endif
         }
         else
         {
@@ -220,33 +219,34 @@ void __fastcall TPlaylistForm::Timer1Timer(TObject* Sender)
             FCheckBox->State[FCheckBox->ItemIndex] = cbUnchecked;
 
           // nothing playing?
-          if (Tag < 0)
+          if (Tag < 0 || !IsPlayOrPause(this))
           {
-            QueueFirst();
-            // if we unchecked an item that was queued, queue the
-            // next item...
 #if DEBUG_ON
             MainForm->CWrite("\r\nCheckbox-click: 1\r\n");
 #endif
+            // if we unchecked an item that was queued, queue the
+            // next item...
+            FNextIndex = FCheckBox->ItemIndex; // start search here
+            GetNext();
           }
           else if (Tag == FCheckBox->ItemIndex)
           {
+#if DEBUG_ON
+            MainForm->CWrite("\r\nCheckbox-click: 2\r\n");
+#endif
             // NOTE: 7/1/2019 - this was causing the next song on the same player
             // to start playing when you unchecked the currently playing song...
             // Kind of abrupt - and the user might not know what song will begin...
             // better to fade to the next song on other player...
             SetTimer(TM_NEXT_PLAYER, TIME_100);
-#if DEBUG_ON
-            MainForm->CWrite("\r\nCheckbox-click: 2\r\n");
-#endif
           }
           else if (FTargetIndex == FCheckBox->ItemIndex)
           {
-            FNextIndex = FCheckBox->ItemIndex; // start search here
-            GetNext(true);
 #if DEBUG_ON
             MainForm->CWrite("\r\nCheckbox-click: 3\r\n");
 #endif
+            FNextIndex = FCheckBox->ItemIndex; // start search here
+            GetNext(true);
           }
           else
           {
@@ -1154,107 +1154,125 @@ String __fastcall TPlaylistForm::GetNext(bool bNoSet, bool bEnableRandom)
 {
   String sFile;
 
+#if DEBUG_ON
+  MainForm->CWrite( "\r\nTPlaylistForm::GetNext() (onenter): NextIndex=" +
+      String(NextIndex) +  ", Tag=" + String(Tag) +  ", TargetIndex=" +
+       String(TargetIndex) + "\r\n");
+#endif
   try
   {
-    int c = FCheckBox->Count;
-
-    // If Form pointer is null or no items in listbox, return ""
-    if (!c)
+    try
     {
-      if (!bNoSet) Tag = -1;
-      return "";
-    }
+      int c = FCheckBox->Count;
 
-    bool bListReset = (FNextIndex >= 0) ? true : false;
-
-    // Random (Shuffle) play?
-    bool bRandom = false;
-
-    if (bEnableRandom)
-      bRandom = ((PlayerA && MainForm->ShuffleModeA) ||
-        (!PlayerA && MainForm->ShuffleModeB)) ? true : false;
-
-    int loops;
-
-    if (bNoSet)
-      loops = 1;
-    else
-    {
-      if (bRandom)
+      // If Form pointer is null or no items in listbox, return ""
+      if (!c)
       {
-        for (int ii = 0 ; ii < c ; ii++)
-        {
-          FNextIndex = ::Random(c);
+        if (!bNoSet)
+          Tag = -1;
 
-          if (FCheckBox->State[FNextIndex] == cbGrayed)
-            break;
-        }
+        return "";
       }
 
-      loops = 2;
-    }
+      bool bListReset = (FNextIndex >= 0) ? true : false;
 
-    for (int ii = 0 ; ii < loops ; ii++)
-    {
-      if (FNextIndex < 0)
-        FNextIndex = Tag; // start at current song if NextInxex is -1
+      // Random (Shuffle) play?
+      bool bRandom = false;
 
-      if (FNextIndex < 0)
-        return "";
+      if (bEnableRandom)
+        bRandom = ((PlayerA && MainForm->ShuffleModeA) ||
+          (!PlayerA && MainForm->ShuffleModeB)) ? true : false;
 
-      int jj;
-      for (jj = 0 ; jj < c ; jj++, FNextIndex++)
+      int loops;
+
+      if (bNoSet)
+        loops = 1;
+      else
       {
-        if (FNextIndex >= c)
-          FNextIndex = 0;
+        if (bRandom)
+        {
+          for (int ii = 0 ; ii < c ; ii++)
+          {
+            FNextIndex = ::Random(c);
 
-        if (FCheckBox->State[FNextIndex] == cbGrayed)
+            if (FCheckBox->State[FNextIndex] == cbGrayed)
+              break;
+          }
+        }
+
+        loops = 2;
+      }
+
+      for (int ii = 0 ; ii < loops ; ii++)
+      {
+        if (FNextIndex < 0)
+          FNextIndex = Tag; // start at current song if NextInxex is -1
+
+        if (FNextIndex < 0)
+          return "";
+
+        int jj;
+        for (jj = 0 ; jj < c ; jj++, FNextIndex++)
+        {
+          if (FNextIndex >= c)
+            FNextIndex = 0;
+
+          if (FCheckBox->State[FNextIndex] == cbGrayed)
+          {
+            if (ii == 0) // first loop...
+            {
+              if (bListReset)
+                // prefetch the next file into our temporary cache directory
+                MainForm->CopyFileToCache(this, FNextIndex);
+
+              sFile = MainForm->GetURL(FCheckBox, FNextIndex);
+            }
+
+            break;
+          }
+        }
+
+        if (jj == c)
+          FNextIndex = -1; // no Play-flags set
+
+        if (FNextIndex >= c)
+        {
+          ShowMessage("GetNext() Tag Index is out-of-range!");
+          Tag = -1;
+          FTargetIndex = -1;
+        }
+        else if (!bNoSet)
         {
           if (ii == 0) // first loop...
           {
-            if (bListReset)
-              // prefetch the next file into our temporary cache directory
-              MainForm->CopyFileToCache(this, FNextIndex);
-
-            sFile = MainForm->GetURL(FCheckBox, FNextIndex);
+            Tag = FNextIndex;
+            FNextIndex = Tag+1;
           }
+          else
+          {
+            FTargetIndex = FNextIndex;
 
-          break;
-        }
-      }
-
-      if (jj == c)
-        FNextIndex = -1; // no Play-flags set
-
-      if (FNextIndex >= c)
-      {
-        ShowMessage("GetNext() Tag Index is out-of-range!");
-        Tag = -1;
-        FTargetIndex = -1;
-      }
-      else if (!bNoSet)
-      {
-        if (ii == 0) // first loop...
-        {
-          Tag = FNextIndex;
-          FNextIndex = Tag+1;
+            // prefetch the next file into our temporary cache directory
+            MainForm->CopyFileToCache(this, FTargetIndex);
+          }
         }
         else
-        {
           FTargetIndex = FNextIndex;
-
-          // prefetch the next file into our temporary cache directory
-          MainForm->CopyFileToCache(this, FTargetIndex);
-        }
       }
-      else
-        FTargetIndex = FNextIndex;
-    }
 
-    FNextIndex = -1;
-    SetTitle();
+      FNextIndex = -1;
+      SetTitle();
+    }
+    catch(...) { ShowMessage("GetNext() threw an exception..."); }
   }
-  catch(...) { ShowMessage("GetNext() threw an exception..."); }
+  __finally
+  {
+#if DEBUG_ON
+    MainForm->CWrite( "TPlaylistForm::GetNext() (onexit): NextIndex=" +
+      String(NextIndex) +  ", Tag=" + String(Tag) +  ", TargetIndex=" +
+       String(TargetIndex) + "\r\n\r\n");
+#endif
+  }
 
   // URL in Windows Media Player is a String... do not percent-encode!
   // Convert UTF-8 to UTF-16!
