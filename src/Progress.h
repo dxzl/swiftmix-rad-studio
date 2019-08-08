@@ -8,7 +8,7 @@
 #include <Forms.hpp>
 #include <ComCtrls.hpp>
 
-#define DEFAULT_MIN 20 // progress bar shows up only if >= 20 items to process
+#define DEFAULT_MIN 25 // progress bar shows up only if >= 500 items to process
 
 #define PROGRESS_MODE_NORMAL     0
 #define PROGRESS_MODE_CUMULATIVE 1
@@ -17,8 +17,8 @@
 class TProgressVars
 {
   public:
-    int mOldPosition;
-    int mOldMaxIterations;
+    int Position;
+    int ExpectedIterations;
 };
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
@@ -34,13 +34,14 @@ __published:	// IDE-managed Components
 protected:
   int __fastcall GetDepth(void);
   int __fastcall GetProgressPosition(void);
+  int __fastcall GetExpectedIterations(void);
   void __fastcall SetProgressPosition(int Value);
   bool __fastcall GetShowCancelButton(void);
   void __fastcall SetShowCancelButton(int Value);
 
 private:	// User declarations
 
-  int FCurrentMaxIterations, FCumulativeIterations, FProgressMode;
+  int FTotalExpectedIterations, FCumulativeIterations, FProgressMode;
   bool FCanceled;
   TList* pTProgressVarsList;
 
@@ -54,11 +55,13 @@ public:		// User declarations
 
   __property int ProgressMode = {read = FProgressMode, write = FProgressMode};
   __property int Position = {read = GetProgressPosition, write = SetProgressPosition};
-  __property int CurrentMaxIterations = {read = FCurrentMaxIterations};
-  __property int CumulativeIterations = {read = FCumulativeIterations};
+  __property int ExpectedIterations = {read = GetExpectedIterations};
   __property int Depth = {read = GetDepth};
   __property bool ShowCancelButton = {read = GetShowCancelButton, write = SetShowCancelButton};
   __property bool Canceled = {read = FCanceled};
+
+  // have to set this before a sequence of Init() if PROGRESS_MODE_CUMULATIVE!
+  __property int TotalExpectedIterations = {read = FTotalExpectedIterations, write = FTotalExpectedIterations};
 };
 //---------------------------------------------------------------------------
 #endif

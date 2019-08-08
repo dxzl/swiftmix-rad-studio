@@ -1127,7 +1127,7 @@ LRESULT CALLBACK TOFMSDlgForm::DefViewSubClass(HWND hDlg, UINT uMsg, WPARAM wPar
         LPOFNOTIFY ofNotify = (LPOFNOTIFY)lParam;
         NMHDR notifyHdr = ofNotify->hdr;
 
-        if (notifyHdr.hwndFrom != NULL && notifyHdr.idFrom == ID_LISTVIEW_SUBCLASS_PROC)
+        if (notifyHdr.hwndFrom && notifyHdr.idFrom == ID_LISTVIEW_SUBCLASS_PROC)
         {
           if (notifyHdr.code == LVN_ODSTATECHANGED || notifyHdr.code == LVN_ITEMCHANGED)
           {
@@ -1143,15 +1143,14 @@ LRESULT CALLBACK TOFMSDlgForm::DefViewSubClass(HWND hDlg, UINT uMsg, WPARAM wPar
 #endif
             LPNMLISTVIEW nmListView = (LPNMLISTVIEW)lParam;
 
-            if (nmListView != NULL)
+            if (nmListView)
             {
               NMHDR listViewHdr = nmListView->hdr;
-              if (listViewHdr.hwndFrom != NULL)
+              if (listViewHdr.hwndFrom)
               {
                 // Refresh the private member handle for the ListView control
                 // when user clicks a new item or selects a range of items...
                 p->m_hListView = listViewHdr.hwndFrom;
-
                 PostMessage(GetParent(hDlg), WM_ITEMS_SELECTED, 0, 0);
               }
             }
@@ -1160,6 +1159,7 @@ LRESULT CALLBACK TOFMSDlgForm::DefViewSubClass(HWND hDlg, UINT uMsg, WPARAM wPar
       }
       break;
     }
+
     return DefSubclassProc(hDlg, uMsg, wParam, lParam);
 //    return p->MyDefSubclassProc(hDlg, uMsg, wParam, lParam);
   }
@@ -1531,7 +1531,7 @@ int __fastcall TOFMSDlgForm::ProcessNotifyMessage(HWND hDlg, LPOFNOTIFY p_notify
         HWND hFileNameCombo = GetDlgItem(hParent, ID_FileNameCombo);
 
         // clear the file-name edit-box when a new folder is opened
-        if (hFileNameCombo != NULL)
+        if (hFileNameCombo)
           SetWindowText(hFileNameCombo, newFile.w_str());
 
         return TRUE;
@@ -1543,7 +1543,7 @@ int __fastcall TOFMSDlgForm::ProcessNotifyMessage(HWND hDlg, LPOFNOTIFY p_notify
 
     case CDN_TYPECHANGE:
     {
-      if (p_notify->lpOFN == NULL || p_notify->lpOFN->lCustData == NULL)
+      if (!p_notify->lpOFN || !p_notify->lpOFN->lCustData)
         break;
 
       LPOPENFILENAME pOFN = p_notify->lpOFN;

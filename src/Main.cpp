@@ -626,8 +626,8 @@ bool __fastcall TMainForm::FileDialog(TPlaylistForm* f, String &d, String t)
 
   try
   {
-    try
-    {
+//    try
+//    {
       TOFMSDlgForm* fd = f->CreateFileDialog();
 
       if (fd != NULL)
@@ -650,7 +650,7 @@ bool __fastcall TMainForm::FileDialog(TPlaylistForm* f, String &d, String t)
 
 #if DEBUG_ON
           // Display for diagnostics
-          if (fd->FileNameObjects != NULL && fd->FileNameObjects->Count > 0)
+          if (fd->FileNameObjects && fd->FileNameObjects->Count > 0)
           {
             MainForm->CWrite( "\r\nPrinting selected-files list!!!!!!!\r\n");
 
@@ -658,21 +658,16 @@ bool __fastcall TMainForm::FileDialog(TPlaylistForm* f, String &d, String t)
 
             int iCount = fd->FileNameObjects->Count;
 
-            f->Progress->Init(iCount);
-
             for (int ii = 0; ii < iCount; ii++)
             {
               TWideItem* pWI = (TWideItem*)fd->FileNameObjects->Items[ii];
 
-              if (pWI != NULL)
+              if (pWI)
               {
                 String s = String(pWI->s);
                 String sDir = pWI->IsDirectory ? "true" : "false";
                 s1 += s + " (IsDirectory: " +  sDir + ")\n";
               }
-
-              if (f->Progress->Move(ii))
-                return false;
             }
 
             if (!s1.IsEmpty())
@@ -684,7 +679,7 @@ bool __fastcall TMainForm::FileDialog(TPlaylistForm* f, String &d, String t)
             MainForm->CWrite( "\r\nsl TStringList is NULL or Empty!\r\n");
 #endif
 
-          if (fd->FileNameObjects != NULL && fd->FileNameObjects->Count > 0)
+          if (fd->FileNameObjects && fd->FileNameObjects->Count > 0)
           {
             if (f == ListA)
               SaveDirA = fd->CurrentFolder;
@@ -699,7 +694,7 @@ bool __fastcall TMainForm::FileDialog(TPlaylistForm* f, String &d, String t)
             {
               TWideItem* pWI = (TWideItem*)fd->FileNameObjects->Items[ii];
 
-              if (pWI != NULL)
+              if (pWI)
                 ProcessFileItem(f, pWI->s);
 
               if (f->Progress->Move(ii))
@@ -728,8 +723,8 @@ bool __fastcall TMainForm::FileDialog(TPlaylistForm* f, String &d, String t)
 #endif
         }
       }
-    }
-    catch(...) { ShowMessage("FileDialog() threw an exception"); }
+//    }
+//    catch(...) { ShowMessage("FileDialog() threw an exception"); }
   }
   __finally
   {
@@ -1157,15 +1152,14 @@ void __fastcall TMainForm::RecurseFileAdd(TPlaylistForm* f, TStringList* slFiles
   {
     slSubDirs = new TStringList();
 
-    if (slSubDirs == NULL)
+    if (!slSubDirs)
       return;
 
     // get list of subdirectories and files
     FindFirstNextToStringLists(slFiles, slSubDirs);
 
-    f->Progress->Init(slSubDirs->Count);
-
     // Get songs in all subdirectories
+    // NOTE: best not to use progress bar here because we just stack up Init() objects - messy!
     for (int ii = 0; ii < slSubDirs->Count; ii++)
     {
       if (SetCurrentDir(slSubDirs->Strings[ii]))
@@ -1175,17 +1169,11 @@ void __fastcall TMainForm::RecurseFileAdd(TPlaylistForm* f, TStringList* slFiles
         // NOTE: An attempt to open a search with a trailing backslash always fails.
         SetCurrentDir("..");
       }
-
-      // Move Progress bar if it exists
-      if (f->Progress->Move(ii))
-        break;
     }
   }
   __finally
   {
     try { if (hFind != NULL) FindClose(hFind); } catch(...) {}
-
-    f->Progress->UnInit();
 
     if (slSubDirs)
       delete slSubDirs;
