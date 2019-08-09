@@ -534,6 +534,15 @@ bool __fastcall TOFMSDlgForm::InitDialog(HWND hDlg)
     GetWindowPlacement(hDlg, &wndLoc);
     wndLoc.rcNormalPosition.bottom -= m_buttonHeight;
 
+	// force a minimum main width or else buttons "vanish"
+	int iWidth = wndLoc.rcNormalPosition.right - wndLoc.rcNormalPosition.left;
+  if (iWidth < MINWIDTH)
+    wndLoc.rcNormalPosition.right += MINWIDTH-iWidth;
+
+//#if DEBUG_ON
+//    OFDbg->CWrite( "\r\iWidth: " + String(iWidth) + "\r\n");
+//#endif
+
 // these all show as -1
 //#if DEBUG_ON
 //    OFDbg->CWrite( "\r\nMin.x: " + String(wndLoc.ptMinPosition.x) + "\r\n");

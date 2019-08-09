@@ -34,6 +34,9 @@
 //#define OFUtil utils
 
 #define WM_ITEMS_SELECTED (WM_USER+1)
+
+// without a MINWIDTH, the custom buttons sometimes won't show!
+#define MINWIDTH 192 // it's actually 188 but add a few pixels to be safe
 //---------------------------------------------------------------------------
 class TWideItem
 {
