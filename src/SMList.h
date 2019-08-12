@@ -139,6 +139,7 @@ __published:  // IDE-managed Components
 
 private:  // User declarations
 
+  String __fastcall GetMediaTags(void);
   bool __fastcall IsPlayOrPause(TPlaylistForm* f);
   void __fastcall MyMoveSelected(TCheckListBox* DestList, TCheckListBox* SourceList, int x=-1, int y=-1);
 //  bool __fastcall InsertNewDeleteOld(TCheckListBox* SourceList,

@@ -128,7 +128,6 @@ void __fastcall TPlaylistForm::Timer1Timer(TObject* Sender)
     // when SetTitle() is called
     if (!IsPlayOrPause(this))
       this->Tag = CheckBox->ItemIndex;
-//    this->TargetIndex = Tag;
     FEditMode = false;
     QueueToIndex(CheckBox->ItemIndex);
     FEditMode = true;
@@ -1617,6 +1616,9 @@ void __fastcall TPlaylistForm::PlayStateChange(WMPPlayState NewState)
       }
       else
       {
+        // display the media info in the hint of the status-bar
+        MainForm->StatusBar1->Hint = GetMediaTags();
+
         if (PlayerA)
         {
           MainForm->Stop1->Checked = false;
@@ -2443,32 +2445,36 @@ void __fastcall TPlaylistForm::CopyLinkToClipboardClick(TObject *Sender)
 //---------------------------------------------------------------------------
 void __fastcall TPlaylistForm::CopyTagsToClipboardClick(TObject* Sender)
 {
+  String s = GetMediaTags();
+  if (!s.IsEmpty())
+    Clipboard()->AsText = s;
+}
+//---------------------------------------------------------------------------
+String __fastcall TPlaylistForm::GetMediaTags(void)
+{
+  String sTags;
+
   try
   {
-    String s;
+    sTags = Wmp->currentMedia->getItemInfo(L"WM/AlbumArtist");
 
-    String Artist = Wmp->currentMedia->getItemInfo(L"WM/AlbumArtist");
+    if (sTags == "" || sTags.LowerCase() == "various artists" ||
+                                          sTags.LowerCase() == "various")
+      sTags = Wmp->currentMedia->getItemInfo(L"Author");
 
-    if (Artist == "" || Artist.LowerCase() == "various artists" ||
-                                         Artist.LowerCase() == "various")
-      Artist = Wmp->currentMedia->getItemInfo(L"Author");
+    if (!sTags.IsEmpty())
+      sTags += String(", ");
 
-    s = Artist;
+    sTags += Wmp->currentMedia->getItemInfo(L"WM/AlbumTitle");
 
-    if (!s.IsEmpty())
-      s += String(", ");
+    if (!sTags.IsEmpty())
+      sTags += String(", ");
 
-    s += Wmp->currentMedia->getItemInfo(L"WM/AlbumTitle");
-
-    if (!s.IsEmpty())
-      s += String(", ");
-
-    s += Wmp->currentMedia->name;
-
-    if (!s.IsEmpty())
-      Clipboard()->AsText = s;
+    sTags += Wmp->currentMedia->name;
   }
   catch(...) {}
+
+  return sTags;
 }
 //---------------------------------------------------------------------------
 //void __fastcall TPlaylistForm::WMMove(TWMMove &Msg)
