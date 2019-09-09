@@ -525,7 +525,7 @@ UINT CALLBACK TSFDlgForm::SFNHookProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM
 
           // Get the file-box text and put a new filter on it...
 
-          HWND hFileNameCombo = GetDlgItem(GetParent(hDlg), ID_FileNameCombo);
+          HWND hFileNameCombo = GetDlgItem(GetParent(hDlg), ID_MyFileName);
 
           if (hFileNameCombo == NULL)
             break;

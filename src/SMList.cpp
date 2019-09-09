@@ -101,6 +101,22 @@ void __fastcall TPlaylistForm::FormCreate(TObject* Sender)
 //  WindowProc = CustomMessageHandler;
 }
 //---------------------------------------------------------------------------
+void __fastcall TPlaylistForm::FormCloseQuery(TObject *Sender, bool &CanClose)
+{
+  if (pProgress && pProgress->Count)
+  {
+    for (int ii = 0; ii < pProgress->Count; ii++)
+      pProgress->Canceled = true;
+
+    CanClose = false;
+    ShowMessage("This list is busy, cancelling... try again in 15 seconds.");
+  }
+  else
+  {
+    CanClose = true;
+  }
+}
+//---------------------------------------------------------------------------
 void __fastcall TPlaylistForm::FormClose(TObject *Sender, TCloseAction &Action)
 {
   DestroyProgressForm();
@@ -1766,29 +1782,29 @@ void __fastcall TPlaylistForm::GetSongInfo(STRUCT_A &sms)
 
   sms.duration = (int)Wmp->currentMedia->duration;
 
-  AnsiString uPath = MainForm->WideToUtf8(Wmp->URL);
+  AnsiString uPath = MainForm->WideToUtf8Ansi(Wmp->URL);
   strncpy(sms.path, uPath.c_str(), SONG_PATH_SIZE-1);
   sms.len_path = uPath.Length();
   if (sms.len_path > SONG_PATH_SIZE-1)
     sms.len_path = SONG_PATH_SIZE-1;
 
 
-  AnsiString uTitle = MainForm->WideToUtf8(Wmp->currentMedia->name);
+  AnsiString uTitle = MainForm->WideToUtf8Ansi(Wmp->currentMedia->name);
   strncpy(sms.name, uTitle.c_str(), SONG_NAME_SIZE-1);
   sms.len_name = uTitle.Length();
   if (sms.len_name > SONG_NAME_SIZE-1)
     sms.len_name = SONG_NAME_SIZE-1;
 
   // Note the "L" to make string-constants wide!!!!!!
-  AnsiString uArtist = MainForm->WideToUtf8(Wmp->currentMedia->getItemInfo(L"WM/AlbumArtist"));
+  AnsiString uArtist = MainForm->WideToUtf8Ansi(Wmp->currentMedia->getItemInfo(L"WM/AlbumArtist"));
   if (uArtist == "" || uArtist.LowerCase() == "various artists" || uArtist.LowerCase() == "various")
-    uArtist = MainForm->WideToUtf8(Wmp->currentMedia->getItemInfo(L"Author"));
+    uArtist = MainForm->WideToUtf8Ansi(Wmp->currentMedia->getItemInfo(L"Author"));
   strncpy(sms.artist, uArtist.c_str(), SONG_NAME_SIZE-1);
   sms.len_artist = uArtist.Length();
   if (sms.len_artist > SONG_NAME_SIZE-1)
     sms.len_artist = SONG_NAME_SIZE-1;
 
-  AnsiString uAlbum = MainForm->WideToUtf8(Wmp->currentMedia->getItemInfo(L"WM/AlbumTitle"));
+  AnsiString uAlbum = MainForm->WideToUtf8Ansi(Wmp->currentMedia->getItemInfo(L"WM/AlbumTitle"));
   strncpy(sms.album, uAlbum.c_str(), SONG_NAME_SIZE-1);
   sms.len_album = uAlbum.Length();
   if (sms.len_album > SONG_NAME_SIZE-1)

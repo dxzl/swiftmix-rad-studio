@@ -2,7 +2,7 @@
 #ifndef MainH
 #define MainH
 //---------------------------------------------------------------------------
-#define VERSION "1.76"
+#define VERSION "1.78"
 #define FREEWARE_EDITION true
 #define DEBUG_ON false // Include a debug console, use MainForm->CWrite("")
 //---------------------------------------------------------------------------
@@ -387,8 +387,8 @@ public:		// User declarations
   void __fastcall AddFailure(String sPath, int iIndex);
   void __fastcall AddFailure(String sSource, String sDest, int iSource, int iList);
   bool __fastcall IsSourcePathUri(String sIn);
-  bool __fastcall IsUri(String wIn);
-  bool __fastcall IsFileUri(String wIn);
+  bool __fastcall IsUri(String sIn);
+  bool __fastcall IsFileUri(String sIn);
   void __fastcall ShowPlaylist(TPlaylistForm* f);
   String __fastcall SetFlag(String S, int f);
   bool __fastcall ForceFade(void);
@@ -397,8 +397,19 @@ public:		// User declarations
   bool __fastcall FileDialog(TPlaylistForm* f, String &d, String t);
   void __fastcall LoadListWithDroppedFiles(TPlaylistForm* f, TWMDropFiles &Msg);
   bool __fastcall AddFileToListBox(TPlaylistForm* f, String sFile);
-  int __fastcall AddAllSongsToListBox(TPlaylistForm* f, String sPath);
-  AnsiString __fastcall WideToUtf8(WideString sIn);
+  int __fastcall AddDirToListBox(TPlaylistForm* f, String sPath);
+//  String __fastcall WideToUtf8U(WideString wIn);
+//  WideString __fastcall Utf8ToWide(String sIn);
+
+  AnsiString __fastcall WideToUtf8Ansi(WideString wIn);
+
+  // helper functopns for FormOFMSDlg (to keep it compatible with old C++ Builder 4)
+  WideString __fastcall GetCurrentDirW(void);
+  bool __fastcall DirectoryExistsW(WideString wIn);
+  bool __fastcall FileExistsW(WideString wIn);
+  bool __fastcall IsUriW(WideString wIn);
+  WideString __fastcall Utf8ToWide(String sIn);
+  String __fastcall WideToUtf8(WideString wIn);
 
   bool __fastcall WriteStringToFile(String sPath, String sInfo);
   String __fastcall GetSpecialFolder(int csidl);

@@ -35,6 +35,7 @@ protected:
   int __fastcall GetDepth(void);
   int __fastcall GetProgressPosition(void);
   int __fastcall GetExpectedIterations(void);
+  int __fastcall GetProgressCount(void);
   void __fastcall SetProgressPosition(int Value);
   bool __fastcall GetShowCancelButton(void);
   void __fastcall SetShowCancelButton(int Value);
@@ -56,9 +57,10 @@ public:		// User declarations
   __property int ProgressMode = {read = FProgressMode, write = FProgressMode};
   __property int Position = {read = GetProgressPosition, write = SetProgressPosition};
   __property int ExpectedIterations = {read = GetExpectedIterations};
+  __property int Count = {read = GetProgressCount};
   __property int Depth = {read = GetDepth};
   __property bool ShowCancelButton = {read = GetShowCancelButton, write = SetShowCancelButton};
-  __property bool Canceled = {read = FCanceled};
+  __property bool Canceled = {read = FCanceled, write = FCanceled};
 
   // have to set this before a sequence of Init() if PROGRESS_MODE_CUMULATIVE!
   __property int TotalExpectedIterations = {read = FTotalExpectedIterations, write = FTotalExpectedIterations};

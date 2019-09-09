@@ -136,6 +136,7 @@ __published:  // IDE-managed Components
   void __fastcall PositionChange(double oldPosition, double newPosition);
   void __fastcall MediaError(LPDISPATCH Item);
   void __fastcall FormClose(TObject *Sender, TCloseAction &Action);
+  void __fastcall FormCloseQuery(TObject *Sender, bool &CanClose);
 
 private:  // User declarations
 

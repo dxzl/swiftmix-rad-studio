@@ -49,7 +49,6 @@ object OFMSDlgForm: TOFMSDlgForm
   OldCreateOrder = False
   Position = poMainFormCenter
   OnActivate = FormActivate
-  OnCreate = FormCreate
   OnDestroy = FormDestroy
   PixelsPerInch = 96
   TextHeight = 13

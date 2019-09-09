@@ -15,6 +15,9 @@
 #ifndef FormOFMSDlgH
 #define FormOFMSDlgH
 //---------------------------------------------------------------------------
+#define IS_OLD_BORLAND_CPP_BUILDER false
+#define DEFAULT_FULL_FILEPATH true
+
 #include <Classes.hpp>
 #include <Controls.hpp>
 #include <StdCtrls.hpp>
@@ -23,8 +26,6 @@
 #include <SysUtils.hpp>
 #include <Forms.hpp>
 #include <Windows.h>
-#include <dlgs.h>
-//#include <vcl\olectnrs.hpp>
 
 // For SwiftMiX use:
 #define OFDbg MainForm
@@ -34,14 +35,11 @@
 //#define OFUtil utils
 
 #define WM_ITEMS_SELECTED (WM_USER+1)
-
-// without a MINWIDTH, the custom buttons sometimes won't show!
-#define MINWIDTH 192 // it's actually 188 but add a few pixels to be safe
 //---------------------------------------------------------------------------
 class TWideItem
 {
 public:
-  String s;
+  WideString s;
   bool IsDirectory;
 };
 //---------------------------------------------------------------------------
@@ -49,20 +47,19 @@ public:
 // see http://msdn.microsoft.com/en-us/library/ms646960.aspx#_win32_Explorer_Style_Control_Identifiers
 // for a complete list.
 // S.S. these are in dlgs.h
-//chx1	The read-only check box
-//cmb1	Drop-down combo box that displays the list of file type filters
-//stc2	Label for the cmb1 combo box
-//cmb2	Drop-down combo box that displays the current drive or folder, and that allows the user to select a drive or folder to open
-//stc4	Label for the cmb2 combo box
-//cmb13	Drop-down combo box that displays the name of the current file, allows the user to type the name of a file to open, and select a file that has been opened or saved recently. This is for earlier Explorer-compatible applications without hook or dialog template. Compare with edt1.
-//edt1	Edit control that displays the name of the current file, or allows the user to type the name of the file to open. Compare with cmb13.
-//stc3	Label for the cmb13 combo box and the edt1 edit control
-//lst1	List box that displays the contents of the current drive or folder
-//stc1	Label for the lst1 list box
-//IDOK	The OK command button (push button)
-//IDCANCEL	The Cancel command button (push button)
-//pshHelp	The Help command button (push button)
-// (dlgs.h)
+//chx1 The read-only check box
+//cmb1 Drop-down combo box that displays the list of file type filters
+//stc2 Label for the cmb1 combo box
+//cmb2 Drop-down combo box that displays the current drive or folder, and that allows the user to select a drive or folder to open
+//stc4 Label for the cmb2 combo box
+//cmb13 Drop-down combo box that displays the name of the current file, allows the user to type the name of a file to open, and select a file that has been opened or saved recently. This is for earlier Explorer-compatible applications without hook or dialog template. Compare with edt1.
+//edt1 Edit control that displays the name of the current file, or allows the user to type the name of the file to open. Compare with cmb13.
+//stc3 Label for the cmb13 combo box and the edt1 edit control
+//lst1 List box that displays the contents of the current drive or folder
+//stc1 Label for the lst1 list box
+//IDOK The OK command button (push button)
+//IDCANCEL The Cancel command button (push button)
+//pshHelp The Help command button (push button)
 //#define stc2 0x0441
 //#define cmb1 0x0470
 //#define stc3 0x0442
@@ -76,16 +73,20 @@ public:
 #define ID_FilterCombo cmb1
 #define ID_FilterLabel stc2
 #define ID_FileNameLabel stc3
-
-// https://www.codeproject.com/questions/40907/cfiledialog-hidecontrol-broken
-// Using Spy++ on a sample application I just built, it would seem that
-// instead of edt1, you now want to use cmb13 (0x47c). I guess they decided
-// that as that field is (now) actually a combo-box, that would be a better
-// ID to use.
-//#define ID_FileName edt1
-
 #define ID_FileList lst1
 #define ID_FileNameCombo cmb13
+#define ID_FileName edt1
+
+// Apparently - when building on old Borland C++ Builder you
+// need ID_FileName and when building on new Embarcadero C++ Builder
+// you need ID_FileNameCombo!
+#if IS_OLD_BORLAND_CPP_BUILDER
+  #define ID_MyFileName ID_FileName
+  #define OFNPROP "OFN" // GetProp()/SetProp()
+#else
+  #define ID_MyFileName ID_FileNameCombo
+  #define OFNPROP L"OFN" // GetProp()/SetProp()
+#endif
 
 // NOTE: These constants are defined in resource.h
 //#define IDD_CustomOpenDialog 101
@@ -98,26 +99,23 @@ public:
 
 #define OF_BUFSIZE (MAX_PATH*10)
 
-// 6/6/2019 - problem with custom buttons not appearing when program is
-// first run... until you stretch out the dialog width a few pixels.
-// Trying a simple fix to decrease the cumulative width of the buttons and
-// gaps.
-//#define BUTTON_GAP 3
-#define BUTTON_GAP 2
+#if !IS_OLD_BORLAND_CPP_BUILDER
+  #define MakeWParam(x,y) MAKEWPARAM(x,y)
+  // this is the MAKEINTRESOURCEW macro with "::" before ULONG_PTR
+  // (I was having namespace conflicts...)
+  #define MYMIR(i) ((LPWSTR)((::UINT_PTR)((WORD)(i))))
+#endif
 
-// this is the MAKEINTRESOURCEW macro with "::" before ULONG_PTR
-// (I was having namespace conflicts...)
-#define MYMIR(i) ((LPWSTR)((::ULONG_PTR)((WORD)(i))))
+#define BUTTON_GAP 3
 
-// name of property we set to pass parameters...
-#define PROP_OFN L"OFMS"
+//#define INVALID_FILE_ATTRIBUTES 0xFFFFFFFF
 
 typedef void __fastcall (__closure *TOFMSDlgFolderChangeEvent)(TObject* Sender, TWMNotify& Message);
 
 //
 // subclassing stuff
 //
-typedef LRESULT (CALLBACK* MYSUBCLASSPROC)(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData);
+typedef LRESULT (CALLBACK* MYSUBCLASSPROC)(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, LPUINT uIdSubclass, LPDWORD dwRefData);
 
 //---------------------------------------------------------------------------
 // This is for the new version IFileDialog
@@ -154,10 +152,12 @@ class TOFMSDlgForm : public TForm
 __published:	// IDE-managed Components
   void __fastcall FormDestroy(TObject *Sender);
   void __fastcall FormActivate(TObject *Sender);
-  void __fastcall FormCreate(TObject *Sender);
 
 private:
-  bool __fastcall UriIsDirectory(String sUri);
+  bool __fastcall SetFileName(HWND hEdit, WideString wName);
+  WideString __fastcall GetListViewItemText(HWND hListView, int selectedIndex);
+  WideString __fastcall GetTextFromCommonDialog(HWND hWnd, UINT msg);
+  bool __fastcall NewFileSelected(HWND hDlg);
   WideChar* __fastcall SetFilter(void);
   wchar_t* __fastcall GetFilter(wchar_t* pFilterBuf, int iFilter, int iMax);
   int __fastcall FindFilter(wchar_t* pFilterBuf, wchar_t* pFilterToFind, int iMax);
@@ -165,14 +165,15 @@ private:
   bool __fastcall ResizeCustomControl(HWND hDlg);
   bool __fastcall PositionButton(HWND hDlg, int top, int left, int right);
   bool __fastcall LoadFontFrom(HWND hDlgDest, HWND hDlgSrc);
-  bool __fastcall AddWideItem(String sPath, bool bIsDirectory);
-  bool __fastcall GetSelectedItems(bool bRaw=false);
-  String __fastcall GetTextFromCommonDialog(HWND hWnd, UINT msg);
+  WideString __fastcall GetShortcutTarget(WideString file);
+  bool __fastcall GetShortcut(WideString &sPath, bool &bIsDirectory);
+  bool __fastcall AddWideItem(WideString sPath, bool bIsDirectory);
+  bool __fastcall GetSelectedItems(void);
   bool __fastcall InitDialog(HWND hDlg);
-  String __fastcall GetNextFileName(void);
+  WideString __fastcall GetNextFileName(void);
   bool __fastcall DeleteFileNameObjects();
   int __fastcall ProcessNotifyMessage(HWND hDlg, LPOFNOTIFY p_notify);
-//  bool __fastcall MyDefSubclassProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+  bool __fastcall MyDefSubclassProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
   bool __fastcall MyRemoveWindowSubclass(HWND hWnd, MYSUBCLASSPROC pfnSubclass, int uIdSubclass);
   bool __fastcall MySetWindowSubclass(HWND hWnd, MYSUBCLASSPROC pfnSubclass, int uIdSubclass);
 
@@ -180,21 +181,18 @@ private:
   WideChar* p_szTitleName;
 
   OPENFILENAMEW m_ofn;
-  HWND m_hListView;
-  HWND m_hFileNameCombo;
-  HWND m_hNewWindow;
-  HWND m_hCustomOpenButton;
+  HWND m_hListView, m_hCustomOpenButton, m_hChildWindow, m_hMyFileName;
 
-  bool FFolderIsSelected, FSingleSelect;
+  bool FFolderIsSelected, FSingleSelect, FDisplayFullPath;
 
   int FFilterCount, FFilterIndex;
 
   static const WideChar szUntitled[10];
 
-  String FCurrentFolder, FCurrentFilter;
-  String FInitialDir, FDlgTitle;
+  WideString FCurrentFolder, FCurrentFilter;
+  WideString FInitialDir, FDlgTitle;
 
-  String FFilters, FFileNameLabel;
+  WideString FFilters, FFileNameLabel;
   WideChar* p_filterBuf;
 
   TList* p_fno;
@@ -204,30 +202,35 @@ private:
   HWND FDlgHandle;
 
 protected:
-  String __fastcall GetTitle(void);
-  String __fastcall GetFileName(void);
+  WideString __fastcall GetFileName(void);
+  String __fastcall GetFileNameUtf8(void);
+  String __fastcall GetTitleUtf8(void);
   TList* __fastcall GetFileNameObjects(void);
 
   static UINT CALLBACK OFNHookProc(HWND hDlg, UINT msg, WPARAM wParam,
                                                               LPARAM lParam);
 
   static LRESULT CALLBACK OpenFileSubClass(HWND hDlg, UINT uMsg, WPARAM wParam,
-                     LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData);
+                     LPARAM lParam, UINT* uIdSubclass, DWORD* dwRefData);
 
   static LRESULT CALLBACK DefViewSubClass(HWND hDlg, UINT uMsg, WPARAM wParam,
-                           LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData);
+                           LPARAM lParam, UINT* uIdSubclass, DWORD* dwRefData);
 
-public: // User declarations
-//  __fastcall TOFMSDlgForm(TComponent* Owner);
-//  virtual __fastcall ~TOFMSDlgForm();
+public:		// User declarations
+  __fastcall TOFMSDlgForm(TComponent* Owner);
+  virtual __fastcall ~TOFMSDlgForm();
 
   // Call this show the dialog.
-  bool __fastcall Execute(String uFilter, String uInitialDir, String uDlgTitle);
-  bool __fastcall Execute(int iFilter, String uInitialDir, String uDlgTitle);
+  bool __fastcall ExecuteW(int iFilter, WideString wInitialDir,
+                                                          String sDlgTitle);
+  bool __fastcall ExecuteU(String uFilter, String uInitialDir,
+                                                            String uDlgTitle);
+  bool __fastcall ExecuteU(int iFilter, String uInitialDir,
+                                                           String uDlgTitle);
 
   // You can set these three before calling Execute
-  __property String Filters = {read = FFilters, write = FFilters};
-  __property String FileNameLabel = {read = FFileNameLabel,
+  __property WideString Filters = {read = FFilters, write = FFilters};
+  __property WideString FileNameLabel = {read = FFileNameLabel,
                                                 write = FFileNameLabel};
   __property bool SingleSelect = {read = FSingleSelect, write = FSingleSelect};
 
@@ -239,12 +242,14 @@ public: // User declarations
   __property UINT Result = {read = FResult};
   __property int FilterCount = {read = FFilterCount};
   __property int FilterIndex = {read = FFilterIndex}; // 1-based index
-  __property String Title = {read = GetTitle};
-  __property String FileName = {read = GetFileName};
-  __property String InitialDir = {read = FInitialDir};
-  __property String DlgTitle = {read = FDlgTitle};
-  __property String CurrentFolder = {read = FCurrentFolder};
-  __property String CurrentFilter = {read = FCurrentFilter};
+  __property String TitleUtf8 = {read = GetTitleUtf8 };
+  __property String FileNameUtf8 = {read = GetFileNameUtf8};
+  __property WideString FileName = {read = GetFileName};
+  __property WideString InitialDir = {read = FInitialDir};
+  __property WideString DlgTitle = {read = FDlgTitle};
+  __property WideString CurrentFolder = {read = FCurrentFolder};
+  __property WideString CurrentFilter = {read = FCurrentFilter};
+  __property bool DisplayFullPath = {read = FDisplayFullPath};
 };
 //---------------------------------------------------------------------------
 extern PACKAGE TOFMSDlgForm *OFMSDlgForm;

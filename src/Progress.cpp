@@ -103,6 +103,14 @@ int __fastcall TProgressForm::GetExpectedIterations(void)
   return mi;
 }
 //---------------------------------------------------------------------------
+// return 1 id error to avoid divide by zero error in Move
+int __fastcall TProgressForm::GetProgressCount(void)
+{
+  if (!pTProgressVarsList)
+    return 0;
+  return pTProgressVarsList->Count;
+}
+//---------------------------------------------------------------------------
 // returns the Canceled flag
 bool __fastcall TProgressForm::Move(int Value)
 {

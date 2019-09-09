@@ -308,14 +308,14 @@ void __fastcall TMainForm::FormClose(TObject* Sender, TCloseAction &Action)
 {
   if (SFDlgForm)
   {
-    SFDlgForm->Close();
     SFDlgForm->Release();
+    SFDlgForm = NULL;
   }
 
   if (OFMSDlgForm)
   {
-    OFMSDlgForm->Close();
     OFMSDlgForm->Release();
+    OFMSDlgForm = NULL;
   }
 
   TRegHelper* pReg = NULL;
@@ -352,13 +352,11 @@ void __fastcall TMainForm::FormClose(TObject* Sender, TCloseAction &Action)
   // that might be used during file-copy, etc - so delete these last.
   if (ListA)
   {
-    ListA->Close();
     ListA->Release();
     ListA = NULL;
   }
   if (ListB)
   {
-    ListB->Close();
     ListB->Release();
     ListB = NULL;
   }
@@ -626,8 +624,8 @@ bool __fastcall TMainForm::FileDialog(TPlaylistForm* f, String &d, String t)
 
   try
   {
-//    try
-//    {
+    try
+    {
       TOFMSDlgForm* fd = f->CreateFileDialog();
 
       if (fd != NULL)
@@ -640,7 +638,7 @@ bool __fastcall TMainForm::FileDialog(TPlaylistForm* f, String &d, String t)
 
         FFilesAddedCount = 0;
 
-        fd->Execute(0, d, t); // no def utf-8 extension?
+        fd->ExecuteU(0, d, t); // no def utf-8 extension?
 
         if(fd->Result == IDOK)
         {
@@ -723,8 +721,8 @@ bool __fastcall TMainForm::FileDialog(TPlaylistForm* f, String &d, String t)
 #endif
         }
       }
-//    }
-//    catch(...) { ShowMessage("FileDialog() threw an exception"); }
+    }
+    catch(...) { ShowMessage("FileDialog() threw an exception"); }
   }
   __finally
   {
@@ -883,9 +881,9 @@ void __fastcall TMainForm::ProcessFileItem(TPlaylistForm* f, String s)
         if (bIsDirectory)
         {
 #if DEBUG_ON
-          MainForm->CWrite("\r\nTMainForm::LoadListWithDroppedFiles: bIsDirectory is set! Calling AddAllSongsToListBox()\r\n");
+          MainForm->CWrite("\r\nTMainForm::LoadListWithDroppedFiles: bIsDirectory is set! Calling AddDirToListBox()\r\n");
 #endif
-          FFilesAddedCount += AddAllSongsToListBox(f, s); // recurse add folder and sub-folder's songs to list
+          FFilesAddedCount += AddDirToListBox(f, s); // recurse add folder and sub-folder's songs to list
         }
         else if (IsPlaylistPath(s))
         {
@@ -1054,7 +1052,7 @@ String __fastcall TMainForm::GetShortcutTarget(String wPath)
   return wOut;
 }
 //---------------------------------------------------------------------------
-int __fastcall TMainForm::AddAllSongsToListBox(TPlaylistForm* f, String sPath)
+int __fastcall TMainForm::AddDirToListBox(TPlaylistForm* f, String sPath)
 // Strings are in UTF-8 format!
 {
   TStringList* sl = NULL;
@@ -1075,7 +1073,7 @@ int __fastcall TMainForm::AddAllSongsToListBox(TPlaylistForm* f, String sPath)
       return 0;
 
 #if DEBUG_ON
-    MainForm->CWrite("\r\nTMainForm::AddAllSongsToListBox(): sPath=\"" + sPath + "\"\r\n");
+    MainForm->CWrite("\r\nTMainForm::AddDirToListBox(): sPath=\"" + sPath + "\"\r\n");
 #endif
 
     RecurseFileAdd(f, sl);
@@ -3493,6 +3491,63 @@ void __fastcall TMainForm::PromptRetry(void)
 //  return sIn;
 //}
 //---------------------------------------------------------------------------
+AnsiString __fastcall TMainForm::WideToUtf8Ansi(WideString sIn)
+// Code to convert UTF-16 (WideString or WideChar wchar_t) to UTF-8
+{
+  if (sIn.IsEmpty()) return "";
+
+  int nLenUtf16 = sIn.Length();
+
+  int nLenUtf8 = WideCharToMultiByte(CP_UTF8, // UTF-8 Code Page
+    0, // No special handling of unmapped chars
+    sIn.c_bstr(), // wide-character string to be converted
+    nLenUtf16,
+    NULL, 0, // No output buffer since we are calculating length
+    NULL, NULL); // Unrepresented char replacement - Use Default
+
+  // nNameLen does NOT appear to include the NULL character!
+  char* buf = new char[nLenUtf8];
+
+  WideCharToMultiByte(CP_UTF8, // UTF-8 Code Page
+    0, // No special handling of unmapped chars
+    sIn.c_bstr(), // wide-character string to be converted
+    nLenUtf16,
+    buf,
+    nLenUtf8,
+    NULL, NULL); // Unrepresented char replacement - Use Default
+
+  String sOut = String(buf, nLenUtf8); // there is no null written...
+  delete [] buf;
+
+  return sOut;
+}
+//---------------------------------------------------------------------------
+// These methods help FormOFMSDlg.cpp
+WideString __fastcall TMainForm::GetCurrentDirW(void)
+{
+  return WideString(GetCurrentDir());
+}
+bool __fastcall TMainForm::DirectoryExistsW(WideString wIn)
+{
+  return DirectoryExists(wIn);
+}
+bool __fastcall TMainForm::FileExistsW(WideString wIn)
+{
+  return FileExists(wIn);
+}
+bool __fastcall TMainForm::IsUriW(WideString wIn)
+{
+  return IsUri(String(wIn));
+}
+WideString __fastcall TMainForm::Utf8ToWide(String sIn)
+{
+  return WideString(sIn);
+}
+String __fastcall TMainForm::WideToUtf8(WideString wIn)
+{
+  return String(wIn);
+}
+//---------------------------------------------------------------------------
 //WideString __fastcall TMainForm::Utf8ToWide(AnsiString sIn)
 //// Code to convert UTF-8 to UTF-16 (wchar_t)
 //{
@@ -3528,37 +3583,6 @@ void __fastcall TMainForm::PromptRetry(void)
 //
 //  return sWide;
 //}
-//---------------------------------------------------------------------------
-AnsiString __fastcall TMainForm::WideToUtf8(WideString sIn)
-// Code to convert UTF-16 (WideString or WideChar wchar_t) to UTF-8
-{
-  if (sIn.IsEmpty()) return "";
-
-  int nLenUtf16 = sIn.Length();
-
-  int nLenUtf8 = WideCharToMultiByte(CP_UTF8, // UTF-8 Code Page
-    0, // No special handling of unmapped chars
-    sIn.c_bstr(), // wide-character string to be converted
-    nLenUtf16,
-    NULL, 0, // No output buffer since we are calculating length
-    NULL, NULL); // Unrepresented char replacement - Use Default
-
-  // nNameLen does NOT appear to include the NULL character!
-  char* buf = new char[nLenUtf8];
-
-  WideCharToMultiByte(CP_UTF8, // UTF-8 Code Page
-    0, // No special handling of unmapped chars
-    sIn.c_bstr(), // wide-character string to be converted
-    nLenUtf16,
-    buf,
-    nLenUtf8,
-    NULL, NULL); // Unrepresented char replacement - Use Default
-
-  AnsiString sOut = String(buf, nLenUtf8); // there is no null written...
-  delete [] buf;
-
-  return sOut;
-}
 //---------------------------------------------------------------------------
 //void __fastcall TMainForm::WMMove(TWMMove &Msg)
 //{
