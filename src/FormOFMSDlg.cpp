@@ -1322,7 +1322,7 @@ LRESULT CALLBACK TOFMSDlgForm::OpenFileSubClass(HWND hDlg, UINT uMsg, WPARAM wPa
   }
 
 #if IS_OLD_BORLAND_CPP_BUILDER
-  return p->MyDefSubclassProc(hDlg, uMsg, wParam, lParam);
+  return DefDlgProcW(hDlg, uMsg, wParam, lParam);
 #else
   return DefSubclassProc(hDlg, uMsg, wParam, lParam);
 #endif

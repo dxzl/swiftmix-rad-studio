@@ -1202,7 +1202,9 @@ void __fastcall TMainForm::FindFirstNextToStringLists(TStringList* slFiles, TStr
     // NOTE: a trailing backslash for FindFirst() is not allowed
     String sTemp = sCurrentDir + "*";
 
-    hFind = ::FindFirstFileEx(sTemp.c_str(), l, &sr, s, NULL, (DWORD)FIND_FIRST_EX_LARGE_FETCH);
+    // 9/16/2019 the commented out version FAILS on Win XP!!!!!
+    //hFind = ::FindFirstFileEx(sTemp.c_str(), l, &sr, s, NULL, (DWORD)FIND_FIRST_EX_LARGE_FETCH);
+    hFind = ::FindFirstFileEx(sTemp.c_str(), l, &sr, s, NULL, NULL);
 
     // Get list of subdirectories into a stringlist
     if (hFind == INVALID_HANDLE_VALUE)
