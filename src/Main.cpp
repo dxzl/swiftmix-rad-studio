@@ -936,7 +936,7 @@ bool __fastcall TMainForm::GetShortcut(String &wPath, bool &bIsDirectory)
 
     if (FileExists(wPath))
     {
-      if (ExtractFileExt(wPath).LowerCase() == ".lnk")
+      if (MyExtractFileExt(wPath) == ".lnk")
       {
         wPath = GetShortcutTarget(wPath);
 
@@ -1009,7 +1009,7 @@ bool __fastcall TMainForm::UriIsDirectory(String sUri)
 //---------------------------------------------------------------------------
 String __fastcall TMainForm::GetShortcutTarget(String wPath)
 {
-  if (ExtractFileExt(wPath).LowerCase() != ".lnk")
+  if (MyExtractFileExt(wPath) != ".lnk")
     return "";
 
   String wOut = "";
@@ -1121,7 +1121,8 @@ bool __fastcall TMainForm::AddFileToListBox(TPlaylistForm* f, String sSourcePath
   {
     // NOTE: the following creates a new TPlayerURL() class object!
     // (its pointer is stored in the list-item's Tag property)
-    f->AddListItem(sSourcePath);
+    if (IsAudioFile(sSourcePath))
+      f->AddListItem(sSourcePath);
 
     // move the first file to the cache
     if (f->Count == 1)
@@ -1258,7 +1259,7 @@ bool __fastcall TMainForm::IsAudioFile(String sSourcePath)
 
   if (GBypassFilters) return true;
 
-  String sExt = ExtractFileExt(sSourcePath).LowerCase();
+  String sExt = MyExtractFileExt(sSourcePath);
 
   if (sExt.IsEmpty()) return false;
 
@@ -1275,7 +1276,7 @@ bool __fastcall TMainForm::IsPlaylistPath(String sSourcePath)
 
   if (GBypassFilters) return true;
 
-  String sExt = ExtractFileExt(sSourcePath).LowerCase();
+  String sExt = MyExtractFileExt(sSourcePath);
 
   return IsPlaylistExtension(sExt);
 }
@@ -1306,6 +1307,35 @@ bool __fastcall TMainForm::IsFileUri(String sIn)
 bool __fastcall TMainForm::IsSourcePathUri(String sIn)
 {
   return sIn.LowerCase().Pos("file:/") == 1;
+}
+//---------------------------------------------------------------------------
+String __fastcall TMainForm::MyExtractFileExt(String sPath)
+{
+  int len = sPath.Length();
+
+  String sExt;
+
+  int dotIdx = 0;
+
+  for (int ii = len; ii > 0; ii--)
+  {
+    if (sPath[ii] == '.')
+    {
+      dotIdx = ii;
+      break;
+    }
+    if (sPath[ii] == '\\' || sPath[ii] == '/' || sPath[ii] == ':')
+      break;
+  }
+
+  // have to have at least 1 char before '.'
+  if (dotIdx > 1)
+    sExt = sPath.SubString(dotIdx, len - dotIdx + 1).LowerCase();
+
+#if DEBUG_ON
+  MainForm->CWrite("\r\nTMainForm::MyExtractFileExt(String sPath): \"" + String(sExt) + "\"\r\n");
+#endif
+  return sExt;
 }
 //---------------------------------------------------------------------------
 void __fastcall TMainForm::VA_10Click(TObject* Sender)

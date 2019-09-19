@@ -2,7 +2,7 @@
 #ifndef MainH
 #define MainH
 //---------------------------------------------------------------------------
-#define VERSION "1.79"
+#define VERSION "1.80"
 #define FREEWARE_EDITION true
 #define DEBUG_ON false // Include a debug console, use MainForm->CWrite("")
 //---------------------------------------------------------------------------
@@ -309,6 +309,7 @@ private:	// User declarations
   bool __fastcall IsPlaylistPath(String sSourcePath);
   bool __fastcall IsAudioFile(String sSourcePath);
   bool __fastcall IsPlaylistExtension(String sExt);
+  String __fastcall MyExtractFileExt(String sPath);
   bool __fastcall SetVolumes(void);
   bool __fastcall SetVolumeA(int v);
   bool __fastcall SetVolumeA(void);
