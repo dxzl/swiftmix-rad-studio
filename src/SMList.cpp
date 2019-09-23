@@ -119,7 +119,6 @@ void __fastcall TPlaylistForm::FormCloseQuery(TObject *Sender, bool &CanClose)
 //---------------------------------------------------------------------------
 void __fastcall TPlaylistForm::FormClose(TObject *Sender, TCloseAction &Action)
 {
-  DestroyProgressForm();
   DestroyFileDialog();
   DestroyImportDialog();
   DestroyExportDialog();
@@ -128,6 +127,7 @@ void __fastcall TPlaylistForm::FormClose(TObject *Sender, TCloseAction &Action)
 void __fastcall TPlaylistForm::FormDestroy(TObject *Sender)
 {
   ClearAndStop();
+  DestroyProgressForm(); // have to do this here since it's created in FormCreate()!
 
   if (FCheckBox)
     delete FCheckBox;

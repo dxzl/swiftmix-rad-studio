@@ -154,6 +154,8 @@ __published:	// IDE-managed Components
   void __fastcall FormActivate(TObject *Sender);
 
 private:
+  WideString __fastcall WTrim(WideString wIn);
+  bool __fastcall ParseComplexPath(WideString wPath, TStringList* sl);
   bool __fastcall SetFileName(HWND hEdit, WideString wName);
   WideString __fastcall GetListViewItemText(HWND hListView, int selectedIndex);
   WideString __fastcall GetTextFromCommonDialog(HWND hWnd, UINT msg);
@@ -202,6 +204,7 @@ private:
   HWND FDlgHandle;
 
 protected:
+  bool __fastcall GetMultiSelect(void);
   WideString __fastcall GetFileName(void);
   String __fastcall GetFileNameUtf8(void);
   String __fastcall GetTitleUtf8(void);
@@ -250,6 +253,7 @@ public:		// User declarations
   __property WideString CurrentFolder = {read = FCurrentFolder};
   __property WideString CurrentFilter = {read = FCurrentFilter};
   __property bool DisplayFullPath = {read = FDisplayFullPath};
+  __property bool IsMultiSelect = {read = GetMultiSelect};
 };
 //---------------------------------------------------------------------------
 extern PACKAGE TOFMSDlgForm *OFMSDlgForm;

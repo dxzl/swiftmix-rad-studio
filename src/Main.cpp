@@ -936,7 +936,7 @@ bool __fastcall TMainForm::GetShortcut(String &wPath, bool &bIsDirectory)
 
     if (FileExists(wPath))
     {
-      if (MyExtractFileExt(wPath) == ".lnk")
+      if (MyExtractFileExt(wPath) == "lnk")
       {
         wPath = GetShortcutTarget(wPath);
 
@@ -1009,7 +1009,7 @@ bool __fastcall TMainForm::UriIsDirectory(String sUri)
 //---------------------------------------------------------------------------
 String __fastcall TMainForm::GetShortcutTarget(String wPath)
 {
-  if (MyExtractFileExt(wPath) != ".lnk")
+  if (MyExtractFileExt(wPath) != "lnk")
     return "";
 
   String wOut = "";
@@ -1263,11 +1263,11 @@ bool __fastcall TMainForm::IsAudioFile(String sSourcePath)
 
   if (sExt.IsEmpty()) return false;
 
-  return sExt == ".mp3" || sExt == ".wma" || sExt == ".asf" || sExt == ".wav" ||
-          sExt == ".mpa" || sExt == ".mpe" || sExt == ".m3u" || sExt == ".avi" || sExt == ".aac" ||
-          sExt == ".adt" || sExt == ".adts" || sExt == ".mp2" || sExt == ".cda" ||
-          sExt == ".au" || sExt == ".snd" || sExt == ".aif" || sExt == ".aiff" || sExt == ".aifc" ||
-          sExt == ".mid" || sExt == ".midi" || sExt == ".rmi" || sExt == ".m4a";
+  return sExt == "mp3" || sExt == "wma" || sExt == "asf" || sExt == "wav" ||
+          sExt == "mpa" || sExt == "mpe" || sExt == "m3u" || sExt == "avi" || sExt == "aac" ||
+          sExt == "adt" || sExt == "adts" || sExt == "mp2" || sExt == "cda" ||
+          sExt == "au" || sExt == "snd" || sExt == "aif" || sExt == "aiff" || sExt == "aifc" ||
+          sExt == "mid" || sExt == "midi" || sExt == "rmi" || sExt == "m4a";
 }
 //---------------------------------------------------------------------------
 bool __fastcall TMainForm::IsPlaylistPath(String sSourcePath)
@@ -1285,9 +1285,9 @@ bool __fastcall TMainForm::IsPlaylistExtension(String sExt)
 {
   if (sExt.IsEmpty()) return false;
 
-  return sExt == ".wpl" || sExt == ".m3u8" || sExt == ".m3u" ||
-        sExt == ".asx" || sExt == ".xspf" || sExt == ".wax" ||
-          sExt == ".wmx" || sExt == ".wvx" ||  sExt == ".pls" || sExt == ".txt";
+  return sExt == "wpl" || sExt == "m3u8" || sExt == "m3u" ||
+        sExt == "asx" || sExt == "xspf" || sExt == "wax" ||
+          sExt == "wmx" || sExt == "wvx" ||  sExt == "pls" || sExt == "txt";
 }
 //---------------------------------------------------------------------------
 // Could have "file:/laptop/D:/path/file.wma" so the key to telling a URL from
@@ -1309,6 +1309,7 @@ bool __fastcall TMainForm::IsSourcePathUri(String sIn)
   return sIn.LowerCase().Pos("file:/") == 1;
 }
 //---------------------------------------------------------------------------
+// returns extension (without the period!)
 String __fastcall TMainForm::MyExtractFileExt(String sPath)
 {
   int len = sPath.Length();
@@ -1329,8 +1330,9 @@ String __fastcall TMainForm::MyExtractFileExt(String sPath)
   }
 
   // have to have at least 1 char before '.'
-  if (dotIdx > 1)
-    sExt = sPath.SubString(dotIdx, len - dotIdx + 1).LowerCase();
+  if (dotIdx > 1 && dotIdx < len)
+    //sExt = sPath.SubString(dotIdx, len - dotIdx + 1).LowerCase(); // with period...
+    sExt = sPath.SubString(dotIdx + 1, len - dotIdx).LowerCase(); // without period
 
 #if DEBUG_ON
   MainForm->CWrite("\r\nTMainForm::MyExtractFileExt(String sPath): \"" + String(sExt) + "\"\r\n");

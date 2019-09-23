@@ -446,10 +446,10 @@ WideString __fastcall TOFMSDlgForm::GetNextFileName(void)
 }
 */
 //---------------------------------------------------------------------------
-//bool __fastcall TOFMSDlgForm::GetMultiSelect(void)
-//{
-//  return m_ofn.Flags & OFN_ALLOWMULTISELECT;
-//}
+bool __fastcall TOFMSDlgForm::GetMultiSelect(void)
+{
+  return m_ofn.Flags & OFN_ALLOWMULTISELECT;
+}
 //---------------------------------------------------------------------------
 // Property getter for this->FileNameUtf8
 String __fastcall TOFMSDlgForm::GetFileNameUtf8(void)
@@ -1031,12 +1031,12 @@ bool __fastcall TOFMSDlgForm::LoadFontFrom(HWND hDlgDest, HWND hDlgSrc)
   catch(...) { return FALSE; }
 }
 //---------------------------------------------------------------------------
-bool __fastcall TOFMSDlgForm::AddWideItem(WideString sPath, bool bIsDirectory)
+bool __fastcall TOFMSDlgForm::AddWideItem(WideString wPath, bool bIsDirectory)
 {
   try
   {
     TWideItem* pWI = new TWideItem();
-    pWI->s = sPath;
+    pWI->s = wPath;
     pWI->IsDirectory = bIsDirectory;
     p_fno->Add(pWI);
     this->FResult = IDOK;
@@ -1154,35 +1154,6 @@ LRESULT CALLBACK TOFMSDlgForm::OpenFileSubClass(HWND hDlg, UINT uMsg, WPARAM wPa
   {
     case WM_ITEMS_SELECTED: // Custom message!
     {
-/*
-      // Get the selected-count
-      int count = SendMessage(p->m_hListView, LVM_GETSELECTEDCOUNT, 0, 0);
-#if DEBUG_ON
-      OFDbg->CWrite("\r\nWM_ITEMS_SELECTED, Count: " + String(count) + "\r\n");
-#endif
-      LONG style = GetWindowLong(p->m_hCustomOpenButton, GWL_STYLE);
-
-      bool bDisabled = (style & WS_DISABLED);
-
-      if (count == 1)
-      {
-        // enable the open button
-        if (bDisabled)
-        {
-          SetWindowLong(p->m_hCustomOpenButton, GWL_STYLE, style & ~WS_DISABLED);
-          InvalidateRect(p->m_hCustomOpenButton, NULL, TRUE);
-        }
-      }
-      else
-      {
-        // disable the open button (setting this in the .rc file now!)
-        if (!bDisabled)
-        {
-          SetWindowLong(p->m_hCustomOpenButton, GWL_STYLE, style | WS_DISABLED);
-          InvalidateRect(p->m_hCustomOpenButton, NULL, TRUE);
-        }
-      }
-*/
       if (p->m_hListView == NULL) return NULL;
 
       // Get the selected-count
@@ -1192,79 +1163,70 @@ LRESULT CALLBACK TOFMSDlgForm::OpenFileSubClass(HWND hDlg, UINT uMsg, WPARAM wPa
 #endif
       if (count)
       {
-          // Get the first selected item
-          int iFirst = SendMessageW(p->m_hListView, LVM_GETNEXTITEM, -1, LVNI_SELECTED);
-          if (iFirst >= 0)
-          {
-            WideString wName = p->GetListViewItemText(p->m_hListView, iFirst);
-#if DEBUG_ON
-            // we get a hex 201 when we click in the file-edit combobox
-            OFDbg->CWrite("\r\nWwName: " + String(wName) + "\r\n");
-#endif
-
-            if (!wName.IsEmpty())
-            {
-              p->m_hMyFileName = GetDlgItem(hDlg, ID_MyFileName);
-
-              // get the file-edit-box handle
-#if IS_OLD_BORLAND_CPP_BUILDER
-              HWND hWndEdit = p->m_hMyFileName; // use above for RAD Studio, this for old Borland C++ 4
-#else
-              HWND hWndEdit = (HWND)SendMessageW(p->m_hMyFileName, CBEM_GETEDITCONTROL, 0, 0);
-#endif
-
-              //  EM_CANUNDO
-              //  EM_CHARFROMPOS
-              //  EM_EMPTYUNDOBUFFER
-              //  EM_FMTLINES
-              //  EM_GETCUEBANNER
-              //  EM_GETFIRSTVISIBLELINE
-              //  EM_GETHANDLE
-              //  EM_GETHILITE
-              //  EM_GETIMESTATUS
-              //  EM_GETLIMITTEXT
-              //  EM_GETLINE
-              //  EM_GETLINECOUNT
-              //  EM_GETMARGINS
-              //  EM_GETMODIFY
-              //  EM_GETPASSWORDCHAR
-              //  EM_GETRECT
-              //  EM_GETSEL
-              //  EM_GETTHUMB
-              //  EM_GETWORDBREAKPROC
-              //  EM_HIDEBALLOONTIP
-              //  EM_LIMITTEXT
-              //  EM_LINEFROMCHAR
-              //  EM_LINEINDEX
-              //  EM_LINELENGTH
-              //  EM_LINESCROLL
-              //  EM_NOSETFOCUS
-              //  EM_POSFROMCHAR
-              //  EM_REPLACESEL
-              //  EM_SCROLL
-              //  EM_SCROLLCARET
-              //  EM_SETCUEBANNER
-              //  EM_SETHANDLE
-              //  EM_SETHILITE
-              //  EM_SETIMESTATUS
-              //  EM_SETLIMITTEXT
-              //  EM_SETMARGINS
-              //  EM_SETMODIFY
-              //  EM_SETPASSWORDCHAR
-              //  EM_SETREADONLY
-              //  EM_SETRECT
-              //  EM_SETRECTNP
-              //  EM_SETSEL
-              //  EM_SETTABSTOPS
-              //  EM_SETWORDBREAKPROC
-              //  EM_SHOWBALLOONTIP
-              //  EM_TAKEFOCUS
-              //  EM_UNDO
-              //  WM_UNDO
-              if (hWndEdit)
-                p->SetFileName(hWndEdit, wName);
-            }
-          }
+//          // Get the first selected item
+//          int iFirst = SendMessageW(p->m_hListView, LVM_GETNEXTITEM, -1, LVNI_SELECTED);
+//          if (iFirst >= 0)
+//          {
+//            WideString wName = p->GetListViewItemText(p->m_hListView, iFirst);
+//#if DEBUG_ON
+//            // we get a hex 201 when we click in the file-edit combobox
+//            OFDbg->CWrite("\r\nWwName: " + String(wName) + "\r\n");
+//#endif
+//
+//            if (!wName.IsEmpty())
+//            {
+//              //  EM_CANUNDO
+//              //  EM_CHARFROMPOS
+//              //  EM_EMPTYUNDOBUFFER
+//              //  EM_FMTLINES
+//              //  EM_GETCUEBANNER
+//              //  EM_GETFIRSTVISIBLELINE
+//              //  EM_GETHANDLE
+//              //  EM_GETHILITE
+//              //  EM_GETIMESTATUS
+//              //  EM_GETLIMITTEXT
+//              //  EM_GETLINE
+//              //  EM_GETLINECOUNT
+//              //  EM_GETMARGINS
+//              //  EM_GETMODIFY
+//              //  EM_GETPASSWORDCHAR
+//              //  EM_GETRECT
+//              //  EM_GETSEL
+//              //  EM_GETTHUMB
+//              //  EM_GETWORDBREAKPROC
+//              //  EM_HIDEBALLOONTIP
+//              //  EM_LIMITTEXT
+//              //  EM_LINEFROMCHAR
+//              //  EM_LINEINDEX
+//              //  EM_LINELENGTH
+//              //  EM_LINESCROLL
+//              //  EM_NOSETFOCUS
+//              //  EM_POSFROMCHAR
+//              //  EM_REPLACESEL
+//              //  EM_SCROLL
+//              //  EM_SCROLLCARET
+//              //  EM_SETCUEBANNER
+//              //  EM_SETHANDLE
+//              //  EM_SETHILITE
+//              //  EM_SETIMESTATUS
+//              //  EM_SETLIMITTEXT
+//              //  EM_SETMARGINS
+//              //  EM_SETMODIFY
+//              //  EM_SETPASSWORDCHAR
+//              //  EM_SETREADONLY
+//              //  EM_SETRECT
+//              //  EM_SETRECTNP
+//              //  EM_SETSEL
+//              //  EM_SETTABSTOPS
+//              //  EM_SETWORDBREAKPROC
+//              //  EM_SHOWBALLOONTIP
+//              //  EM_TAKEFOCUS
+//              //  EM_UNDO
+//              //  WM_UNDO
+//              if (p->m_hMyFileName)
+//                p->SetFileName(p->m_hMyFileName, wName);
+//            }
+//          }
 
         LONG style = GetWindowLongW(p->m_hCustomOpenButton, GWL_STYLE);
         bool bDisabled = (style & WS_DISABLED);
@@ -1313,7 +1275,13 @@ LRESULT CALLBACK TOFMSDlgForm::OpenFileSubClass(HWND hDlg, UINT uMsg, WPARAM wPa
 
             p->m_hChildWindow = (HWND)lParam;
             p->m_hListView = GetDlgItem(hDlg, ID_FileList); // this works here... but the handle changes!
+
+            // get the file-edit-box handle
             p->m_hMyFileName = GetDlgItem(hDlg, ID_MyFileName);
+#if !IS_OLD_BORLAND_CPP_BUILDER
+            p->m_hMyFileName = (HWND)SendMessageW(p->m_hMyFileName, CBEM_GETEDITCONTROL, 0, 0);
+#endif
+
           }
         }
       }
@@ -1535,9 +1503,6 @@ UINT CALLBACK TOFMSDlgForm::OFNHookProc(HWND hDlg, UINT msg, WPARAM wParam, LPAR
       // Get the OPENFILENAMEW pointer...
       OPENFILENAMEW* p_ofn = (OPENFILENAMEW*)GetProp(GetParent(hDlg), OFNPROP);
       if (p_ofn == NULL) break;
-#if DEBUG_ON
-     OFDbg->CWrite("\r\nOK\r\n");
-#endif
 
       TOFMSDlgForm* p_osfDlg = (TOFMSDlgForm*)p_ofn->lCustData;
 
@@ -1596,6 +1561,9 @@ UINT CALLBACK TOFMSDlgForm::OFNHookProc(HWND hDlg, UINT msg, WPARAM wParam, LPAR
               // open file dialog.
 
               PostMessageW(hParent, WM_COMMAND, MakeWParam(IDOK, BN_CLICKED), (LPARAM)GetDlgItem(hParent, IDOK));
+#if DEBUG_ON
+              OFDbg->CWrite("\r\nsent BN_CLICKED IDOK!\r\n");
+#endif
             }
             return TRUE;
 
@@ -1609,10 +1577,8 @@ UINT CALLBACK TOFMSDlgForm::OFNHookProc(HWND hDlg, UINT msg, WPARAM wParam, LPAR
 
             case ID_CUSTOM_SELECT:
             {
-              HWND hFileName = GetDlgItem(hParent, ID_MyFileName);
-
               // get the file-edit-box modify flag
-              BOOL bModified = hFileName == NULL ? FALSE : SendMessage(hFileName, EM_GETMODIFY, 0, 0);
+              BOOL bModified = (p->m_hMyFileName == NULL) ? FALSE : SendMessage(p->m_hMyFileName, EM_GETMODIFY, 0, 0);
 
               if (bModified)
               {
@@ -1625,25 +1591,54 @@ UINT CALLBACK TOFMSDlgForm::OFNHookProc(HWND hDlg, UINT msg, WPARAM wParam, LPAR
                 p->DeleteFileNameObjects();
 
                 // if the user typed their own path - use that...
-                int bufLen = GetWindowTextLengthW(hFileName) + 1;
+                int bufLen = GetWindowTextLengthW(p->m_hMyFileName) + 1;
                 WideChar* buf = new WideChar[bufLen];
 
-                int strLen = GetWindowTextW(hFileName, buf, bufLen);
+                int strLen = GetWindowTextW(p->m_hMyFileName, buf, bufLen);
 
                 if (strLen > 0)
                 {
-                  WideString sPath = WideString(buf, strLen);
+                  WideString wPath = WideString(buf, strLen);
 
 #if DEBUG_ON
-                  OFDbg->CWrite("\r\nEdit Control Path: " + sPath + "\r\n");
+                  OFDbg->CWrite("\r\nEdit Control Path: " + String(wPath) + "\r\n");
 #endif
-                  if (!sPath.IsEmpty())
+                  if (!wPath.IsEmpty())
                   {
-                    bool bIsDirectory = false;
+                    TStringList* sl = NULL;
 
-                    // sPath, bIsDirectory are by reference...
-                    if (p->GetShortcut(sPath, bIsDirectory))
-                      p->AddWideItem(sPath, bIsDirectory);
+                    // path can have multiple quote and space delineated song-files in it...
+                    try
+                    {
+                      sl = new TStringList();
+
+                      if (p->ParseComplexPath(wPath, sl))
+                      {
+                        if (sl->Count)
+                        {
+                          for (int ii = 0; ii < sl->Count; ii++)
+                          {
+                            bool bIsDirectory = false;
+
+                            // sPath, bIsDirectory are by reference...
+                            WideString wS;
+
+#if IS_OLD_BORLAND_CPP_BUILDER
+                            wS = OFUtil->Utf8ToWide(sl->Strings[ii]);
+#else
+                            wS = WideString(sl->Strings[ii]);
+#endif
+
+                            if (p->GetShortcut(wS, bIsDirectory))
+                              p->AddWideItem(wS, bIsDirectory);
+                          }
+                        }
+                      }
+                    }
+                    __finally
+                    {
+                      if (sl) delete sl;
+                    }
                   }
                 }
                 delete [] buf;
@@ -1708,6 +1703,112 @@ UINT CALLBACK TOFMSDlgForm::OFNHookProc(HWND hDlg, UINT msg, WPARAM wParam, LPAR
 //#endif
   } // end switch msg
   return FALSE; // Calls default if you return 0
+}
+//---------------------------------------------------------------------------
+bool __fastcall TOFMSDlgForm::ParseComplexPath(WideString wPath, TStringList* sl)
+{
+  // NOTE: found another quirk in the dialog... if you select multiple files
+  // and the length is longer than the box's width, the file-path part is
+  // omitted! The string might just begin with a quote or a space-quote - then,
+  // we need to add the path ourselves!
+
+  int iLen = wPath.Length();
+  if (iLen == 0) return false;
+
+  int Q1 = 0;
+  WideString wAcc, wMainPath;
+  bool bHaveMainPath = false;
+
+  int ii;
+  for (ii = 1; ii <= iLen; ii++)
+  {
+    WideChar c = wPath[ii];
+
+    if (c == '\"')
+    {
+      if (!bHaveMainPath)
+      {
+        // set the main path
+        wMainPath = WTrim(wAcc); // trim any spaces before the leading quote;
+        wAcc = "";
+
+        if (wMainPath.IsEmpty())
+        {
+          wMainPath = OFUtil->GetCurrentDirW();
+          
+          // has to be terminated!
+          if (wMainPath.Length() > 0 && wMainPath[wMainPath.Length()] != '\\')
+            wMainPath += "\\";
+        }
+
+        bHaveMainPath = true;
+        Q1 = ii;
+      }
+      else if (Q1)
+      {
+        wAcc = WTrim(wMainPath) + WTrim(wAcc);
+        if (wAcc.Length())
+        {
+#if IS_OLD_BORLAND_CPP_BUILDER
+          sl->Add(OFUtil->WideToUtf8Ansi(wAcc));
+#else
+          sl->Add(String(wAcc));
+#endif
+#if DEBUG_ON
+          OFDbg->CWrite("\r\nParseComplexPath: \"" + String(wAcc) + "\"\r\n");
+#endif
+        }
+        Q1 = 0;
+        wAcc = "";
+      }
+      else
+        Q1 = ii;
+    }
+    else
+      wAcc += WideString(c);
+  }
+  if (!bHaveMainPath)
+  {
+    // set the main path
+    wAcc = WTrim(wAcc); // trim any spaces before the leading quote;
+
+    if (wAcc.IsEmpty())
+    {
+      wAcc = OFUtil->GetCurrentDirW();
+
+      // has to be terminated!
+      if (wAcc.Length() > 0 && wAcc[wAcc.Length()] != '\\')
+        wAcc += "\\";
+    }
+
+    if (wAcc.Length())
+    {
+#if IS_OLD_BORLAND_CPP_BUILDER
+      sl->Add(OFUtil->WideToUtf8Ansi(wAcc));
+#else
+      sl->Add(String(wAcc));
+#endif
+#if DEBUG_ON
+      OFDbg->CWrite("\r\nParseComplexPath: \"" + String(wAcc) + "\"\r\n");
+#endif
+    }
+  }
+  return true;
+}
+//---------------------------------------------------------------------------
+WideString __fastcall TOFMSDlgForm::WTrim(WideString wIn)
+{
+#if IS_OLD_BORLAND_CPP_BUILDER
+  while (wIn.Length() > 1 && wIn[wIn.Length()] == ' ')
+    wIn = wIn.SubString(1, wIn.Length()-1);
+  while (wIn.Length() > 1 && wIn[1] == ' ')
+    wIn = wIn.SubString(2, wIn.Length()-1);
+  if (wIn.Length() == 1 && wIn[1] == ' ')
+    return "";
+  return wIn;
+#else
+  return wIn.Trim();
+#endif
 }
 //---------------------------------------------------------------------------
 int __fastcall TOFMSDlgForm::ProcessNotifyMessage(HWND hDlg, LPOFNOTIFY p_notify)
@@ -1791,7 +1892,7 @@ int __fastcall TOFMSDlgForm::ProcessNotifyMessage(HWND hDlg, LPOFNOTIFY p_notify
         this->FCurrentFolder = newFolder;
 
         // Set TOFMSDlgForm's window-title to the current folder
-        WideString wTemp = this->FDlgTitle + L": " + newFolder;
+        WideString wTemp = this->FDlgTitle + L" - " + newFolder;
         SetWindowTextW(hParent, wTemp.c_bstr());
 
         HWND hFileName = GetDlgItem(hParent, ID_MyFileName);
@@ -1901,6 +2002,10 @@ bool __fastcall TOFMSDlgForm::NewFileSelected(HWND hDlg)
 
   // Show current folder path in window-title-bar and in the file edit-box
   WideString newFile = this->GetTextFromCommonDialog(hParent, CDM_GETFILEPATH);
+
+#if DEBUG_ON
+  OFDbg->CWrite("\r\n" + String(newFile) + "\r\n");
+#endif
 
   if (!newFile.IsEmpty())
   {
