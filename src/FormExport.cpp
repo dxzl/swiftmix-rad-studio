@@ -46,7 +46,7 @@ int __fastcall TExportForm::Dialog(TPlaylistForm* f, String d, String t)
   if (f == NULL)
     return 0;
 
-  if (f->Count == 0 || f->PlayTag < 0)
+  if (f->Count == 0 || f->PlayIdx < 0)
     return 0;
 
   int Count = -1;
@@ -147,7 +147,7 @@ int __fastcall TExportForm::NoDialog(TPlaylistForm* f, String sListPath,
   if (f == NULL)
     return 0;
 
-  if (f->Count == 0 || f->PlayTag < 0)
+  if (f->Count == 0 || f->PlayIdx < 0)
     return 0;
 
   int Count = 0;

@@ -24,10 +24,15 @@
 // Timer modes
 #define TM_NULL                 0
 #define TM_START_PLAYER         1
-#define TM_NEXT_PLAYER          2
-#define TM_STOP_PLAYER          3
-#define TM_CHECKBOX_CLICK       4
-#define TM_SCROLL_KEY_PRESSED   5
+#define TM_NEXT_SONG            2
+#define TM_NEXT_SONG_CHECK      3
+#define TM_FADE                 4
+#define TM_STOP_PLAYER          5
+#define TM_CHECKBOX_CLICK       6
+#define TM_SCROLL_KEY_PRESSED   7
+
+#define RETRY_A 4
+#define RETRY_B 6
 //---------------------------------------------------------------------------
 
 #define SONG_PATH_SIZE 4096
@@ -140,17 +145,15 @@ __published:  // IDE-managed Components
 
 private:  // User declarations
 
+  bool __fastcall UnplayedSongsInOtherList(void);
   String __fastcall GetMediaTags(void);
-  bool __fastcall IsPlayOrPause(TPlaylistForm* f);
   void __fastcall MyMoveSelected(TCheckListBox* DestList, TCheckListBox* SourceList, int x=-1, int y=-1);
 //  bool __fastcall InsertNewDeleteOld(TCheckListBox* SourceList,
 //                TCheckListBox* DestList, int SourceIndex, int &DestIndex );
-  void __fastcall ClearCheckState(int oldtag);
+  void __fastcall ClearCheckState(int oldidx);
   void __fastcall QueueToIndex(int Index);
   void __fastcall UpdatePlayerStatus(void);
   bool __fastcall SendToSwiftMix(void * sms, int size, int msg);
-  void __fastcall StopPlayer(TWindowsMediaPlayer* p);
-  void __fastcall StartPlayer(TWindowsMediaPlayer* p);
   void __fastcall SetTimer(int mode, int time);
   void __fastcall CheckAllItems(void);
   void __fastcall WMListDropFile(TWMDropFiles &Msg);
@@ -162,16 +165,16 @@ private:  // User declarations
   void __fastcall ClearListItems(void);
 
   int m_TimerMode, m_failSafeCounter;
-  bool bInhibitFlash;
-  bool bDoubleClick, bCheckClick;
+  bool m_bInhibitFlash;
+  bool m_bDoubleClick, m_bCheckClick;
   int m_Duration, m_PrevState;
-  bool bForceNextPlay, bSkipFilePrompt, bOpening;
+  bool m_bForceNextPlay, m_bSkipFilePrompt, m_bOpening;
 
   // Properties
   TCheckListBox* FCheckBox;
   TPlaylistForm* FOtherForm;
   TWindowsMediaPlayer *FWmp, *FOtherWmp;
-  int FNextIndex, FTargetIndex;
+  int FNextIndex, FTargetIndex, FPlayIdx;
   TColor FTextColor;
   bool FEditMode;
   bool FPlayerA;
@@ -220,28 +223,29 @@ public:  // User declarations
   void __fastcall DestroyProgressForm(void);
   void __fastcall DestroyFileDialog(void);
   bool __fastcall QueueFirst(void);
-  void __fastcall NextPlayer(bool bForceStartPlay = false);
+  void __fastcall NextSong(bool bForceStartPlay = false);
   void __fastcall TimeDisplay(int t, int item);
   void __fastcall ClearAndStop(void);
   void __fastcall GetSongInfo(void);
   void __fastcall GetSongInfo(STRUCT_A &sms);
   void __fastcall SetTitle(void);
   String __fastcall GetNext(bool bNoSet = false, bool bEnableRandom = false);
-  String __fastcall GetNextCheckCache(bool bNoSet = false, bool bEnableRandom = false);
   TImportForm* __fastcall CreateImportDialog(void);
   TExportForm* __fastcall CreateExportDialog(void);
   TOFMSDlgForm* __fastcall CreateFileDialog(void);
-  int __fastcall GetPlayTag(void);
   void __fastcall AddListItem(String s);
   TPlayerURL* __fastcall InitTPlayerURL(String s);
   void __fastcall DeleteListItem(int idx, bool bDeleteFromCache=true);
   bool __fastcall RestoreCache(void);
+  bool __fastcall IsPlayOrPause(void);
+  void __fastcall StopPlayer(void);
+  void __fastcall StartPlayer(void);
 
   STRUCT_A MediaInfo;
 
 //  __property TCheckListBox* CheckBox = {read = FCheckBox};
   __property int Count = {read = GetCount};
-  __property int PlayTag = {read = GetPlayTag};
+  __property int PlayIdx = {read = FPlayIdx, write = FPlayIdx};
   __property TPlaylistForm* OtherForm = {read = FOtherForm, write = FOtherForm};
   __property TWindowsMediaPlayer* Wmp = {read = FWmp, write = FWmp};
   __property TWindowsMediaPlayer* OtherWmp = {read = FOtherWmp, write = FOtherWmp};

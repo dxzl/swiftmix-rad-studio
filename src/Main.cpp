@@ -1403,13 +1403,13 @@ void __fastcall TMainForm::VB_100Click(TObject* Sender)
 void __fastcall TMainForm::Player1Next1Click(TObject* Sender)
 {
   ListA->NextIndex = ListA->TargetIndex;
-  ListA->NextPlayer();
+  ListA->NextSong();
 }
 //---------------------------------------------------------------------------
 void __fastcall TMainForm::Player2Next1Click(TObject* Sender)
 {
   ListB->NextIndex = ListB->TargetIndex;
-  ListB->NextPlayer();
+  ListB->NextSong();
 }
 //---------------------------------------------------------------------------
 void __fastcall TMainForm::MenuForceFadeClick(TObject* Sender)
@@ -1419,23 +1419,18 @@ void __fastcall TMainForm::MenuForceFadeClick(TObject* Sender)
 //---------------------------------------------------------------------------
 bool __fastcall TMainForm::ForceFade(void)
 // Manually initiate an "auto-fade"
-// Also triggers next Queued song
 {
-  if (!WindowsMediaPlayer1 || !WindowsMediaPlayer2 || bModeManualFade)
+  if (!ListA || !ListB || bModeManualFade)
     return false;
 
   try
   {
     // player 1 on now?
-    if (ListB->Tag >= 0 && WindowsMediaPlayer1->playState == WMPPlayState::wmppsPlaying)
+    if (ListA->IsPlayOrPause() && ListB->PlayIdx >= 0)
     {
       // Start Player 2
-      if (WindowsMediaPlayer2->playState != WMPPlayState::wmppsPlaying)
-      {
-        WindowsMediaPlayer2->settings->mute = true;
-        WindowsMediaPlayer2->controls->play();
-        WindowsMediaPlayer2->settings->mute = false;
-      }
+      if (!ListB->IsPlayOrPause())
+        ListB->StartPlayer();
 
       bFadeRight = true; // Set fade-direction
       AutoFadeTimer->Enabled = true; // Start a fade
@@ -1443,15 +1438,11 @@ bool __fastcall TMainForm::ForceFade(void)
     }
 
     // player 2 on now?
-    if (ListA->Tag >= 0 && WindowsMediaPlayer2->playState == WMPPlayState::wmppsPlaying)
+    if (ListB->IsPlayOrPause() && ListA->PlayIdx >= 0)
     {
       // Start Player 1
-      if (WindowsMediaPlayer1->playState != WMPPlayState::wmppsPlaying)
-      {
-        WindowsMediaPlayer1->settings->mute = true;
-        WindowsMediaPlayer1->controls->play();
-        WindowsMediaPlayer1->settings->mute = false;
-      }
+      if (!ListA->IsPlayOrPause())
+        ListA->StartPlayer();
 
       bFadeRight = false; // Set fade-direction
       AutoFadeTimer->Enabled = true; // Start a fade
@@ -1464,6 +1455,84 @@ bool __fastcall TMainForm::ForceFade(void)
   }
 
   return false;
+}
+//---------------------------------------------------------------------------
+// Here, we either increment or decrement the fader trackbar position by the
+// trackbar frequency. The base timer unit is 50ms. The up-down Fade Rate
+// can be 0 to +9 or 0 to -9. When it's positive, the timer-tick is 50ms and the
+// tick-frequency of the trackbar is 0-9. There are 100 steps in the
+// trackbar range. So the "normal" fade is 50ms * 100 steps = 5 seconds.
+// The fastest fade is (50ms*100)/9 = .55 seconds. For negative fade-rates
+// the tick-frequency is 1 and the trackbar interval is 50ms to (50*9) = 450ms.
+// So the slowest fade-time is 100 steps at 50ms per step * 9 or 450 * 100 or
+// 45 seconds.
+void __fastcall TMainForm::AutoFadeTimerEvent(TObject* Sender)
+{
+  if (!WindowsMediaPlayer1 || !WindowsMediaPlayer2) return;
+
+  try
+  {
+    if (bFadeRight)
+    {
+      if (FaderTrackBar->Position < FaderTrackBar->Max)
+      {
+        if (FaderTrackBar->Position <= FaderTrackBar->Max-FaderTrackBar->Frequency)
+          FaderTrackBar->Position += FaderTrackBar->Frequency;
+        else
+          FaderTrackBar->Position = FaderTrackBar->Max;
+      }
+      else
+      {
+        AutoFadeTimer->Enabled = false;
+
+        // this is a way to periodically return focus to this
+        // main form...
+        RestoreFocus();
+
+        ListA->StopPlayer();
+
+        // Queue next song
+        ListA->Wmp->URL = ListA->GetNext();
+
+        if (ListA->TargetIndex < 0)
+          if (FileDialog(ListA, SaveDirA, ADD_A_TITLE))
+            ListA->QueueFirst();
+      }
+    }
+    else
+    {
+      if (FaderTrackBar->Position > FaderTrackBar->Min)
+      {
+        if (FaderTrackBar->Position >= FaderTrackBar->Frequency)
+          FaderTrackBar->Position -= FaderTrackBar->Frequency;
+        else
+          FaderTrackBar->Position = FaderTrackBar->Min;
+      }
+      else
+      {
+        AutoFadeTimer->Enabled = false;
+
+        // this is a way to periodically return focus to this
+        // main form...
+        RestoreFocus();
+
+        ListB->StopPlayer();
+
+        // Queue next song
+        ListB->Wmp->URL = ListB->GetNext();
+
+        if (ListB->TargetIndex < 0)
+          if (FileDialog(ListB, SaveDirB, ADD_B_TITLE))
+            ListB->QueueFirst();
+      }
+    }
+  }
+  catch(...)
+  {
+#if DEBUG_ON
+    ShowMessage("AutoFadeTimerEvent() threw an exception...");
+#endif
+  }
 }
 //---------------------------------------------------------------------------
 bool __fastcall TMainForm::SetVolumeAndCheckmarkA(int v)
@@ -1735,7 +1804,7 @@ void __fastcall TMainForm::ShowPlaylist(TPlaylistForm* f)
 
   try
   {
-    if (f->Count && f->Tag == -1)
+    if (f->Count && f->PlayIdx == -1)
       f->QueueFirst();
 
     f->SetTitle();
@@ -1818,88 +1887,6 @@ void __fastcall TMainForm::ViewPlaylist1Click(TObject* Sender)
 void __fastcall TMainForm::ViewPlaylist2Click(TObject* Sender)
 {
   ShowPlaylist(ListB);
-}
-//---------------------------------------------------------------------------
-// Here, we either increment or decrement the fader trackbar position by the
-// trackbar frequency. The base timer unit is 50ms. The up-down Fade Rate
-// can be 0 to +9 or 0 to -9. When it's positive, the timer-tick is 50ms and the
-// tick-frequency of the trackbar is 0-9. There are 100 steps in the
-// trackbar range. So the "normal" fade is 50ms * 100 steps = 5 seconds.
-// The fastest fade is (50ms*100)/9 = .55 seconds. For negative fade-rates
-// the tick-frequency is 1 and the trackbar interval is 50ms to (50*9) = 450ms.
-// So the slowest fade-time is 100 steps at 50ms per step * 9 or 450 * 100 or
-// 45 seconds.
-void __fastcall TMainForm::AutoFadeTimerEvent(TObject* Sender)
-{
-  if (!WindowsMediaPlayer1 || !WindowsMediaPlayer2) return;
-
-  try
-  {
-    if (bFadeRight)
-    {
-      if (FaderTrackBar->Position < FaderTrackBar->Max)
-      {
-        if (FaderTrackBar->Position <= FaderTrackBar->Max-FaderTrackBar->Frequency)
-          FaderTrackBar->Position += FaderTrackBar->Frequency;
-        else
-          FaderTrackBar->Position = FaderTrackBar->Max;
-      }
-      else
-      {
-        AutoFadeTimer->Enabled = false;
-
-        // this is a way to periodically return focus to this
-        // main form...
-        RestoreFocus();
-
-        WindowsMediaPlayer1->settings->mute = true;
-        WindowsMediaPlayer1->controls->stop();
-        WindowsMediaPlayer1->settings->mute = false;
-
-        // Queue next song
-        WindowsMediaPlayer1->URL = ListA->GetNextCheckCache();
-
-        if (ListA->TargetIndex < 0)
-          if (FileDialog(ListA, SaveDirA, ADD_A_TITLE))
-            ListA->QueueFirst();
-      }
-    }
-    else
-    {
-      if (FaderTrackBar->Position > FaderTrackBar->Min)
-      {
-        if (FaderTrackBar->Position >= FaderTrackBar->Frequency)
-          FaderTrackBar->Position -= FaderTrackBar->Frequency;
-        else
-          FaderTrackBar->Position = FaderTrackBar->Min;
-      }
-      else
-      {
-        AutoFadeTimer->Enabled = false;
-
-        // this is a way to periodically return focus to this
-        // main form...
-        RestoreFocus();
-
-        WindowsMediaPlayer2->settings->mute = true;
-        WindowsMediaPlayer2->controls->stop();
-        WindowsMediaPlayer2->settings->mute = false;
-
-        // Queue next song
-        WindowsMediaPlayer2->URL = ListB->GetNextCheckCache();
-
-        if (ListB->TargetIndex < 0)
-          if (FileDialog(ListB, SaveDirB, ADD_B_TITLE))
-            ListB->QueueFirst();
-      }
-    }
-  }
-  catch(...)
-  {
-#if DEBUG_ON
-    ShowMessage("AutoFadeTimerEvent() threw an exception...");
-#endif
-  }
 }
 //---------------------------------------------------------------------------
 void __fastcall TMainForm::FaderTrackBarChange(TObject* Sender)
@@ -3227,6 +3214,14 @@ bool __fastcall TMainForm::DeleteCacheFile(TPlaylistForm* f, long cacheNumber)
 //---------------------------------------------------------------------------
 String __fastcall TMainForm::GetURL(TCheckListBox* l, int idx)
 {
+  if (l == NULL || idx < 0 || idx >= l->Count)
+  {
+#if DEBUG_ON
+    CWrite("\r\nTMainForm::GetURL(): bad index or null list-pointer!\r\n");
+#endif
+    return "";
+  }
+
   String sPath;
 
   try
@@ -3236,7 +3231,16 @@ String __fastcall TMainForm::GetURL(TCheckListBox* l, int idx)
       TPlayerURL* p = (TPlayerURL*)l->Items->Objects[idx];
 
       if (p && p->cacheNumber > 0)
-        sPath = p->cachePath;
+      {
+        if (FileExists(p->cachePath))
+          sPath = p->cachePath;
+        else
+        {
+          sPath = l->Items->Strings[idx];
+          p->cacheNumber = 0;
+          p->cachePath = sPath;
+        }
+      }
       else
         sPath = l->Items->Strings[idx];
     }

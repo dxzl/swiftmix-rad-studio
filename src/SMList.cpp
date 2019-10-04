@@ -38,16 +38,17 @@ __fastcall STRUCT_B::STRUCT_B()
 void __fastcall TPlaylistForm::FormCreate(TObject* Sender)
 {
   Color = TColor(0xF5CFB8);
-  bInhibitFlash = false;
-  bDoubleClick = false;
-  bCheckClick = false;
+  m_bInhibitFlash = false;
+  m_bDoubleClick = false;
+  m_bCheckClick = false;
   m_Duration = 0;
   m_PrevState = 0;
   m_failSafeCounter = 0;
   m_TimerMode = TM_NULL;
-  bForceNextPlay = false;
-  bSkipFilePrompt = false;
-  bOpening = false;
+  m_bForceNextPlay = false;
+  m_bSkipFilePrompt = false;
+  m_bOpening = false;
+  FPlayIdx = -1;
 
   // properties
   FCacheCount = 0;
@@ -134,7 +135,7 @@ void __fastcall TPlaylistForm::FormDestroy(TObject *Sender)
 }
 //---------------------------------------------------------------------------
 void __fastcall TPlaylistForm::Timer1Timer(TObject* Sender)
-// Scroll to Tag item
+// Scroll to FPlayIdx item
 {
   // timeout after user has pressed left, right up or down before
   // we exit Edit mode
@@ -142,8 +143,8 @@ void __fastcall TPlaylistForm::Timer1Timer(TObject* Sender)
   {
     // this will set the item to the one the user has scrolled to
     // when SetTitle() is called
-    if (!IsPlayOrPause(this))
-      this->Tag = CheckBox->ItemIndex;
+    if (!IsPlayOrPause())
+      this->FPlayIdx = CheckBox->ItemIndex;
     FEditMode = false;
     QueueToIndex(CheckBox->ItemIndex);
     FEditMode = true;
@@ -157,59 +158,75 @@ void __fastcall TPlaylistForm::Timer1Timer(TObject* Sender)
   {
     case TM_START_PLAYER:
       Timer1->Enabled = false;
-      StartPlayer(Wmp);
+      StartPlayer();
     break;
 
-    case TM_NEXT_PLAYER:
+    case TM_FADE:
       Timer1->Enabled = false;
-      if (!MainForm->ForceFade())
-        NextPlayer(true);
+      MainForm->ForceFade();
+    break;
+
+    case TM_NEXT_SONG:
+      Timer1->Enabled = false;
+      NextSong(true); // force start of player
+    break;
+
+    case TM_NEXT_SONG_CHECK:
+
+      Timer1->Enabled = false;
+
+      if (!UnplayedSongsInOtherList())
+      {
+        FNextIndex = -1;
+        NextSong(true);
+      }
+
     break;
 
     case TM_STOP_PLAYER:
       Timer1->Enabled = false;
-      StopPlayer(Wmp);
+      StopPlayer();
     break;
 
     case TM_CHECKBOX_CLICK:
 
       Timer1->Enabled = false;
 
-      if (bDoubleClick)
+      if (m_bDoubleClick)
       {
         if (!Wmp)
         {
-          bDoubleClick = false;
-          bCheckClick = false;
+          m_bDoubleClick = false;
+          m_bCheckClick = false;
           return;
         }
 
         // Check the item so GetNext() will queue it
         FCheckBox->State[FCheckBox->ItemIndex] = cbGrayed;
 
-        int oldtag = Tag;
+        int oldidx = FPlayIdx;
 
         FNextIndex = FCheckBox->ItemIndex;
 
-        Wmp->URL = GetNextCheckCache();
+        Wmp->URL = GetNext();
 
         // Old listbox checkbox needs to be cleared...
-        ClearCheckState(oldtag);
+        ClearCheckState(oldidx);
 
-        if (Tag >= 0)
+        if (FPlayIdx >= 0)
         {
-          bSkipFilePrompt = true; // don't ask for other-player files
+          m_bSkipFilePrompt = true; // don't ask for other-player files
 
           // Start this player
-          StartPlayer(Wmp);
+          StartPlayer();
         }
       }
-      else if (bCheckClick)
+      else if (m_bCheckClick)
       {
         if (Wmp == NULL || MainForm->AutoFadeTimer->Enabled)
         {
-          bDoubleClick = false;
-          bCheckClick = false;
+          m_bDoubleClick = false;
+          m_bCheckClick = false;
           return;
         }
 
@@ -223,7 +240,7 @@ void __fastcall TPlaylistForm::Timer1Timer(TObject* Sender)
 #if DEBUG_ON
           MainForm->CWrite("\r\nnCheckbox-click: 0 (State == cbGrayed)\r\n");
 #endif
-          if (Tag < 0)
+          if (FPlayIdx < 0)
             QueueFirst();
           else
             GetNext(true);
@@ -234,7 +251,7 @@ void __fastcall TPlaylistForm::Timer1Timer(TObject* Sender)
             FCheckBox->State[FCheckBox->ItemIndex] = cbUnchecked;
 
           // nothing playing?
-          if (Tag < 0 || !IsPlayOrPause(this))
+          if (FPlayIdx < 0 || !IsPlayOrPause())
           {
 #if DEBUG_ON
             MainForm->CWrite("\r\nCheckbox-click: 1\r\n");
@@ -244,7 +261,7 @@ void __fastcall TPlaylistForm::Timer1Timer(TObject* Sender)
             FNextIndex = FCheckBox->ItemIndex; // start search here
             GetNext();
           }
-          else if (Tag == FCheckBox->ItemIndex)
+          else if (FPlayIdx == FCheckBox->ItemIndex)
           {
 #if DEBUG_ON
             MainForm->CWrite("\r\nCheckbox-click: 2\r\n");
@@ -253,7 +270,7 @@ void __fastcall TPlaylistForm::Timer1Timer(TObject* Sender)
             // to start playing when you unchecked the currently playing song...
             // Kind of abrupt - and the user might not know what song will begin...
             // better to fade to the next song on other player...
-            SetTimer(TM_NEXT_PLAYER, TIME_100);
+            SetTimer(TM_FADE, TIME_100);
           }
           else if (FTargetIndex == FCheckBox->ItemIndex)
           {
@@ -277,8 +294,8 @@ void __fastcall TPlaylistForm::Timer1Timer(TObject* Sender)
       {
         if (!Wmp || MainForm->AutoFadeTimer->Enabled)
         {
-          bDoubleClick = false;
-          bCheckClick = false;
+          m_bDoubleClick = false;
+          m_bCheckClick = false;
           return;
         }
 
@@ -297,8 +314,8 @@ void __fastcall TPlaylistForm::Timer1Timer(TObject* Sender)
 
           // If we were playing, may need to Check the item
           // (since we permit re-queuing a playing item)
-          if (Tag >= 0 && Tag < FCheckBox->Count && IsPlayOrPause(this))
-            FCheckBox->State[Tag] = cbChecked;
+          if (FPlayIdx >= 0 && FPlayIdx < FCheckBox->Count && IsPlayOrPause())
+            FCheckBox->State[FPlayIdx] = cbChecked;
 
           // Copy the clicked file to the cache - (however, we still might be
           // drag-dropping it someplace...)
@@ -310,8 +327,8 @@ void __fastcall TPlaylistForm::Timer1Timer(TObject* Sender)
         }
       }
 
-      bDoubleClick = false;
-      bCheckClick = false;
+      m_bDoubleClick = false;
+      m_bCheckClick = false;
 
     break;
 
@@ -320,6 +337,12 @@ void __fastcall TPlaylistForm::Timer1Timer(TObject* Sender)
       m_TimerMode = TM_NULL;
     break;
   };
+}
+//---------------------------------------------------------------------------
+bool __fastcall TPlaylistForm::UnplayedSongsInOtherList(void)
+{
+  OtherForm->GetNext(true); // set bNoSet since we're just checking
+  return (OtherForm->TargetIndex < 0) ? false : true;
 }
 //---------------------------------------------------------------------------
 void __fastcall TPlaylistForm::FlashTimerEvent(TObject* Sender)
@@ -337,10 +360,10 @@ void __fastcall TPlaylistForm::FlashTimerEvent(TObject* Sender)
   if (Focused())
     FCheckBox->ItemIndex = FTargetIndex;
   // if no items, or the player's index is -1, or player is in an unknown state, turn off selection
-  else if (!FCheckBox->Count || Tag < 0 || Wmp->playState == WMPOpenState::wmposUndefined)
+  else if (!FCheckBox->Count || FPlayIdx < 0 || Wmp->playState == WMPOpenState::wmposUndefined)
     FCheckBox->ItemIndex = -1;
   // if player is in pause or in play-mode
-  else if (IsPlayOrPause(this))
+  else if (IsPlayOrPause())
   {
     // Flash faster if in pause
     if (Wmp->playState == WMPPlayState::wmppsPaused)
@@ -358,13 +381,13 @@ void __fastcall TPlaylistForm::FlashTimerEvent(TObject* Sender)
     }
     else
     {
-      FCheckBox->ItemIndex = Tag;
+      FCheckBox->ItemIndex = FPlayIdx;
       bFlashOn = true;
     }
   }
   // if player is in stop or ready mode
   else
-    FCheckBox->ItemIndex = Tag;
+    FCheckBox->ItemIndex = FPlayIdx;
 }
 //---------------------------------------------------------------------------
 // this seems way too processor-intensive - so, I'm disabling it for now - S.S.
@@ -400,14 +423,14 @@ void __fastcall TPlaylistForm::FlashTimerEvent(TObject* Sender)
 void __fastcall TPlaylistForm::CheckBoxClickCheck(TObject* Sender)
 {
   if (!InEditMode)
-    bCheckClick = true;
+    m_bCheckClick = true;
 }
 //---------------------------------------------------------------------------
 void __fastcall TPlaylistForm::CheckBoxClick(TObject* Sender)
 {
 // problem I'm having is that this event happens when mouse button is released on another
 // item after a list item drag-drop. need to ignore it if the index has changed.
-// the original index was saved in ListBox->Tag. The drop event might not have happened
+// the original index was saved in FCheckBox->Tag. The drop event might not have happened
 // yet - we need ItemAtPos and to get the mouse X,Y coordinates.
 //  if (FCheckBox->Tag != FCheckBox->ItemAtPos(Mouse->CursorPos, true))
 //    ShowMessage("moved");
@@ -421,7 +444,7 @@ void __fastcall TPlaylistForm::CheckBoxClick(TObject* Sender)
 void __fastcall TPlaylistForm::CheckBoxDblClick(TObject* Sender)
 {
   if (!InEditMode)
-    bDoubleClick = true;
+    m_bDoubleClick = true;
 }
 //---------------------------------------------------------------------------
 void __fastcall TPlaylistForm::FormActivate(TObject* Sender)
@@ -557,13 +580,13 @@ void __fastcall TPlaylistForm::MyMoveSelected(TCheckListBox* DestList, TCheckLis
       }
     }
 
-    // scan source-list to reset the playing song's Tag and ItemIndex
-    int SourcePlayIdx = -1;
+    // scan source-list to reset the playing song's FPlayIdx and ItemIndex
+    int SourceFPlayIdx = -1;
     for (int ii = 0 ; ii < SourceList->Count ; ii++)
     {
       if (SourceList->State[ii] == cbChecked)
       {
-        SourcePlayIdx = ii;
+        SourceFPlayIdx = ii;
         break;
       }
     }
@@ -572,19 +595,19 @@ void __fastcall TPlaylistForm::MyMoveSelected(TCheckListBox* DestList, TCheckLis
     // might want to add a field in p for the index of the next queued song and
     // be able to restore that for both source and dest lists...
     // - for now, force it to the first song
-    if (SourcePlayIdx < 0 && SourceList->Count)
-      SourcePlayIdx = 0;
+    if (SourceFPlayIdx < 0 && SourceList->Count)
+      SourceFPlayIdx = 0;
 
-    SourceForm->Tag = SourcePlayIdx;
-    SourceList->ItemIndex = SourcePlayIdx;
+    SourceForm->FPlayIdx = SourceFPlayIdx;
+    SourceList->ItemIndex = SourceFPlayIdx;
 
     if (SourceList->Count)
     {
       // Queue a song in the source list and add the file(s) to the cache
       if (SourceForm != DestForm)
       {
-        MainForm->CopyFileToCache(SourceForm, SourceForm->Tag);
-        SourceForm->QueueToIndex(SourceForm->Tag);
+        MainForm->CopyFileToCache(SourceForm, SourceForm->FPlayIdx);
+        SourceForm->QueueToIndex(SourceForm->FPlayIdx);
       }
       else
       {
@@ -599,19 +622,19 @@ void __fastcall TPlaylistForm::MyMoveSelected(TCheckListBox* DestList, TCheckLis
 
     if (SourceForm != DestForm)
     {
-      // scan destination-list to reset the playing song's Tag and ItemIndex
-      int DestPlayIdx = -1;
+      // scan destination-list to reset the playing song's FPlayIdx and ItemIndex
+      int DestFPlayIdx = -1;
       for (int ii = 0 ; ii < DestList->Count ; ii++)
       {
         if (DestList->State[ii] == cbChecked)
         {
-          DestPlayIdx = ii;
+          DestFPlayIdx = ii;
           break;
         }
       }
 
-      DestForm->Tag = DestPlayIdx;
-      DestList->ItemIndex = DestPlayIdx;
+      DestForm->FPlayIdx = DestFPlayIdx;
+      DestList->ItemIndex = DestFPlayIdx;
 
       // Queue a song in the destination list and add the file(s) to the cache
       if (DestIndex >= 0)
@@ -727,7 +750,7 @@ void __fastcall TPlaylistForm::MyMoveSelected(TCheckListBox* DestList, TCheckLis
 //
 //    // Don't allow move of source player's song
 //    // to other player if it is playing or paused!
-//    if (SourceForm->Tag == SourceIndex && IsPlayOrPause(SourceForm))
+//    if (SourceForm->FPlayIdx == SourceIndex && IsPlayOrPause(SourceForm))
 //    {
 //      if (DestList != SourceList)
 //        return false;
@@ -738,8 +761,8 @@ void __fastcall TPlaylistForm::MyMoveSelected(TCheckListBox* DestList, TCheckLis
 //// this gets done when we delete the song (below)
 ////    if (!SourceForm->InEditMode && SourceList->ItemIndex > SourceIndex)
 ////      SourceList->ItemIndex--;
-////    if (SourceForm->Tag > SourceIndex)
-////      SourceForm->Tag--;
+////    if (SourceForm->FPlayIdx > SourceIndex)
+////      SourceForm->FPlayIdx--;
 //
 //    // Save item before it is deleted
 //    String S = SourceList->Items->Strings[SourceIndex];
@@ -796,7 +819,7 @@ void __fastcall TPlaylistForm::MyMoveSelected(TCheckListBox* DestList, TCheckLis
 //      SourceList->ItemIndex = -1;
 //      SourceForm->TargetIndex = -1;
 //      SourceForm->NextIndex = -1;
-//      SourceForm->Tag = -1;
+//      SourceForm->FPlayIdx = -1;
 //    }
 //    else if (SourceIndex < 0)
 //      SourceIndex = SourceList->Count-1;
@@ -830,13 +853,13 @@ void __fastcall TPlaylistForm::MyMoveSelected(TCheckListBox* DestList, TCheckLis
 //
 //    if (!DestForm->InEditMode && DestList->ItemIndex >= DestIndex)
 //      DestList->ItemIndex++;
-//    if (DestForm->Tag >= DestIndex)
-//      DestForm->Tag++;
+//    if (DestForm->FPlayIdx >= DestIndex)
+//      DestForm->FPlayIdx++;
 //
 //    if (bWasPlaying)
 //    {
 //      DestList->State[DestIndex] = cbChecked;
-//      DestForm->Tag = DestIndex;
+//      DestForm->FPlayIdx = DestIndex;
 //    }
 //    else
 //    {
@@ -861,31 +884,34 @@ void __fastcall TPlaylistForm::DeleteListItem(int idx, bool bDeleteFromCache)
       return;
 
     // Is this song playing? If so, go to next song unless bDeleteFromCache is false.
-//    if (bDeleteFromCache && idx == Tag)
+//    if (bDeleteFromCache && idx == FPlayIdx)
 //    {
 //      FNextIndex = FTargetIndex;
-//      NextPlayer();
+//      NextSong();
 //    }
 
     int SaveTargetIndex = FTargetIndex;
-    int SaveTag = Tag;
+    int SaveIdx = FPlayIdx;
 
     if (FTargetIndex > idx)
       FTargetIndex--;
-    if (Tag > idx)
-      Tag--;
+    if (FPlayIdx > idx)
+      FPlayIdx--;
     if (FNextIndex > idx)
       FNextIndex--;
 
     // delete TPlayerURL object
-    TPlayerURL* p = (TPlayerURL*)FCheckBox->Items->Objects[idx];
-    if (p)
+    if (MainForm->CacheEnabled)
     {
-      // delete a specific cached-file (if it exists)
-      if (bDeleteFromCache && p->cacheNumber > 0)
-        MainForm->DeleteCacheFile(this, p->cacheNumber);
+      TPlayerURL* p = (TPlayerURL*)FCheckBox->Items->Objects[idx];
+      if (p)
+      {
+        // delete a specific cached-file (if it exists)
+        if (bDeleteFromCache && p->cacheNumber > 0)
+          MainForm->DeleteCacheFile(this, p->cacheNumber);
 
-      delete p;
+        delete p;
+      }
     }
 
     // remove item from list
@@ -895,13 +921,13 @@ void __fastcall TPlaylistForm::DeleteListItem(int idx, bool bDeleteFromCache)
     {
       FTargetIndex = -1;
       FNextIndex = -1;
-      Tag = -1;
+      FPlayIdx = -1;
     }
 
-    if (SaveTag == idx)
+    if (SaveIdx == idx)
     {
-      NextPlayer();
-      FTargetIndex = SaveTag;
+      NextSong();
+      FTargetIndex = SaveIdx;
       if (FTargetIndex >= FCheckBox->Count)
         FTargetIndex = 0;
     }
@@ -1031,24 +1057,24 @@ void __fastcall TPlaylistForm::QueueToIndex(int Index)
 
   // Can't Set URL or we stop the player! If player playing or paused... don't set URL
   // because it will stop the current song
-  if (!IsPlayOrPause(this))
-    Wmp->URL = GetNextCheckCache();
+  if (!IsPlayOrPause())
+    Wmp->URL = GetNext();
 
   FTargetIndex = Index;
   SetTitle();
 }
 //---------------------------------------------------------------------------
-// call this when Tag (currently playing song-index) is -1
+// call this when FPlayIdx (currently playing song-index) is -1
 bool __fastcall TPlaylistForm::QueueFirst(void)
 {
   if (!Wmp || !FCheckBox->Count) return false;
 
   try
   {
-    if (Tag < 0)
+    if (FPlayIdx < 0)
     {
       FNextIndex = 0; // reset list
-      Wmp->URL = GetNextCheckCache();
+      Wmp->URL = GetNext();
       return true;
     }
   }
@@ -1057,7 +1083,7 @@ bool __fastcall TPlaylistForm::QueueFirst(void)
   return false;
 }
 //---------------------------------------------------------------------------
-void __fastcall TPlaylistForm::NextPlayer(bool bForceStartPlay)
+void __fastcall TPlaylistForm::NextSong(bool bForceStartPlay)
 {
   if (!Wmp) return;
 
@@ -1066,33 +1092,33 @@ void __fastcall TPlaylistForm::NextPlayer(bool bForceStartPlay)
     bool bWasPlaying = false;
 
     // this player on now?
-    if (Wmp->playState == WMPPlayState::wmppsPlaying)
+    if (IsPlayOrPause())
       bWasPlaying = true; // playing?
 
-    // Make sure Tag is in-bounds...
-    if (Tag >= FCheckBox->Count)
-      Tag = 0;
+    // Make sure FPlayIdx is in-bounds...
+    if (FPlayIdx >= FCheckBox->Count)
+      FPlayIdx = 0;
 
     if (FNextIndex >= FCheckBox->Count)
       FNextIndex = 0;
 
-    int oldtag = Tag;
+    int oldidx = FPlayIdx;
 
     if (FNextIndex < 0)
-      FNextIndex = Tag + 1;
+      FNextIndex = FPlayIdx + 1;
 
-    String sFile = GetNextCheckCache(false, true); // enable random
+    String sFile = GetNext(false, true); // enable random
 
   #if DEBUG_ON
-    MainForm->CWrite("\r\nNextPlayer() Tag:" + String(Tag) +
-     " Target:" + String(TargetIndex) + " File:" + String(sFile) + "\r\n");
+    MainForm->CWrite("\r\nNextSong() FPlayIdx:" + String(FPlayIdx) +
+     " Target:" + String(TargetIndex) + " File: \"" + String(sFile) +
+      "\" bForceStartPlay: " + (bForceStartPlay ? "yes" : "no") + "\r\n");
   #endif
 
     // Old listbox checkbox needs to be cleared...
-    try { ClearCheckState(oldtag); }
-    catch(...) { ShowMessage(STR[1] + String(oldtag)); }
+    ClearCheckState(oldidx);
 
-    if (Tag >= 0)
+    if (FPlayIdx >= 0)
     {
       Wmp->URL = sFile;
 
@@ -1103,49 +1129,24 @@ void __fastcall TPlaylistForm::NextPlayer(bool bForceStartPlay)
 
       if (bWasPlaying || bForceStartPlay)
       {
-        bSkipFilePrompt = true;
+        m_bSkipFilePrompt = true;
 
 #if DEBUG_ON
     MainForm->CWrite("\r\nCall StartPlayer\r\n");
 #endif
         // Start player
-        StartPlayer(Wmp);
+        StartPlayer();
       }
     }
     else if (!MainForm->ForceFade())  // no more checked items
-      StopPlayer(Wmp); // Stop player
+      StopPlayer(); // Stop player
   }
   catch(...)
   {
 #if DEBUG_ON
-    MainForm->CWrite("\r\nException thrown in NextPlayer()\r\n");
+    MainForm->CWrite("\r\nException thrown in NextSong()\r\n");
 #endif
   }
-}
-//---------------------------------------------------------------------------
-// This will see if a file exists in the cache (that "should" exist).
-// It restores the original file-path or URL if the file is not found
-// in the cache - a "failsafe"!
-String __fastcall TPlaylistForm::GetNextCheckCache(bool bNoSet, bool bEnableRandom)
-{
-  String sFile = GetNext(bNoSet, bEnableRandom);
-
-  if (sFile.Length() > 0 && FCheckBox->ItemIndex >= 0)
-  {
-    TPlayerURL* p = (TPlayerURL*)FCheckBox->Items->Objects[FCheckBox->ItemIndex];
-    if (p)
-    {
-      if (p->cacheNumber > 0 && !FileExists(p->cachePath))
-      {
-        sFile = FCheckBox->Items->Strings[FCheckBox->ItemIndex];
-        p->cacheNumber = 0;
-      }
-    }
-  }
-#if DEBUG_ON
-  MainForm->CWrite( "\r\nTPlaylistForm::GetNextCheckCache(): \"" + sFile + "\"\r\n");
-#endif
-  return sFile;
 }
 //---------------------------------------------------------------------------
 // Gets a UTF-8 string from the listbox and converts it to UTF-16
@@ -1153,26 +1154,23 @@ String __fastcall TPlaylistForm::GetNext(bool bNoSet, bool bEnableRandom)
 // Given pointer to a Form containing a listbox, returns the first file-name
 // that has its check-box grayed (queued song).
 //
-// Do not include the second arguement to return Tag and FTargetIndex.
-// FTargetIndex is the index of the next grey-checked item after Tag...
-//
-// Set bNoSet true to cause Tag to be unaffected, instead the next grey-checked
+// Set bNoSet true to cause FPlayIdx to be unaffected, instead the next grey-checked
 // item is returned in FTargetIndex.
 //
 // BEFORE calling this function, set FNextIndex to a >= 0 value to force
-// searching to begin there.
+// searching to begin there. Set FNextIndex -1 to begin the search at FPlayIdx+1.
 //
-// NOTE: this->Tag is used to hold the list-index of the currently playing song.
+// NOTE: this->FPlayIdx is used to hold the list-index of the currently playing song.
 // FNextIndex is the start-index of the search on entry. It's set to -1 on return.
-// On return, Tag set to the next available song and TargetIndex is set to the
-// next available song that follows Tag.
+// On return, FPlayIdx set to the next available song and FTargetIndex is set to the
+// next available song (grey-checked item) that follows FPlayIdx.
 {
   String sFile;
 
 #if DEBUG_ON
   MainForm->CWrite( "\r\nTPlaylistForm::GetNext() (onenter): NextIndex=" +
-      String(NextIndex) +  ", Tag=" + String(Tag) +  ", TargetIndex=" +
-       String(TargetIndex) + "\r\n");
+      String(NextIndex) +  ", FPlayIdx=" + String(FPlayIdx) +  ", TargetIndex=" +
+       String(TargetIndex) + ", Player: " + (FPlayerA ? String("A") : String("B")) + "\r\n");
 #endif
   try
   {
@@ -1184,7 +1182,7 @@ String __fastcall TPlaylistForm::GetNext(bool bNoSet, bool bEnableRandom)
       if (!c)
       {
         if (!bNoSet)
-          Tag = -1;
+          FPlayIdx = -1;
 
         return "";
       }
@@ -1221,10 +1219,15 @@ String __fastcall TPlaylistForm::GetNext(bool bNoSet, bool bEnableRandom)
       for (int ii = 0 ; ii < loops ; ii++)
       {
         if (FNextIndex < 0)
-          FNextIndex = Tag; // start at current song if NextInxex is -1
+          FNextIndex = FPlayIdx; // start at current song if NextInxex is -1
 
         if (FNextIndex < 0)
+        {
+#if DEBUG_ON
+          MainForm->CWrite("\r\nTPlaylistForm::GetNext: RETURNING EMPTY (FPlayIdx was -1)!!!!\r\n");
+#endif
           return "";
+        }
 
         int jj;
         for (jj = 0 ; jj < c ; jj++, FNextIndex++)
@@ -1236,7 +1239,7 @@ String __fastcall TPlaylistForm::GetNext(bool bNoSet, bool bEnableRandom)
           {
             if (ii == 0) // first loop...
             {
-              if (bListReset)
+              if (!bNoSet && bListReset)
                 // prefetch the next file into our temporary cache directory
                 MainForm->CopyFileToCache(this, FNextIndex);
 
@@ -1252,16 +1255,16 @@ String __fastcall TPlaylistForm::GetNext(bool bNoSet, bool bEnableRandom)
 
         if (FNextIndex >= c)
         {
-          ShowMessage("GetNext() Tag Index is out-of-range!");
-          Tag = -1;
+          ShowMessage("GetNext() FPlayIdx Index is out-of-range!");
+          FPlayIdx = -1;
           FTargetIndex = -1;
         }
         else if (!bNoSet)
         {
           if (ii == 0) // first loop...
           {
-            Tag = FNextIndex;
-            FNextIndex = Tag+1;
+            FPlayIdx = FNextIndex;
+            FNextIndex = FPlayIdx+1;
           }
           else
           {
@@ -1284,8 +1287,9 @@ String __fastcall TPlaylistForm::GetNext(bool bNoSet, bool bEnableRandom)
   {
 #if DEBUG_ON
     MainForm->CWrite( "TPlaylistForm::GetNext() (onexit): NextIndex=" +
-      String(NextIndex) +  ", Tag=" + String(Tag) +  ", TargetIndex=" +
-       String(TargetIndex) + "\r\n\r\n");
+      String(NextIndex) +  ", FPlayIdx=" + String(FPlayIdx) +  ", TargetIndex=" +
+       String(TargetIndex) + "\r\n");
+    MainForm->CWrite( "TPlaylistForm::GetNext() sFile: \"" + sFile +  "\"\r\n\r\n");
 #endif
   }
 
@@ -1294,16 +1298,16 @@ String __fastcall TPlaylistForm::GetNext(bool bNoSet, bool bEnableRandom)
   return sFile;
 }
 //---------------------------------------------------------------------------
-void __fastcall TPlaylistForm::ClearCheckState(int oldtag)
+void __fastcall TPlaylistForm::ClearCheckState(int oldidx)
 {
-  if (oldtag >= 0 && oldtag <= FCheckBox->Count)
+  if (oldidx >= 0 && oldidx <= FCheckBox->Count)
   {
     bool bRepeatMode = PlayerA ? MainForm->RepeatModeA : MainForm->RepeatModeB;
 
     if (bRepeatMode)
-      FCheckBox->State[oldtag] = cbGrayed;
-    else if (FCheckBox->State[oldtag] == cbChecked)
-      FCheckBox->State[oldtag] = cbUnchecked;
+      FCheckBox->State[oldidx] = cbGrayed;
+    else if (FCheckBox->State[oldidx] == cbChecked)
+      FCheckBox->State[oldidx] = cbUnchecked;
   }
 }
 //---------------------------------------------------------------------------
@@ -1341,14 +1345,15 @@ void __fastcall TPlaylistForm::ClearCheckState(int oldtag)
 void __fastcall TPlaylistForm::OpenStateChange(WMPOpenState NewState)
 {
   if (!Wmp) return;
-#if DEBUG_ON
-  MainForm->CWrite( "OpenStateChange():NewState:" + String(NewState) + "\r\n");
-#endif
 
   try
   {
     if (NewState == WMPOpenState::wmposMediaOpen) // Media Open
     {
+#if DEBUG_ON
+      MainForm->CWrite( "\r\nOpenStateChange():wmposMediaOpen: FPlayIdx:" + String(FPlayIdx) + " Target:" + String(TargetIndex) + "\r\n");
+#endif
+
       m_Duration = (int)Wmp->currentMedia->duration;
 
       if (PlayerA)
@@ -1357,45 +1362,45 @@ void __fastcall TPlaylistForm::OpenStateChange(WMPOpenState NewState)
         TimeDisplay(m_Duration, 4);
 
       // Green
-
-#if DEBUG_ON
-      MainForm->CWrite( "\r\nwmposMediaOpen: Tag:" + String(Tag) + " Target:" + String(TargetIndex) + "\r\n");
-#endif
-      if (bOpening && Tag >= 0 && Tag < FCheckBox->Count)
+      if (m_bOpening && FPlayIdx >= 0 && FPlayIdx < FCheckBox->Count)
       {
-        TPlayerURL* p = (TPlayerURL*)FCheckBox->Items->Objects[Tag];
+        TPlayerURL* p = (TPlayerURL*)FCheckBox->Items->Objects[FPlayIdx];
         if (p)
           p->color = clGreen;
       }
 
-      bOpening = false;
+      m_bOpening = false;
     }
     else if (NewState == WMPOpenState::wmposOpeningUnknownURL)
     {
 #if DEBUG_ON
-      MainForm->CWrite( "\r\nwmposOpeningUnknownURL: Tag:" + String(Tag) + " Target:" + String(TargetIndex) + "\r\n");
+      MainForm->CWrite( "\r\nOpenStateChange():wmposOpeningUnknownURL: FPlayIdx:" + String(FPlayIdx) + " Target:" + String(TargetIndex) + "\r\n");
 #endif
-      bOpening = true;
+      m_bOpening = true;
     }
     else if (NewState == WMPOpenState::wmposMediaOpening)
     {
 #if DEBUG_ON
-      MainForm->CWrite( "\r\nwmposMediaOpening: Tag:" + String(Tag) + " Target:" + String(TargetIndex) + "\r\n");
+      MainForm->CWrite( "\r\nOpenStateChange():wmposMediaOpening: FPlayIdx:" + String(FPlayIdx) + " Target:" + String(TargetIndex) + "\r\n");
 #endif
-      bOpening = true;
+      m_bOpening = true;
     }
     else if (NewState == WMPOpenState::wmposPlaylistOpenNoMedia)
     {
       // Red
 #if DEBUG_ON
-      MainForm->CWrite( "\r\nwmposPlaylistOpenNoMedia: Tag:" + String(Tag) + " Target:" + String(TargetIndex) + "\r\n");
+      MainForm->CWrite( "\r\nOpenStateChange():wmposPlaylistOpenNoMedia: FPlayIdx:" + String(FPlayIdx) + " Target:" + String(TargetIndex) + "\r\n");
 #endif
-      bOpening = false;
+      m_bOpening = false;
     }
 #if DEBUG_ON
+    else if (NewState == WMPOpenState::wmposMediaChanging)
+    {
+      MainForm->CWrite( "\r\nOpenStateChange():wmposMediaChanging: FPlayIdx:" + String(FPlayIdx) + " Target:" + String(TargetIndex) + "\r\n");
+    }
     else
     {
-      MainForm->CWrite( "\r\Misc OpenStateChange: " + String(NewState) + "\r\n");
+      MainForm->CWrite( "\r\nMisc OpenStateChange: " + String(NewState) + "\r\n");
     }
 #endif
   }
@@ -1408,52 +1413,73 @@ void __fastcall TPlaylistForm::OpenStateChange(WMPOpenState NewState)
 // hooks in Main.cpp
 void __fastcall TPlaylistForm::MediaError(LPDISPATCH Item)
 {
-  if (Tag < 0 || Tag >= FCheckBox->Count)
-    return;
-
-  if (m_failSafeCounter < 4)
+  if (m_failSafeCounter < RETRY_A)
   {
-    String sPath = FCheckBox->Items->Strings[Tag];
-
-    if (MainForm->CacheEnabled)
+    if (FPlayIdx >= 0 && FPlayIdx < FCheckBox->Count)
     {
-      TPlayerURL* p = (TPlayerURL*)FCheckBox->Items->Objects[Tag];
-
-      if (p && p->cacheNumber > 0)
+      String sPath = FCheckBox->Items->Strings[FPlayIdx];
+      TPlayerURL* p = (TPlayerURL*)FCheckBox->Items->Objects[FPlayIdx];
+      if (p)
       {
-        if (FileExists(p->cachePath))
+        if (MainForm->CacheEnabled)
         {
-          sPath = p->cachePath;
-#if DEBUG_ON
-          MainForm->CWrite("\r\nMediaError(" + String(Tag) + "): Retrying cache-file path: \"" +
-                  String(sPath) + "\"\r\n");
-#endif
+          if (p->cacheNumber > 0)
+          {
+            if (FileExists(p->cachePath))
+            {
+              sPath = p->cachePath;
+    #if DEBUG_ON
+              MainForm->CWrite("\r\nMediaError(" + String(FPlayIdx) + "): Retrying cache-file path: \"" +
+                      String(sPath) + "\"\r\n");
+    #endif
+            }
+            else
+            {
+              p->cachePath = sPath;
+              p->cacheNumber = 0;
+    #if DEBUG_ON
+              MainForm->CWrite("\r\nMediaError(" + String(FPlayIdx) + "): Restoring original path: \"" +
+                      String(sPath) + "\"\r\n");
+    #endif
+            }
+          }
         }
         else
         {
           p->cachePath = sPath;
           p->cacheNumber = 0;
+        }
+
+        Wmp->URL = sPath;
+        SetTimer(TM_START_PLAYER, TIME_100);
+      }
+    }
+
+    m_failSafeCounter++;
+  }
+  else if (m_failSafeCounter < RETRY_B)
+  {
+    // clear the check-state for the unresponsive song
+    if (FPlayIdx >= 0 && FPlayIdx < FCheckBox->Count)
+    {
 #if DEBUG_ON
-          MainForm->CWrite("\r\nMediaError(" + String(Tag) + "): Restoring original path: \"" +
-                  String(sPath) + "\"\r\n");
+      MainForm->CWrite("\r\nMediaError(" + String(FPlayIdx) + "): Gave up on this song... running MainForm->ForceFade() or NextSong(): \"" +
+                  String(Wmp->URL) + "\"\r\n");
 #endif
+      if (FCheckBox->State[FPlayIdx] != cbUnchecked)
+      {
+        FCheckBox->State[FPlayIdx] = cbUnchecked;
+        TPlayerURL* p = (TPlayerURL*)FCheckBox->Items->Objects[FPlayIdx];
+        if (p)
+        {
+          p->cachePath = FCheckBox->Items->Strings[FPlayIdx];
+          p->cacheNumber = 0;
+          p->state = cbUnchecked;
         }
       }
     }
 
-    Wmp->URL = sPath;
-    SetTimer(TM_START_PLAYER, TIME_100);
-
-    m_failSafeCounter++;
-  }
-  else if (m_failSafeCounter < 6)
-  {
-#if DEBUG_ON
-    MainForm->CWrite("\r\nMediaError(" + String(Tag) + "): Gave up on this song... running NextPlayer: \"" +
-                  String(Wmp->URL) + "\"\r\n");
-#endif
-    FNextIndex = -1; // this will clear song at Tag and queue up Tag+1
-    SetTimer(TM_NEXT_PLAYER, TIME_100); // NextPlayer
+    SetTimer(TM_NEXT_SONG, TIME_100); // NextSong
     m_failSafeCounter++;
   }
 }
@@ -1469,38 +1495,43 @@ void __fastcall TPlaylistForm::PositionTimerEvent(TObject* Sender)
   {
     if (!MainForm->ManualFade)
     {
-      if (FOtherForm->Tag >= 0)
+      if (OtherForm->FPlayIdx < 0)
       {
-        // refer also to AutoFadeTimerEvent() in Main.cpp
-        int iFadeAt = MainForm->FadeAt; // FadeAt can be 0-99 seconds before the end
+#if DEBUG_ON
+        MainForm->CWrite("\r\nTPlaylistForm::PositionTimerEvent: OtherForm->FPlayIdx < 0!!!\r\n");
+#endif
+        return;
+      }
 
-        // TODO: need a solution to juggle this and AutoFadeTimerEvent() in Main.cpp
-        // in the case of very short music clips!!!!!!!!!!!!!!!!!!!!!!! (below does NOT work)
-        //if (iFadeAt < m_Duration)
-        //{
-        //  iFadeAt = m_Duration;
-        //  MainForm->AutoFadeTimer->Enabled = false;
-        //}
+      // refer also to AutoFadeTimerEvent() in Main.cpp
+      int iFadeAt = MainForm->FadeAt; // FadeAt can be 0-99 seconds before the end
 
-        if (m_Duration-(int)Wmp->controls->currentPosition <= iFadeAt)
+      // TODO: need a solution to juggle this and AutoFadeTimerEvent() in Main.cpp
+      // in the case of very short music clips!!!!!!!!!!!!!!!!!!!!!!! (below does NOT work)
+      //if (iFadeAt < m_Duration)
+      //{
+      //  iFadeAt = m_Duration;
+      //  MainForm->AutoFadeTimer->Enabled = false;
+      //}
+
+      if (m_Duration-(int)Wmp->controls->currentPosition <= iFadeAt)
+      {
+        // Start Other Player
+        if (!OtherForm->IsPlayOrPause())
+          OtherForm->StartPlayer();
+
+        if (PlayerA)
         {
-          // Start Other Player
-          if (OtherWmp->playState != WMPPlayState::wmppsPlaying)
-            StartPlayer(OtherWmp);
-
-          if (PlayerA)
+          if (MainForm->FaderTrackBar->Position != MainForm->FaderTrackBar->Max)
           {
-            if (MainForm->FaderTrackBar->Position != MainForm->FaderTrackBar->Max)
-            {
-              MainForm->bFadeRight = true; // Set fade-direction
-              MainForm->AutoFadeTimer->Enabled = true; // Start a fade right
-            }
+            MainForm->bFadeRight = true; // Set fade-direction
+            MainForm->AutoFadeTimer->Enabled = true; // Start a fade right
           }
-          else if (MainForm->FaderTrackBar->Position != MainForm->FaderTrackBar->Min)
-          {
-            MainForm->bFadeRight = false; // Set fade-direction
-            MainForm->AutoFadeTimer->Enabled = true; // Start a fade left
-          }
+        }
+        else if (MainForm->FaderTrackBar->Position != MainForm->FaderTrackBar->Min)
+        {
+          MainForm->bFadeRight = false; // Set fade-direction
+          MainForm->AutoFadeTimer->Enabled = true; // Start a fade left
         }
       }
     }
@@ -1601,13 +1632,16 @@ void __fastcall TPlaylistForm::PlayStateChange(WMPPlayState NewState)
     if (NewState == WMPPlayState::wmppsReady) // song ready to play...
     {
 #if DEBUG_ON
-      MainForm->CWrite( "\r\nWMPPlayState::wmppsReady " + String(PlayerA ? "A" : "B") + ": Tag=" + String(Tag) + "\r\n");
+      MainForm->CWrite( "\r\nWMPPlayState():wmppsReady " + String(PlayerA ? "A" : "B") + ": FPlayIdx=" + String(FPlayIdx) + "\r\n");
       if (TargetIndex < 0)
         MainForm->CWrite( "(Good place to prompt for more music files via timer???\r\n");
 #endif
     }
     else if (NewState == WMPPlayState::wmppsPaused) // pause?
     {
+#if DEBUG_ON
+      MainForm->CWrite( "\r\nWMPPlayState():wmppsPaused " + String(PlayerA ? "A" : "B") + ": FPlayIdx=" + String(FPlayIdx) + "\r\n");
+#endif
       if (PlayerA)
       {
         MainForm->Stop1->Checked = false;
@@ -1623,7 +1657,10 @@ void __fastcall TPlaylistForm::PlayStateChange(WMPPlayState NewState)
     }
     else if (NewState == WMPPlayState::wmppsPlaying) // play?
     {
-      if (Tag < 0)
+#if DEBUG_ON
+      MainForm->CWrite( "\r\nWMPPlayState():wmppsPlaying " + String(PlayerA ? "A" : "B") + ": FPlayIdx=" + String(FPlayIdx) + "\r\n");
+#endif
+      if (FPlayIdx < 0)
       {
         // illegal to start if nothing checked
         PositionTimer->Enabled = false;
@@ -1670,26 +1707,32 @@ void __fastcall TPlaylistForm::PlayStateChange(WMPPlayState NewState)
           }
         }
 
-        FCheckBox->State[Tag] = cbChecked;
+        FCheckBox->State[FPlayIdx] = cbChecked;
         m_failSafeCounter = 0; // reset failsafe counter
 
-        // Need to update target index without affecting TAG if
+        // Need to update target index without affecting FPlayIdx if
         // we just started a manually queued (by single-click) song.
         // (So that when clicking the list-box we see the next
         // grey-checked song in the list queued...)
-        FNextIndex = this->Tag;
+        FNextIndex = this->FPlayIdx;
         GetNext(true, true); // allow random...
 
-        bSkipFilePrompt = false;
+        m_bSkipFilePrompt = false;
 
         PositionTimer->Enabled = true;
         SetTitle();
       }
+
+      MainForm->SetCurrentPlayer();
     }
     else if (NewState == WMPPlayState::wmppsStopped) // stop?
     {
+#if DEBUG_ON
+      MainForm->CWrite( "\r\nWMPPlayState():wmppsStopped " + String(PlayerA ? "A" : "B") + ": FPlayIdx=" + String(FPlayIdx) + "\r\n");
+#endif
       PositionTimer->Enabled = false;
       UpdatePlayerStatus();
+      ClearCheckState(PlayIdx);
 
       if (PlayerA)
       {
@@ -1704,18 +1747,37 @@ void __fastcall TPlaylistForm::PlayStateChange(WMPPlayState NewState)
         MainForm->Pause2->Checked = false;
       }
 
-      if (bForceNextPlay) // set when NewState == wmppsMediaEnded
+      if (!MainForm->ManualFade)
       {
-        SetTimer(TM_NEXT_PLAYER, TIME_100);
-        bForceNextPlay = false;
+        if (m_bForceNextPlay) // set when NewState == wmppsMediaEnded
+        {
+          if (!MainForm->ForceFade())
+            SetTimer(TM_NEXT_SONG_CHECK, TIME_100);
+          m_bForceNextPlay = false;
+        }
+        else
+          SetTimer(TM_NEXT_SONG_CHECK, TIME_100);
       }
-      else
-        NextPlayer();
+      //else
+      //this is causing a bug when one list is out of songs and has popped up
+      // a file dialog for the user to enter new songs we have just faded and this fades
+      // back the wrong way!
+      // Don't recall why it was put in...
+      //
+      // Ahhh - I think it was to go on to the next song in this list
+      // when there are no songs in the OTHER list!
+      //
+      // YES - player won't now go to next song...
 
       SetTitle();
+
+      MainForm->SetCurrentPlayer();
     }
     else if (NewState == WMPPlayState::wmppsMediaEnded) // Song ended?
     {
+#if DEBUG_ON
+      MainForm->CWrite( "\r\nWMPPlayState():wmppsMediaEnded " + String(PlayerA ? "A" : "B") + ": FPlayIdx=" + String(FPlayIdx) + "\r\n");
+#endif
       // if we were fading when the song ended, stop the fade-timer
       // and force it the rest of the way...
       //
@@ -1759,12 +1821,17 @@ void __fastcall TPlaylistForm::PlayStateChange(WMPPlayState NewState)
         }
       }
 
-      bForceNextPlay = true;
+      m_bForceNextPlay = true;
     }
+#if DEBUG_ON
+    else if (NewState == WMPPlayState::wmppsTransitioning)
+      MainForm->CWrite( "\r\nWMPPlayState():wmppsTransitioning " + String(PlayerA ? "A" : "B") + ": FPlayIdx=" + String(FPlayIdx) + "\r\n");
+    else
+      MainForm->CWrite( "\r\nMisc. WMPPlayState(): " + String(NewState) + "\r\n");
+#endif
+
   }
   catch(...) {}
-
-  MainForm->SetCurrentPlayer();
 
   if (NewState != WMPPlayState::wmppsTransitioning) // not transitioning? save state...
     m_PrevState = NewState;
@@ -1941,9 +2008,9 @@ void __fastcall TPlaylistForm::SetTitle(void)
     {
       if (Active) // Window is focused?
       {
-        if (Tag >= 0 && Tag < FCheckBox->Count)
+        if (FPlayIdx >= 0 && FPlayIdx < FCheckBox->Count)
         {
-          if (FCheckBox->State[Tag] == cbChecked) // playing?
+          if (FCheckBox->State[FPlayIdx] == cbChecked) // playing?
           {
             if (FTargetIndex >= 0 && FTargetIndex < FCheckBox->Count)
             {
@@ -1955,16 +2022,16 @@ void __fastcall TPlaylistForm::SetTitle(void)
           else // not playing...
           {
             S1 += "(Q) ";
-            S2 = MainForm->GetURL(FCheckBox, Tag);
-            SelectIdx = Tag;
+            S2 = MainForm->GetURL(FCheckBox, FPlayIdx);
+            SelectIdx = FPlayIdx;
           }
         }
       }
       else // Not focused...
       {
-        if (Tag >= 0)
+        if (FPlayIdx >= 0)
         {
-          if (FCheckBox->State[Tag] == cbChecked)
+          if (FCheckBox->State[FPlayIdx] == cbChecked)
           {
             S1 += "(P) ";
             FlashTimer->Enabled = true;
@@ -1972,17 +2039,18 @@ void __fastcall TPlaylistForm::SetTitle(void)
           else // not focused and player is idle...
             S1 += "(Q) ";
 
-          if (Tag >= 0 && Tag < FCheckBox->Count)
+          if (FPlayIdx >= 0 && FPlayIdx < FCheckBox->Count)
           {
-            S2 = MainForm->GetURL(FCheckBox, Tag);
-            SelectIdx = Tag;
+            S2 = MainForm->GetURL(FCheckBox, FPlayIdx);
+            SelectIdx = FPlayIdx;
           }
         }
       }
     }
 
     // Set listbox selection to match title
-    FCheckBox->ItemIndex = SelectIdx;
+    if (FCheckBox->ItemIndex != SelectIdx)
+      FCheckBox->ItemIndex = SelectIdx;
 
     // Buttons and icon
     int Misc = 3*GetSystemMetrics(SM_CXSMSIZE);
@@ -2007,18 +2075,18 @@ void __fastcall TPlaylistForm::SetTitle(void)
   }
 }
 //---------------------------------------------------------------------------
-void __fastcall TPlaylistForm::StartPlayer(TWindowsMediaPlayer* p)
+void __fastcall TPlaylistForm::StartPlayer(void)
 {
-  p->settings->mute = true;
-  p->controls->play();
-  p->settings->mute = false;
+  Wmp->settings->mute = true;
+  Wmp->controls->play();
+  Wmp->settings->mute = false;
 }
 //---------------------------------------------------------------------------
-void __fastcall TPlaylistForm::StopPlayer(TWindowsMediaPlayer* p)
+void __fastcall TPlaylistForm::StopPlayer(void)
 {
-  p->settings->mute = true;
-  p->controls->stop();
-  p->settings->mute = false;
+  Wmp->settings->mute = true;
+  Wmp->controls->stop();
+  Wmp->settings->mute = false;
 }
 //---------------------------------------------------------------------------
 void __fastcall TPlaylistForm::ClearAndStop(void)
@@ -2027,7 +2095,7 @@ void __fastcall TPlaylistForm::ClearAndStop(void)
 
   if (Wmp)
   {
-    StopPlayer(Wmp);
+    StopPlayer();
     Wmp->URL = "";
   }
 
@@ -2049,7 +2117,7 @@ void __fastcall TPlaylistForm::ClearAndStop(void)
 
   ClearListItems();
 
-  Tag = -1;
+  FPlayIdx = -1;
   FTargetIndex = -1;
   FNextIndex = -1;
 }
@@ -2076,8 +2144,8 @@ void __fastcall TPlaylistForm::EditModeClick(TObject* Sender)
 
   FlashTimer->Enabled = false;
   Timer1->Enabled = false;
-  bCheckClick = false;
-  bDoubleClick = false;
+  m_bCheckClick = false;
+  m_bDoubleClick = false;
 
   FCheckBox->PopupMenu = PopupMenu2;
 
@@ -2110,7 +2178,7 @@ void __fastcall TPlaylistForm::ClearListClick(TObject* Sender)
 void __fastcall TPlaylistForm::CheckAllItems(void)
 {
   for (int ii = 0 ; ii < FCheckBox->Count ; ii++)
-    if (ii != Tag && ii != FTargetIndex)
+    if (ii != FPlayIdx && ii != FTargetIndex)
       FCheckBox->State[ii] = cbGrayed;
 }
 //---------------------------------------------------------------------------
@@ -2124,7 +2192,7 @@ void __fastcall TPlaylistForm::UncheckAllClick(TObject* Sender)
 // PopupMenu1 F6
 {
   for (int ii = 0 ; ii < FCheckBox->Count ; ii++)
-    if (ii != Tag && ii != FTargetIndex)
+    if (ii != FPlayIdx && ii != FTargetIndex)
       FCheckBox->State[ii] = cbUnchecked;
 }
 //---------------------------------------------------------------------------
@@ -2136,7 +2204,7 @@ void __fastcall TPlaylistForm::DeleteSelected1Click(TObject* Sender)
     DeleteListItem(FCheckBox->ItemIndex);
 
     // nothing playing?
-    if (Tag < 0)
+    if (FPlayIdx < 0)
       QueueFirst();
 
     SetTitle();
@@ -2195,7 +2263,7 @@ void __fastcall TPlaylistForm::RemoveDuplicates1Click(TObject* Sender)
   delete sl;
 */
 
-  Tag = -1;
+  FPlayIdx = -1;
   FTargetIndex = -1;
 
   // Probably don't want to reenable played items
@@ -2277,7 +2345,7 @@ void __fastcall TPlaylistForm::RandomizeList1Click(TObject* Sender)
 
     pProgress->UnInit();
 
-    Tag = -1;
+    FPlayIdx = -1;
     FTargetIndex = -1;
 
     // Probably don't want to reenable played items
@@ -2511,15 +2579,10 @@ int __fastcall TPlaylistForm::GetCount(void)
   return FCheckBox->Count;
 }
 //---------------------------------------------------------------------------
-int __fastcall TPlaylistForm::GetPlayTag(void)
+bool __fastcall TPlaylistForm::IsPlayOrPause(void)
 {
-  return FCheckBox->Tag;
-}
-//---------------------------------------------------------------------------
-bool __fastcall TPlaylistForm::IsPlayOrPause(TPlaylistForm* f)
-{
-  return f->Wmp->playState == WMPPlayState::wmppsPlaying ||
-                f->Wmp->playState == WMPPlayState::wmppsPaused;
+  return Wmp->playState == WMPPlayState::wmppsPlaying ||
+                Wmp->playState == WMPPlayState::wmppsPaused;
 }
 //---------------------------------------------------------------------------
 void __fastcall TPlaylistForm::FormKeyDown(TObject* Sender, WORD &Key, TShiftState Shift)
@@ -2560,8 +2623,8 @@ void __fastcall TPlaylistForm::FormKeyDown(TObject* Sender, WORD &Key, TShiftSta
         {
           if (FTargetIndex >= ii)
             FTargetIndex--;
-          if (Tag >= ii)
-            Tag--;
+          if (FPlayIdx >= ii)
+            FPlayIdx--;
           if (NextIndex >= ii)
             FNextIndex--;
 
@@ -2571,7 +2634,7 @@ void __fastcall TPlaylistForm::FormKeyDown(TObject* Sender, WORD &Key, TShiftSta
     }
 
     // nothing playing?
-    if (Tag < 0)
+    if (FPlayIdx < 0)
       QueueFirst();
 
     SetTitle();
