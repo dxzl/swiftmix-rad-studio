@@ -1060,16 +1060,7 @@ bool __fastcall TOFMSDlgForm::DeleteFileNameObjects()
     for (int ii = 0; ii < p_fno->Count; ii++)
     {
       if (p_fno->Items[ii] != NULL)
-      {
-#if DEBUG_ON
-    OFDbg->CWrite("\r\nDelete...\r\n");
-#endif
         delete p_fno->Items[ii];
-#if DEBUG_ON
-    OFDbg->CWrite("\r\nDeleted...\r\n");
-#endif
-//        try { delete (TWideItem*)sl->Items[ii]; } catch(...) {}
-      }
     }
 
     p_fno->Clear();

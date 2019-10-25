@@ -867,44 +867,44 @@ void __fastcall TMainForm::LoadListWithDroppedFiles(TPlaylistForm* f, TWMDropFil
 // expand any .lnk shortcut, if any and validate file
 void __fastcall TMainForm::ProcessFileItem(TPlaylistForm* f, String s)
 {
-#if DEBUG_ON
-      MainForm->CWrite("\r\nTMainForm::LoadListWithDroppedFiles: Original sSourcePath: \"" + s + "\"\r\n");
-#endif
+//#if DEBUG_ON
+//      MainForm->CWrite("\r\nTMainForm::ProcessFileItem: Original sSourcePath: \"" + s + "\"\r\n");
+//#endif
 
       // expand any .lnk shortcut, if any and validate file
       bool bIsDirectory;
       if (GetShortcut(s, bIsDirectory))
       {
-#if DEBUG_ON
-        MainForm->CWrite("\r\nTMainForm::LoadListWithDroppedFiles: GetShortcut() sSourcePath: \"" + s + "\"\r\n");
-#endif
+//#if DEBUG_ON
+//        MainForm->CWrite("\r\nTMainForm::ProcessFileItem: GetShortcut() sSourcePath: \"" + s + "\"\r\n");
+//#endif
         if (bIsDirectory)
         {
-#if DEBUG_ON
-          MainForm->CWrite("\r\nTMainForm::LoadListWithDroppedFiles: bIsDirectory is set! Calling AddDirToListBox()\r\n");
-#endif
+//#if DEBUG_ON
+//          MainForm->CWrite("\r\nTMainForm::ProcessFileItem: bIsDirectory is set! Calling AddDirToListBox()\r\n");
+//#endif
           FFilesAddedCount += AddDirToListBox(f, s); // recurse add folder and sub-folder's songs to list
         }
         else if (IsPlaylistPath(s))
         {
-#if DEBUG_ON
-          MainForm->CWrite("\r\nTMainForm::LoadListWithDroppedFiles: IsPlaylistPath() returned true! Calling ImportForm->NoDialog()\r\n");
-#endif
+//#if DEBUG_ON
+//          MainForm->CWrite("\r\nTMainForm::ProcessFileItem: IsPlaylistPath() returned true! Calling ImportForm->NoDialog()\r\n");
+//#endif
           FFilesAddedCount += ImportForm->NoDialog(f, s, IMPORT_MODE_AUTO); // Load the playlist
         }
         else if (AddFileToListBox(f, s))
         {
-#if DEBUG_ON
-          MainForm->CWrite("\r\nTMainForm::LoadListWithDroppedFiles: AddFileToListBox() returned true!\r\n");
-#endif
+//#if DEBUG_ON
+//          MainForm->CWrite("\r\nTMainForm::ProcessFileItem: AddFileToListBox() returned true!\r\n");
+//#endif
           FFilesAddedCount++;
         }
-#if DEBUG_ON
-        else
-        {
-          MainForm->CWrite("\r\nTMainForm::LoadListWithDroppedFiles: ITEM NOT PROCESSED!\r\n");
-        }
-#endif
+//#if DEBUG_ON
+//        else
+//        {
+//          MainForm->CWrite("\r\nTMainForm::ProcessFileItem: ITEM NOT PROCESSED!\r\n");
+//        }
+//#endif
       }
 }
 //---------------------------------------------------------------------------
@@ -1334,9 +1334,9 @@ String __fastcall TMainForm::MyExtractFileExt(String sPath)
     //sExt = sPath.SubString(dotIdx, len - dotIdx + 1).LowerCase(); // with period...
     sExt = sPath.SubString(dotIdx + 1, len - dotIdx).LowerCase(); // without period
 
-#if DEBUG_ON
-  MainForm->CWrite("\r\nTMainForm::MyExtractFileExt(String sPath): \"" + String(sExt) + "\"\r\n");
-#endif
+//#if DEBUG_ON
+//  MainForm->CWrite("\r\nTMainForm::MyExtractFileExt(String sPath): \"" + String(sExt) + "\"\r\n");
+//#endif
   return sExt;
 }
 //---------------------------------------------------------------------------

@@ -106,6 +106,7 @@ __published:  // IDE-managed Components
   TMenuItem *CopyTagsToClipboard;
   TMenuItem *SelectAllItems;
   TMenuItem *CopyLinkToClipboard;
+  TMenuItem *SearchandUncheck1;
   void __fastcall Timer1Timer(TObject *Sender);
   void __fastcall FlashTimerEvent(TObject *Sender);
   void __fastcall FormHide(TObject *Sender);
@@ -142,6 +143,7 @@ __published:  // IDE-managed Components
   void __fastcall MediaError(LPDISPATCH Item);
   void __fastcall FormClose(TObject *Sender, TCloseAction &Action);
   void __fastcall FormCloseQuery(TObject *Sender, bool &CanClose);
+  void __fastcall SearchandUncheck1Click(TObject *Sender);
 
 private:  // User declarations
 
@@ -150,7 +152,10 @@ private:  // User declarations
   void __fastcall MyMoveSelected(TCheckListBox* DestList, TCheckListBox* SourceList, int x=-1, int y=-1);
 //  bool __fastcall InsertNewDeleteOld(TCheckListBox* SourceList,
 //                TCheckListBox* DestList, int SourceIndex, int &DestIndex );
-  void __fastcall ClearCheckState(int oldidx);
+  void __fastcall SetItemState(int idx);
+  void __fastcall SetGrayedState(int idx);
+  void __fastcall SetCheckedState(int idx);
+  void __fastcall ClearCheckState(int idx, bool bRequeueIfRepeatMode=true);
   void __fastcall QueueToIndex(int Index);
   void __fastcall UpdatePlayerStatus(void);
   bool __fastcall SendToSwiftMix(void * sms, int size, int msg);

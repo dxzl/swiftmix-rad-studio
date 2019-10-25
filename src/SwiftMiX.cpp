@@ -18,6 +18,7 @@ USEFORM("FormImportMode.cpp", ImportModeForm);
 USEFORM("FormExportMode.cpp", ExportModeForm);
 USEFORM("FormDirDlg.cpp", DirDlgForm);
 USEFORM("FormExport.cpp", ExportForm);
+USEFORM("FormSearchUncheck.cpp", SearchUncheckForm);
 //---------------------------------------------------------------------------
 int WINAPI _tWinMain(HINSTANCE, HINSTANCE, LPTSTR, int)
 {
@@ -27,6 +28,7 @@ int WINAPI _tWinMain(HINSTANCE, HINSTANCE, LPTSTR, int)
          Application->MainFormOnTaskBar = true;
          TStyleManager::TrySetStyle("Golden Graphite");
          Application->CreateForm(__classid(TMainForm), &MainForm);
+     Application->CreateForm(__classid(TSearchUncheckForm), &SearchUncheckForm);
      Application->Run();
     }
     catch (Exception &exception)

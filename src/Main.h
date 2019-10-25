@@ -2,7 +2,7 @@
 #ifndef MainH
 #define MainH
 //---------------------------------------------------------------------------
-#define VERSION "1.83"
+#define VERSION "1.84"
 #define FREEWARE_EDITION true
 #define DEBUG_ON false // Include a debug console, use MainForm->CWrite("")
 //---------------------------------------------------------------------------
@@ -38,6 +38,7 @@
 #include "FormDirDlg.h"
 #include "FormImportMode.h"
 #include "FormExportMode.h"
+#include "FormSearchUncheck.h"
 #include "SMList.h"
 #include "FormSFDlg.h"
 #include "FormOFMSDlg.h"
