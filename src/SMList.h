@@ -173,7 +173,7 @@ private:  // User declarations
   bool m_bInhibitFlash;
   bool m_bDoubleClick, m_bCheckClick;
   int m_Duration, m_PrevState;
-  bool m_bForceNextPlay, m_bSkipFilePrompt, m_bOpening;
+  bool m_bSkipFilePrompt, m_bOpening;
 
   // Properties
   TCheckListBox* FCheckBox;

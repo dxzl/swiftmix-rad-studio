@@ -1476,12 +1476,24 @@ void __fastcall TMainForm::AutoFadeTimerEvent(TObject* Sender)
     {
       if (FaderTrackBar->Position < FaderTrackBar->Max)
       {
+        // fading right - check to see if a song is playing on WindowsMediaPlayer2,
+        // if not, abort fade
+//        if (WindowsMediaPlayer2->playState != WMPPlayState::wmppsPlaying)
+//        {
+//          AutoFadeTimer->Enabled = false;
+//          FaderTrackBar->Position = FaderTrackBar->Min;
+//#if DEBUG_ON
+//          CWrite("\r\nTMainForm::AutoFadeTimerEvent: Nothing playing on B! abort fade!\r\n");
+//#endif
+//          return;
+//        }
+
         if (FaderTrackBar->Position <= FaderTrackBar->Max-FaderTrackBar->Frequency)
           FaderTrackBar->Position += FaderTrackBar->Frequency;
         else
           FaderTrackBar->Position = FaderTrackBar->Max;
       }
-      else
+      else // fade complete
       {
         AutoFadeTimer->Enabled = false;
 
@@ -1503,6 +1515,18 @@ void __fastcall TMainForm::AutoFadeTimerEvent(TObject* Sender)
     {
       if (FaderTrackBar->Position > FaderTrackBar->Min)
       {
+        // fading left - check to see if a song is playing on WindowsMediaPlayer1,
+        // if not, abort fade
+//        if (WindowsMediaPlayer1->playState != WMPPlayState::wmppsPlaying)
+//        {
+//          AutoFadeTimer->Enabled = false;
+//          FaderTrackBar->Position = FaderTrackBar->Max;
+//#if DEBUG_ON
+//          CWrite("\r\nTMainForm::AutoFadeTimerEvent: Nothing playing on A! abort fade!\r\n");
+//#endif
+//          return;
+//        }
+
         if (FaderTrackBar->Position >= FaderTrackBar->Frequency)
           FaderTrackBar->Position -= FaderTrackBar->Frequency;
         else

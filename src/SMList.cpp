@@ -45,7 +45,6 @@ void __fastcall TPlaylistForm::FormCreate(TObject* Sender)
   m_PrevState = 0;
   m_failSafeCounter = 0;
   m_TimerMode = TM_NULL;
-  m_bForceNextPlay = false;
   m_bSkipFilePrompt = false;
   m_bOpening = false;
   FPlayIdx = -1;
@@ -246,14 +245,11 @@ void __fastcall TPlaylistForm::Timer1Timer(TObject* Sender)
 #if DEBUG_ON
           MainForm->CWrite("\r\nnCheckbox-click: 0 (State == cbGrayed)\r\n");
 #endif
-          if (FPlayIdx < 0)
-            QueueFirst();
-          else
-            GetNext(true);
+          QueueToIndex(FCheckBox->ItemIndex);
         }
         else
         {
-          ClearCheckState(FCheckBox->ItemIndex, false);
+          ClearCheckState(FCheckBox->ItemIndex);
 
           // nothing playing?
           if (FPlayIdx < 0 || !IsPlayOrPause())
@@ -1788,6 +1784,9 @@ void __fastcall TPlaylistForm::PlayStateChange(WMPPlayState NewState)
       // If the bottom player (B) media ended - if we were fading right (toward B)
       // force the rest of the way right. If we were fading to the upper
       // player (A) - just leave it alone.
+      if (!IsPlayOrPause())
+        ClearCheckState(FPlayIdx);
+
       if (!MainForm->ManualFade)
       {
         if (MainForm->AutoFadeTimer->Enabled)
@@ -1821,7 +1820,13 @@ void __fastcall TPlaylistForm::PlayStateChange(WMPPlayState NewState)
         }
       }
 
-      m_bForceNextPlay = true;
+      // start next player if media ended and fade-timer is not running
+      if (!MainForm->AutoFadeTimer->Enabled)
+      {
+        QueueToIndex(FTargetIndex);
+        SetTimer(TM_START_PLAYER, TIME_100); // NextSong
+//        SetTimer(TM_NEXT_SONG, TIME_100); // NextSong
+      }
     }
 #if DEBUG_ON
     else if (NewState == WMPPlayState::wmppsTransitioning)
