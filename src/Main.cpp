@@ -22,6 +22,7 @@ __fastcall TMainForm::TMainForm(TComponent* Owner) : TForm(Owner)
 
   FFilesAddedCount = 0;
   FMaxCacheFiles = MAX_CACHE_FILES;
+  bVistaOrHigher = IsWinVistaOrHigher();
 
 #if !FREEWARE_EDITION
   // Init License-Key Properties
@@ -510,7 +511,7 @@ bool __fastcall TMainForm::ShellCommand(String sVerb, String sSourcePath,
     //        String("cd \"") + AppDataDir + String("\" \& ") +
     //        String("rd /s /q \"") + OUR_NAME_S + String("\"");
 
-    if (IsWinVistaOrHigher())
+    if (VistaOrHigher)
     {
       // Vista, Win7,8,10
       SHELLEXECUTEINFO shExecInfo = {0};
@@ -1848,7 +1849,7 @@ void __fastcall TMainForm::ShowPlaylist(TPlaylistForm* f)
     int borderWidth;
     int borderHeight;
 
-    if (IsWinVistaOrHigher())
+    if (VistaOrHigher)
     {
       borderWidth = GetSystemMetrics(SM_CXDLGFRAME);
       borderHeight = GetSystemMetrics(SM_CYDLGFRAME);

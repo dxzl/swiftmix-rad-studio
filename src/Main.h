@@ -2,7 +2,7 @@
 #ifndef MainH
 #define MainH
 //---------------------------------------------------------------------------
-#define VERSION "1.84"
+#define VERSION "1.85"
 #define FREEWARE_EDITION true
 #define DEBUG_ON false // Include a debug console, use MainForm->CWrite("")
 //---------------------------------------------------------------------------
@@ -337,7 +337,7 @@ private:	// User declarations
   // Flags for registry settings
   bool bTypeCenterFade, bModeManualFade, bSendTiming;
   bool bRepeatModeA, bShuffleModeA, bRepeatModeB, bShuffleModeB;
-  bool bFileCacheEnabled;
+  bool bFileCacheEnabled, bVistaOrHigher;
 
   // Globals for Trial-Version
   bool bTrialFeaturesEnabled;
@@ -432,6 +432,7 @@ public:		// User declarations
   __property String CacheDir = {read = FsCacheDir};
   __property String DeskDir = {read = FsDeskDir};
   __property bool GBypassFilters = {read = FBypassFilters, write = FBypassFilters, default =  false};
+  __property bool VistaOrHigher = {read = bVistaOrHigher};
   __property bool ManualFade = {read = bModeManualFade};
   __property bool CenterFade = {read = bTypeCenterFade};
   __property bool SendTiming = {read = bSendTiming};

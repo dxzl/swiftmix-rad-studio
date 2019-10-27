@@ -125,8 +125,8 @@
         <Icon_MainIcon>SwiftMiX.ico</Icon_MainIcon>
         <LinkPackageStatics>rtl.lib;vcl.lib;vclx.lib;MyControls.lib;User.lib</LinkPackageStatics>
         <_TCHARMapping>wchar_t</_TCHARMapping>
-        <VerInfo_MinorVer>84</VerInfo_MinorVer>
-        <VerInfo_Keys>CompanyName=Discrete-Time Systems;FileDescription=$(MSBuildProjectName);FileVersion=1.84.0.0;InternalName=;LegalCopyright=2020;LegalTrademarks=;OriginalFilename=SwiftMiX.exe;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.84.0.0;Comments=</VerInfo_Keys>
+        <VerInfo_MinorVer>85</VerInfo_MinorVer>
+        <VerInfo_Keys>CompanyName=Discrete-Time Systems;FileDescription=$(MSBuildProjectName);FileVersion=1.85.0.0;InternalName=;LegalCopyright=2020;LegalTrademarks=;OriginalFilename=SwiftMiX.exe;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.85.0.0;Comments=</VerInfo_Keys>
         <BRCC_IncludePath>$(BDSINCLUDE)\windows\sdk;$(BRCC_IncludePath)</BRCC_IncludePath>
         <AppDPIAwarenessMode>PerMonitor</AppDPIAwarenessMode>
         <ILINK_LibraryPath>..\MyControls\;$(ILINK_LibraryPath)</ILINK_LibraryPath>
@@ -248,17 +248,17 @@
         </CppCompile>
         <FormResources Include="Progress.dfm"/>
         <FormResources Include="Main.dfm"/>
-        <FormResources Include="FormSFDlg.dfm"/>
         <FormResources Include="FormSearchUncheck.dfm"/>
+        <FormResources Include="FormSFDlg.dfm"/>
         <FormResources Include="SMList.dfm"/>
-        <FormResources Include="AutoSize.dfm"/>
         <FormResources Include="About.dfm"/>
+        <FormResources Include="AutoSize.dfm"/>
         <FormResources Include="FormDirDlg.dfm"/>
-        <FormResources Include="FormOFMSDlg.dfm"/>
         <FormResources Include="FormImportMode.dfm"/>
+        <FormResources Include="FormOFMSDlg.dfm"/>
         <FormResources Include="FormImport.dfm"/>
-        <FormResources Include="FormExportMode.dfm"/>
         <FormResources Include="FormExport.dfm"/>
+        <FormResources Include="FormExportMode.dfm"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>
@@ -285,14 +285,7 @@
                 <Source>
                     <Source Name="MainSource">SwiftMiX.cpp</Source>
                 </Source>
-                <Excluded_Packages>
-                    <Excluded_Packages Name="C:\Users\Public\Documents\Embarcadero\Studio\20.0\BPL\YcEditPackage.bpl">YcEditPackage</Excluded_Packages>
-                    <Excluded_Packages Name="C:\Users\Public\Documents\Embarcadero\Studio\20.0\bpl\AsyncProCD260.bpl">TurboPack Async Professional CBuilder Designtime Package</Excluded_Packages>
-                    <Excluded_Packages Name="C:\Users\Public\Documents\Embarcadero\Studio\20.0\Bpl\AsyncProCR260.bpl">TurboPack Async Professional CBuilder Runtime Package</Excluded_Packages>
-                    <Excluded_Packages Name="C:\Users\Public\Documents\Embarcadero\Studio\20.0\BPL\MyControls.bpl">MyControls</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\bcboffice2k260.bpl">Embarcadero C++Builder Office 2000 Servers Package</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\bcbofficexp260.bpl">Embarcadero C++Builder Office XP Servers Package</Excluded_Packages>
-                </Excluded_Packages>
+                <Excluded_Packages/>
             </CPlusPlusBuilder.Personality>
             <Platforms>
                 <Platform value="Win32">True</Platform>

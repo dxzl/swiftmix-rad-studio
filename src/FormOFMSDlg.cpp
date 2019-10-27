@@ -103,11 +103,7 @@ __fastcall TOFMSDlgForm::TOFMSDlgForm(TComponent* Owner)
 
   pSetWindowSubclass = (tSetWindowSubclass)GetProcAddress(m_hComCtl32, "SetWindowSubclass");
   pRemoveWindowSubclass = (tRemoveWindowSubclass)GetProcAddress(m_hComCtl32, "RemoveWindowSubclass");
-#if IS_OLD_BORLAND_CPP_BUILDER
   pDefSubclassProc = (tDefSubclassProc)GetProcAddress(m_hComCtl32, "DefSubclassProc");
-#else
-  pDefSubclassProc = NULL; // for RAD studio just call DefSubclassProc() directly
-#endif
 
   ZeroMemory(&m_ofn, sizeof(OPENFILENAMEW));
 
@@ -1283,7 +1279,10 @@ LRESULT CALLBACK TOFMSDlgForm::OpenFileSubClass(HWND hDlg, UINT uMsg, WPARAM wPa
 #if IS_OLD_BORLAND_CPP_BUILDER
   return DefDlgProcW(hDlg, uMsg, wParam, lParam);
 #else
-  return DefSubclassProc(hDlg, uMsg, wParam, lParam);
+  if (MainForm->VistaOrHigher)
+    return DefSubclassProc(hDlg, uMsg, wParam, lParam);
+  else
+    return DefDlgProcW(hDlg, uMsg, wParam, lParam);
 #endif
 }
 //---------------------------------------------------------------------------
@@ -1337,7 +1336,10 @@ LRESULT CALLBACK TOFMSDlgForm::DefViewSubClass(HWND hDlg, UINT uMsg, WPARAM wPar
 #if IS_OLD_BORLAND_CPP_BUILDER
     return p->MyDefSubclassProc(hDlg, uMsg, wParam, lParam);
 #else
-    return DefSubclassProc(hDlg, uMsg, wParam, lParam);
+    if (MainForm->VistaOrHigher)
+      return DefSubclassProc(hDlg, uMsg, wParam, lParam);
+    else
+      return p->MyDefSubclassProc(hDlg, uMsg, wParam, lParam);
 #endif
   }
   catch(...)
