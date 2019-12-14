@@ -1426,7 +1426,18 @@ bool __fastcall TMainForm::ForceFade(void)
 
   try
   {
-    // player 1 on now?
+    // this is the case where we are fading and user unchecks a song that's
+    // playing... reverse
+    if (AutoFadeTimer->Enabled)
+    {
+      bFadeRight = !bFadeRight; // reverse
+      if (bFadeRight)
+        ListB->NextSong();
+      else
+        ListA->NextSong();
+      return true;
+    }
+
     if (ListA->IsPlayOrPause() && ListB->PlayIdx >= 0)
     {
       // Start Player 2

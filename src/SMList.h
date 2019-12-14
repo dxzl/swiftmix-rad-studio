@@ -152,9 +152,12 @@ private:  // User declarations
   void __fastcall MyMoveSelected(TCheckListBox* DestList, TCheckListBox* SourceList, int x=-1, int y=-1);
 //  bool __fastcall InsertNewDeleteOld(TCheckListBox* SourceList,
 //                TCheckListBox* DestList, int SourceIndex, int &DestIndex );
-  void __fastcall SetItemState(int idx);
+  bool __fastcall IsStateUnchecked(TCheckListBox* clb, int idx);
+  bool __fastcall IsStateChecked(TCheckListBox* clb, int idx);
+  bool __fastcall IsStateGrayed(TCheckListBox* clb, int idx);
   void __fastcall SetGrayedState(int idx);
   void __fastcall SetCheckedState(int idx);
+  void __fastcall SetItemState(int idx);
   void __fastcall ClearCheckState(int idx, bool bRequeueIfRepeatMode=true);
   void __fastcall QueueToIndex(int Index);
   void __fastcall UpdatePlayerStatus(void);
@@ -179,7 +182,7 @@ private:  // User declarations
   TCheckListBox* FCheckBox;
   TPlaylistForm* FOtherForm;
   TWindowsMediaPlayer *FWmp, *FOtherWmp;
-  int FNextIndex, FTargetIndex, FPlayIdx;
+  int FNextIndex, FTargetIndex, FPlayIdx, FTempIdx;
   TColor FTextColor;
   bool FEditMode;
   bool FPlayerA;
