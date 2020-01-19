@@ -2,7 +2,7 @@
 #ifndef MainH
 #define MainH
 //---------------------------------------------------------------------------
-#define VERSION "1.86"
+#define VERSION "1.87"
 #define FREEWARE_EDITION true
 #define DEBUG_ON false // Include a debug console, use MainForm->CWrite("")
 //---------------------------------------------------------------------------
@@ -44,7 +44,7 @@
 #include "FormOFMSDlg.h"
 #include "FormImport.h" // include FormOFDlg.h and SMList.h before this
 #include "FormExport.h"
-#include "..\..\20.0\Imports\MediaPlayer_OCX.h"
+//#include "..\..\20.0\Imports\MediaPlayer_OCX.h"
 #include "..\..\20.0\Imports\MediaPlayer_TLB.h"
 #include "WMPLib_OCX.h"
 //---------------------------------------------------------------------------

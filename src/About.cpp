@@ -73,7 +73,8 @@ void __fastcall TAboutForm::Button2Click(TObject *Sender)
 void __fastcall TAboutForm::WebSiteClick(TObject *Sender)
 {
   // launch internet explorer
-  ShellExecute(Handle, L"open", L"iexplore.exe", WEBSITE, NULL, SW_SHOW);
+//  ShellExecute(Handle, L"open", L"iexplore.exe", WEBSITE, NULL, SW_SHOW);
+  ShellExecute(NULL, L"open", WEBSITE, NULL, NULL, SW_SHOWNORMAL);
 }
 //---------------------------------------------------------------------------
 void __fastcall TAboutForm::FormShow(TObject *Sender)

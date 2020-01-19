@@ -1414,6 +1414,7 @@ bool __fastcall TPlaylistForm::IsStateGrayed(TCheckListBox* clb, int idx)
   TPlayerURL* p = (TPlayerURL*)clb->Items->Objects[idx];
   if (p)
     return (p->state == cbGrayed) ? true : false;
+  return false;
 }
 //---------------------------------------------------------------------------
 bool __fastcall TPlaylistForm::IsStateChecked(TCheckListBox* clb, int idx)
@@ -1421,6 +1422,7 @@ bool __fastcall TPlaylistForm::IsStateChecked(TCheckListBox* clb, int idx)
   TPlayerURL* p = (TPlayerURL*)clb->Items->Objects[idx];
   if (p)
     return (p->state == cbChecked) ? true : false;
+  return false;
 }
 //---------------------------------------------------------------------------
 bool __fastcall TPlaylistForm::IsStateUnchecked(TCheckListBox* clb, int idx)
@@ -1428,6 +1430,7 @@ bool __fastcall TPlaylistForm::IsStateUnchecked(TCheckListBox* clb, int idx)
   TPlayerURL* p = (TPlayerURL*)clb->Items->Objects[idx];
   if (p)
     return (p->state == cbUnchecked) ? true : false;
+  return false;
 }
 //---------------------------------------------------------------------------
 //typedef enum WMPOpenState

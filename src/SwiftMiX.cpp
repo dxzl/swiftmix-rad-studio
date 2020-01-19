@@ -7,18 +7,18 @@
 #include <Vcl.Styles.hpp>
 #include <Vcl.Themes.hpp>
 USEFORM("Progress.cpp", ProgressForm);
-USEFORM("FormSFDlg.cpp", SFDlgForm);
 USEFORM("Main.cpp", MainForm);
-USEFORM("SMList.cpp", PlaylistForm);
-USEFORM("FormOFMSDlg.cpp", OFMSDlgForm);
-USEFORM("About.cpp", AboutForm);
-USEFORM("AutoSize.cpp", AutoSizeForm);
-USEFORM("FormImport.cpp", ImportForm);
-USEFORM("FormImportMode.cpp", ImportModeForm);
-USEFORM("FormExportMode.cpp", ExportModeForm);
-USEFORM("FormDirDlg.cpp", DirDlgForm);
-USEFORM("FormExport.cpp", ExportForm);
+USEFORM("FormSFDlg.cpp", SFDlgForm);
 USEFORM("FormSearchUncheck.cpp", SearchUncheckForm);
+USEFORM("SMList.cpp", PlaylistForm);
+USEFORM("AutoSize.cpp", AutoSizeForm);
+USEFORM("About.cpp", AboutForm);
+USEFORM("FormDirDlg.cpp", DirDlgForm);
+USEFORM("FormOFMSDlg.cpp", OFMSDlgForm);
+USEFORM("FormImportMode.cpp", ImportModeForm);
+USEFORM("FormImport.cpp", ImportForm);
+USEFORM("FormExportMode.cpp", ExportModeForm);
+USEFORM("FormExport.cpp", ExportForm);
 //---------------------------------------------------------------------------
 int WINAPI _tWinMain(HINSTANCE, HINSTANCE, LPTSTR, int)
 {
@@ -28,7 +28,6 @@ int WINAPI _tWinMain(HINSTANCE, HINSTANCE, LPTSTR, int)
          Application->MainFormOnTaskBar = true;
          TStyleManager::TrySetStyle("Golden Graphite");
          Application->CreateForm(__classid(TMainForm), &MainForm);
-     Application->CreateForm(__classid(TSearchUncheckForm), &SearchUncheckForm);
      Application->Run();
     }
     catch (Exception &exception)
