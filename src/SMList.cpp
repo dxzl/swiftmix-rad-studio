@@ -895,6 +895,10 @@ void __fastcall TPlaylistForm::DeleteListItem(int idx, bool bDeleteFromCache)
     if (idx < 0 || idx >= FCheckBox->Count)
       return;
 
+    // it's messy to remove an item that's playing... taking the easy way out!
+    if (FPlayIdx == idx && IsPlayOrPause())
+      return;
+
     // Is this song playing? If so, go to next song unless bDeleteFromCache is false.
 //    if (bDeleteFromCache && idx == FPlayIdx)
 //    {
@@ -903,7 +907,7 @@ void __fastcall TPlaylistForm::DeleteListItem(int idx, bool bDeleteFromCache)
 //    }
 
     int SaveTargetIndex = FTargetIndex;
-    int SaveIdx = FPlayIdx;
+    int SavePlayIndex = FPlayIdx;
 
     if (FTargetIndex > idx)
       FTargetIndex--;
@@ -936,14 +940,7 @@ void __fastcall TPlaylistForm::DeleteListItem(int idx, bool bDeleteFromCache)
       FPlayIdx = -1;
     }
 
-    if (SaveIdx == idx)
-    {
-      NextSong();
-      FTargetIndex = SaveIdx;
-      if (FTargetIndex >= FCheckBox->Count)
-        FTargetIndex = 0;
-    }
-    else if (SaveTargetIndex == idx)
+    if (SaveTargetIndex == idx)
     {
       FNextIndex = idx; // start search here
       if (NextIndex >= FCheckBox->Count)
@@ -1189,28 +1186,31 @@ void __fastcall TPlaylistForm::NextSong(bool bForceStartPlay)
     // Old checkbox may need to be cleared...
     ClearCheckState(savePlayIdx);
 
-    if (bWasPlaying && !sFile.IsEmpty())
+    if (bWasPlaying)
     {
-      Wmp->URL = sFile;
-
-#if DEBUG_ON
-      MainForm->CWrite("\r\nCall SetTitle\r\n");
-#endif
-      SetTitle();
-
-      if (bWasPlaying || bForceStartPlay)
+      if (!sFile.IsEmpty())
       {
-        m_bSkipFilePrompt = true;
+        Wmp->URL = sFile;
 
-#if DEBUG_ON
-        MainForm->CWrite("\r\nCall StartPlayer\r\n");
-#endif
-        // Start player
-        StartPlayer();
+  #if DEBUG_ON
+        MainForm->CWrite("\r\nCall SetTitle\r\n");
+  #endif
+        SetTitle();
+
+        if (bWasPlaying || bForceStartPlay)
+        {
+          m_bSkipFilePrompt = true;
+
+  #if DEBUG_ON
+          MainForm->CWrite("\r\nCall StartPlayer\r\n");
+  #endif
+          // Start player
+          StartPlayer();
+        }
       }
+      else if (!MainForm->ForceFade())  // no more checked items
+        StopPlayer(); // Stop player
     }
-    else if (!MainForm->ForceFade())  // no more checked items
-      StopPlayer(); // Stop player
   }
   catch(...)
   {
@@ -2773,39 +2773,40 @@ void __fastcall TPlaylistForm::FormKeyDown(TObject* Sender, WORD &Key, TShiftSta
     SetTimer(TM_SCROLL_KEY_PRESSED, TIME_2000);
   }
 
-  if (Key != VK_DELETE) return;
-
-  Key = 0;
-
-  if (InEditMode)
-    DeleteSelectedClick(NULL);
-  else if (FCheckBox->Count)
+  if (Key == VK_DELETE)
   {
-    if (!Shift.Contains(ssShift))
-      DeleteListItem(FCheckBox->ItemIndex);
-    else // delete all unchecked
-    {
-      for (int ii = FCheckBox->Count-1 ; ii >= 0  ; ii--)
-      {
-        if (IsStateUnchecked(FCheckBox, ii))
-        {
-          if (FTargetIndex >= ii)
-            FTargetIndex--;
-          if (FPlayIdx >= ii)
-            FPlayIdx--;
-          if (NextIndex >= ii)
-            FNextIndex--;
+    Key = 0;
 
-          DeleteListItem(ii);
+    if (InEditMode)
+      DeleteSelectedClick(NULL);
+    else if (FCheckBox->Count)
+    {
+      if (!Shift.Contains(ssShift))
+        DeleteListItem(FCheckBox->ItemIndex);
+      else // delete all unchecked songs if the shift key is held down
+      {
+        for (int ii = FCheckBox->Count-1 ; ii >= 0  ; ii--)
+        {
+          if (IsStateUnchecked(FCheckBox, ii))
+          {
+            if (FTargetIndex >= ii)
+              FTargetIndex--;
+            if (FPlayIdx >= ii)
+              FPlayIdx--;
+            if (NextIndex >= ii)
+              FNextIndex--;
+
+            DeleteListItem(ii);
+          }
         }
       }
+
+      // nothing playing?
+      if (FPlayIdx < 0)
+        QueueFirst();
+
+      SetTitle();
     }
-
-    // nothing playing?
-    if (FPlayIdx < 0)
-      QueueFirst();
-
-    SetTitle();
   }
 }
 //In the the by adding in the of Form2 unit file unit.cpp the the are as follows code:
