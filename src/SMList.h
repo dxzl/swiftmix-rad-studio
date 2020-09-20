@@ -107,6 +107,9 @@ __published:  // IDE-managed Components
   TMenuItem *SelectAllItems;
   TMenuItem *CopyLinkToClipboard;
   TMenuItem *SearchandUncheck1;
+  TMenuItem *MenuFixOrderofTrailingNumbers;
+  TMenuItem *MenuDeleteEvenIndices;
+  TMenuItem *MenuDeleteOddIndicies;
   void __fastcall Timer1Timer(TObject *Sender);
   void __fastcall FlashTimerEvent(TObject *Sender);
   void __fastcall FormHide(TObject *Sender);
@@ -144,9 +147,14 @@ __published:  // IDE-managed Components
   void __fastcall FormClose(TObject *Sender, TCloseAction &Action);
   void __fastcall FormCloseQuery(TObject *Sender, bool &CanClose);
   void __fastcall SearchandUncheck1Click(TObject *Sender);
+  void __fastcall MenuFixOrderofTrailingNumbersClick(TObject *Sender);
+  void __fastcall MenuDeleteEvenIndicesClick(TObject *Sender);
+  void __fastcall MenuDeleteOddIndiciesClick(TObject *Sender);
 
 private:  // User declarations
 
+  int __fastcall GetTrailingDigits(String s, String &sNamePart, String &sExt);
+  int __fastcall IndexOfSmallestNumber(TStringList* sl);
   bool __fastcall UnplayedSongsInOtherList(void);
   String __fastcall GetMediaTags(void);
   void __fastcall MyMoveSelected(TCheckListBox* DestList, TCheckListBox* SourceList, int x=-1, int y=-1);

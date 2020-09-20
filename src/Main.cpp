@@ -1513,10 +1513,13 @@ void __fastcall TMainForm::AutoFadeTimerEvent(TObject* Sender)
         // main form...
         RestoreFocus();
 
-        ListA->StopPlayer();
+        if (ListA->IsPlayOrPause())
+        {
+          ListA->StopPlayer();
 
-        // Queue next song
-        ListA->Wmp->URL = ListA->GetNext();
+          // Queue next song
+//          ListA->Wmp->URL = ListA->GetNext();
+        }
 
         if (ListA->TargetIndex < 0)
           if (FileDialog(ListA, SaveDirA, ADD_A_TITLE))
@@ -1552,10 +1555,13 @@ void __fastcall TMainForm::AutoFadeTimerEvent(TObject* Sender)
         // main form...
         RestoreFocus();
 
-        ListB->StopPlayer();
+        if (ListB->IsPlayOrPause())
+        {
+          ListB->StopPlayer();
 
-        // Queue next song
-        ListB->Wmp->URL = ListB->GetNext();
+          // Queue next song
+//          ListB->Wmp->URL = ListB->GetNext();
+        }
 
         if (ListB->TargetIndex < 0)
           if (FileDialog(ListB, SaveDirB, ADD_B_TITLE))

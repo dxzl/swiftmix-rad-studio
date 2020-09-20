@@ -907,7 +907,7 @@ void __fastcall TPlaylistForm::DeleteListItem(int idx, bool bDeleteFromCache)
 //    }
 
     int SaveTargetIndex = FTargetIndex;
-    int SavePlayIndex = FPlayIdx;
+//    int SavePlayIndex = FPlayIdx;
 
     if (FTargetIndex > idx)
       FTargetIndex--;
@@ -1619,7 +1619,7 @@ void __fastcall TPlaylistForm::PositionTimerEvent(TObject* Sender)
 
   try
   {
-    if (!MainForm->ManualFade)
+    if (!MainForm->ManualFade && MainForm->FadeAt != 0)
     {
       // refer also to AutoFadeTimerEvent() in Main.cpp
       int iFadeAt = MainForm->FadeAt; // FadeAt can be 0-99 seconds before the end
@@ -1809,7 +1809,7 @@ void __fastcall TPlaylistForm::PlayStateChange(WMPPlayState NewState)
         {
           if (PlayerA)
           {
-            if (MainForm->FaderTrackBar->Position != MainForm->FaderTrackBar->Min)
+            if (MainForm->FaderTrackBar->Position != MainForm->FaderTrackBar->Min &&  MainForm->bFadeRight != false)
             {
               MainForm->bFadeRight = false;
               MainForm->AutoFadeTimer->Enabled = true;
@@ -1817,7 +1817,7 @@ void __fastcall TPlaylistForm::PlayStateChange(WMPPlayState NewState)
           }
           else
           {
-            if (MainForm->FaderTrackBar->Position != MainForm->FaderTrackBar->Max)
+            if (MainForm->FaderTrackBar->Position != MainForm->FaderTrackBar->Max && MainForm->bFadeRight != true)
             {
               MainForm->bFadeRight = true;
               MainForm->AutoFadeTimer->Enabled = true;
@@ -1888,45 +1888,45 @@ void __fastcall TPlaylistForm::PlayStateChange(WMPPlayState NewState)
       if (!IsPlayOrPause())
         ClearCheckState(FPlayIdx);
 
-      if (!MainForm->ManualFade)
+      if (!MainForm->ManualFade && !MainForm->AutoFadeTimer->Enabled)
       {
-        if (MainForm->AutoFadeTimer->Enabled)
+//        if (MainForm->AutoFadeTimer->Enabled)
+//        {
+//          // do a "hurry-up" forced-fade...
+//          MainForm->AutoFadeTimer->Enabled = false;
+//          if (PlayerA && !MainForm->bFadeRight)
+//          {
+//            while (MainForm->FaderTrackBar->Position > MainForm->FaderTrackBar->Min)
+//            {
+//              MainForm->FaderTrackBar->Position--;
+//              Application->ProcessMessages();
+//              Sleep(20);
+//            }
+//#if DEBUG_ON
+//            MainForm->CWrite( "\r\Forced fade left\r\n");
+//#endif
+//          }
+//          else if (!PlayerA && MainForm->bFadeRight)
+//          {
+//            while (MainForm->FaderTrackBar->Position < MainForm->FaderTrackBar->Max)
+//            {
+//              MainForm->FaderTrackBar->Position++;
+//              Application->ProcessMessages();
+//              Sleep(20);
+//            }
+//#if DEBUG_ON
+//            MainForm->CWrite( "\r\Forced fade right\r\n");
+//#endif
+//          }
+//        }
+        // start next player if media ended and fade-timer is not running
+//        else
         {
-          // do a "hurry-up" forced-fade...
-          MainForm->AutoFadeTimer->Enabled = false;
-          if (PlayerA && !MainForm->bFadeRight)
-          {
-            while (MainForm->FaderTrackBar->Position > MainForm->FaderTrackBar->Min)
-            {
-              MainForm->FaderTrackBar->Position--;
-              Application->ProcessMessages();
-              Sleep(20);
-            }
-#if DEBUG_ON
-            MainForm->CWrite( "\r\Forced fade left\r\n");
-#endif
-          }
-          else if (!PlayerA && MainForm->bFadeRight)
-          {
-            while (MainForm->FaderTrackBar->Position < MainForm->FaderTrackBar->Max)
-            {
-              MainForm->FaderTrackBar->Position++;
-              Application->ProcessMessages();
-              Sleep(20);
-            }
-#if DEBUG_ON
-            MainForm->CWrite( "\r\Forced fade right\r\n");
-#endif
-          }
+          QueueToIndex(FTargetIndex);
+          SetTimer(TM_START_PLAYER, TIME_100); // NextSong
+  //        SetTimer(TM_NEXT_SONG, TIME_100); // NextSong
         }
-      }
 
-      // start next player if media ended and fade-timer is not running
-      if (!MainForm->AutoFadeTimer->Enabled)
-      {
-        QueueToIndex(FTargetIndex);
-        SetTimer(TM_START_PLAYER, TIME_100); // NextSong
-//        SetTimer(TM_NEXT_SONG, TIME_100); // NextSong
       }
     }
 #if DEBUG_ON
@@ -2349,6 +2349,181 @@ void __fastcall TPlaylistForm::DeleteSelectedClick(TObject* Sender)
   }
   else
     ShowMessage(STR[0]);
+}
+//---------------------------------------------------------------------------
+void __fastcall TPlaylistForm::MenuDeleteEvenIndicesClick(TObject *Sender)
+{
+  // Return if no items or a song is playing
+  if (Wmp == NULL || FCheckBox->Items->Count == 0 || IsPlayOrPause())
+  {
+    ShowMessage(STR[3]);
+    return;
+  }
+
+  try
+  {
+    for (int ii = 1; ii < FCheckBox->Items->Count; ii++)
+      DeleteListItem(ii);
+    QueueFirst();
+  }
+  catch(...) {}
+}
+//---------------------------------------------------------------------------
+void __fastcall TPlaylistForm::MenuDeleteOddIndiciesClick(TObject *Sender)
+{
+ // Return if no items or a song is playing
+  if (Wmp == NULL || FCheckBox->Items->Count == 0 || IsPlayOrPause())
+  {
+    ShowMessage(STR[3]);
+    return;
+  }
+
+  try
+  {
+    for (int ii = 0; ii < FCheckBox->Items->Count; ii++)
+      DeleteListItem(ii);
+    QueueFirst();
+  }
+  catch(...) {}
+}
+//---------------------------------------------------------------------------
+void __fastcall TPlaylistForm::MenuFixOrderofTrailingNumbersClick(TObject *Sender)
+{
+  int ct = FCheckBox->Count;
+  if (ct < 2)
+    return;
+  TStringList* sl = NULL;
+  TStringList* slTemp = NULL;
+  try
+  {
+    sl = new TStringList(); // used to build a new song-list
+    slTemp = new TStringList(); // holds interim songs with same base name
+    for (int ii = 0; ii < ct; ii++)
+    {
+      String sPath = FCheckBox->Items->Strings[ii];
+      TPlayerURL* p = (TPlayerURL*)FCheckBox->Items->Objects[ii];
+      if (!p || sPath == "")
+        continue;
+      FCheckBox->Items->Strings[ii] = ""; // mark it as processed
+      FCheckBox->Items->Objects[ii] = NULL; // will be moving it...
+      String sNamePart1, sExt1; // returned by reference
+      int iDigits = GetTrailingDigits(sPath, sNamePart1, sExt1);
+      if (iDigits < 0)
+      {
+        p->listIndex = sl->Count; // return this to normal-use!
+        sl->AddObject(sPath, (TObject*)p);
+        continue;
+      }
+      // add song at ii
+      if (p->cacheNumber > 0)
+        MainForm->DeleteCacheFile(this, p->cacheNumber);
+      p->listIndex = iDigits; // use this field to hold trailing number
+      p->cachePath = sPath;
+      p->state = cbGrayed;
+      slTemp->AddObject(sPath, (TObject*)p);
+      for (int jj = ii+1; jj < ct; jj++)
+      {
+        p = (TPlayerURL*)FCheckBox->Items->Objects[jj];
+        sPath = FCheckBox->Items->Strings[jj];
+        if (!p || sPath == "") continue;
+        String sNamePart2, sExt2; // get these by reference below...
+        iDigits = GetTrailingDigits(sPath, sNamePart2, sExt2);
+        if (iDigits < 0 || sNamePart1 != sNamePart2 || sExt1 != sExt2)
+          continue;
+        // add song at jj
+        if (p->cacheNumber > 0)
+          MainForm->DeleteCacheFile(this, p->cacheNumber);
+        p->listIndex = iDigits; // use this field to hold trailing number
+        p->cachePath = sPath;
+        p->state = cbGrayed;
+        slTemp->AddObject(sPath, (TObject*)p);
+        FCheckBox->Items->Strings[jj] = ""; // mark it as processed
+        FCheckBox->Items->Objects[jj] = NULL; // moveing it!
+      }
+      if (slTemp->Count > 0)
+      {
+        while (slTemp->Count > 0)
+        {
+          int idx = IndexOfSmallestNumber(slTemp);
+          if (idx >= 0)
+          {
+            p = (TPlayerURL*)slTemp->Objects[idx];
+            if (p)
+            {
+              p->listIndex = sl->Count; // return this to normal-use!
+              sl->AddObject(slTemp->Strings[idx], (TObject*)p);
+            }
+            slTemp->Delete(idx);
+          }
+          else
+            break; // error... shouldn't happen!
+        }
+        slTemp->Clear();
+      }
+    }
+    // now clear the main songlist and move new songs to it
+    FCheckBox->Clear();
+    for (int ii = 0; ii < sl->Count; ii++)
+      AddListItem(sl->Strings[ii], (TPlayerURL*)sl->Objects[ii]);
+    this->QueueFirst();
+  }
+  __finally
+  {
+    if (slTemp) delete slTemp;
+    if (sl) delete sl;
+  }
+}
+//---------------------------------------------------------------------------
+int __fastcall TPlaylistForm::IndexOfSmallestNumber(TStringList* sl)
+{
+  int iSmallest = INT_MAX;
+  int idx = -1;
+  for (int ii=0; ii<sl->Count; ii++)
+  {
+    TPlayerURL* p = (TPlayerURL*)sl->Objects[ii];
+    if (p && p->listIndex < iSmallest)
+    {
+      iSmallest = p->listIndex;
+      idx = ii;
+    }
+  }
+  return idx;
+}
+//---------------------------------------------------------------------------
+// returns last file-extension in sExt
+// returns int for trailing digits in the file name part before the first "."
+// returns -1 if no digits
+// sNamePart has the name part without the digits
+// NOTE: if the file's name has multiple extensions, the in-between ones will
+// NOT be returned, so save the original full file-path before calling!
+int __fastcall TPlaylistForm::GetTrailingDigits(String s, String &sNamePart, String &sExt)
+{
+  String sDigits;
+  int idx = s.LastDelimiter('.');
+  if (idx > 1)
+  {
+    sExt = s.SubString(idx, s.Length()-idx+1); // return trailing file-extension by reference
+    s = s.SubString(1, idx-1);
+  }
+  else
+    sExt = "";
+  int len = s.Length();
+  int jj = len;
+  for (; jj>0; jj--) // trim trailing spaces
+    if (s[jj] != ' ')
+      break;
+  for (; jj>0; jj--)
+  {
+    Char c = s[jj];
+    if (!isdigit(c))
+      break;
+    sDigits.Insert(c, 1);
+  }
+  if (jj > 0)
+    sNamePart = s.SubString(1, jj);
+  else
+    sNamePart = "";
+  return (sDigits.Length() > 0) ? sDigits.ToIntDef(-1) : -1;
 }
 //---------------------------------------------------------------------------
 void __fastcall TPlaylistForm::RemoveDuplicates1Click(TObject* Sender)
