@@ -165,11 +165,10 @@ void __fastcall TPlaylistForm::Timer1Timer(TObject* Sender)
 
       Timer1->Enabled = false;
 
-      if (UnplayedSongsInOtherList())
+      if (OtherForm->UnplayedSongsInList())
         MainForm->ForceFade();
       else
         NextSong(true);
-
     break;
 
     case TM_NEXT_SONG:
@@ -181,7 +180,7 @@ void __fastcall TPlaylistForm::Timer1Timer(TObject* Sender)
 
       Timer1->Enabled = false;
 
-      if (!UnplayedSongsInOtherList())
+      if (!OtherForm->UnplayedSongsInList())
       {
 //        FNextIndex = -1;
         NextSong(true);
@@ -274,7 +273,7 @@ void __fastcall TPlaylistForm::Timer1Timer(TObject* Sender)
 #if DEBUG_ON
             MainForm->CWrite("\r\nCheckbox-click: 2\r\n");
 #endif
-            SetTimer(TM_FADE, TIME_100);
+            SetTimer(TM_FADE);
           }
           else if (FTargetIndex == FCheckBox->ItemIndex)
           {
@@ -344,10 +343,10 @@ void __fastcall TPlaylistForm::Timer1Timer(TObject* Sender)
   };
 }
 //---------------------------------------------------------------------------
-bool __fastcall TPlaylistForm::UnplayedSongsInOtherList(void)
+bool __fastcall TPlaylistForm::UnplayedSongsInList(void)
 {
-  OtherForm->GetNext(true); // set bNoSet since we're just checking
-  return (OtherForm->TargetIndex < 0) ? false : true;
+  GetNext(true); // set bNoSet since we're just checking
+  return (TargetIndex < 0) ? false : true;
 }
 //---------------------------------------------------------------------------
 void __fastcall TPlaylistForm::FlashTimerEvent(TObject* Sender)
@@ -1573,7 +1572,7 @@ void __fastcall TPlaylistForm::MediaError(LPDISPATCH Item)
         }
 
         Wmp->URL = sPath;
-        SetTimer(TM_START_PLAYER, TIME_100);
+        SetTimer(TM_START_PLAYER);
       }
     }
 
@@ -1605,7 +1604,7 @@ void __fastcall TPlaylistForm::MediaError(LPDISPATCH Item)
       }
     }
 
-    SetTimer(TM_NEXT_SONG, TIME_100); // NextSong
+    SetTimer(TM_NEXT_SONG); // NextSong
     m_failSafeCounter++;
   }
 }
@@ -1619,20 +1618,20 @@ void __fastcall TPlaylistForm::PositionTimerEvent(TObject* Sender)
 
   try
   {
-    if (!MainForm->ManualFade && MainForm->FadeAt != 0)
+    if (!MainForm->ManualFade && MainForm->FadePoint != 0)
     {
       // refer also to AutoFadeTimerEvent() in Main.cpp
-      int iFadeAt = MainForm->FadeAt; // FadeAt can be 0-99 seconds before the end
+      int iFadePoint = MainForm->FadePoint; // FadePoint can be 0-99 seconds before the end
 
       // TODO: need a solution to juggle this and AutoFadeTimerEvent() in Main.cpp
       // in the case of very short music clips!!!!!!!!!!!!!!!!!!!!!!! (below does NOT work)
-      //if (iFadeAt < m_Duration)
+      //if (iFadePoint < m_Duration)
       //{
-      //  iFadeAt = m_Duration;
+      //  iFadePoint = m_Duration;
       //  MainForm->AutoFadeTimer->Enabled = false;
       //}
 
-      if (OtherForm->FPlayIdx >= 0 && (m_Duration-(int)Wmp->controls->currentPosition <= iFadeAt))
+      if (OtherForm->FPlayIdx >= 0 && (m_Duration-(int)Wmp->controls->currentPosition <= iFadePoint))
       {
         // Start Other Player
         if (!OtherForm->IsPlayOrPause())
@@ -1783,7 +1782,7 @@ void __fastcall TPlaylistForm::PlayStateChange(WMPPlayState NewState)
         // illegal to start if nothing checked
         PositionTimer->Enabled = false;
 
-        SetTimer(TM_STOP_PLAYER, TIME_100);
+        SetTimer(TM_STOP_PLAYER);
       }
       else
       {
@@ -1923,8 +1922,7 @@ void __fastcall TPlaylistForm::PlayStateChange(WMPPlayState NewState)
 //        else
         {
           QueueToIndex(FTargetIndex);
-          SetTimer(TM_START_PLAYER, TIME_100); // NextSong
-  //        SetTimer(TM_NEXT_SONG, TIME_100); // NextSong
+          SetTimer(TM_FADE); // NextSong
         }
 
       }
@@ -2065,7 +2063,7 @@ void __fastcall TPlaylistForm::UpdatePlayerStatus(void)
 
 //!!!!!!!!!!!!!! not yet implimented
       sms.color = 0;
-      sms.redtime = MainForm->FadeAt;
+      sms.redtime = MainForm->FadePoint;
       sms.yellowtime = 0;
 
       SendToSwiftMix(&sms, size, MainForm->RWM_SwiftMixTime);

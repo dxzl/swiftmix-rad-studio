@@ -2,7 +2,7 @@
 #ifndef MainH
 #define MainH
 //---------------------------------------------------------------------------
-#define VERSION "1.89"
+#define VERSION "1.90"
 #define FREEWARE_EDITION true
 #define DEBUG_ON false // Include a debug console, use MainForm->CWrite("")
 //---------------------------------------------------------------------------
@@ -57,6 +57,8 @@
 #define FILE_CACHE_PATH2 L"\\MusicMixer"
 
 #define MAX_CACHE_FILES 4 // max disk-cache files to keep for each player (so 8 total)
+#define DEF_FADE_POINT 5
+#define DEF_FADE_RATE 0
 
 // max combination of both TMyFileCopy and TMyUrlCopy objects to allow
 #define MAX_TMyFileCopy_OBJECTS 10
@@ -69,6 +71,8 @@
 #define COMMON_CONTROLS_LIB L"Comctl32.dll"
 
 // Registry entries we save in HKEY_CURRENT_USER
+#define SM_REGKEY_FADEPOINT L"FadePoint"
+#define SM_REGKEY_FADERATE L"FadeRate"
 #define SM_REGKEY_DIR_A L"DefDirA"
 #define SM_REGKEY_DIR_B L"DefDirB"
 #define SM_REGKEY_VOL_A L"VolA"
@@ -216,9 +220,9 @@ __published:	// IDE-managed Components
     TPanel *Panel1;
     TPanel *Panel2;
   TUpDown *FRUpDown;
-    TEdit *FadeRate;
+  TEdit *EditFadeRate;
   TUpDown *FPUpDown;
-    TEdit *FadePoint;
+  TEdit *EditFadePoint;
   TTrackBar *FaderTrackBar;
   TMenuItem *MenuCacheFiles;
 
@@ -289,6 +293,7 @@ __published:	// IDE-managed Components
   void __fastcall WindowsMediaPlayer2MediaError(TObject *Sender, LPDISPATCH Item);
   void __fastcall WindowsMediaPlayer1MediaError(TObject *Sender, LPDISPATCH Item);
   void __fastcall FormCloseQuery(TObject *Sender, bool &CanClose);
+  void __fastcall EditFadePointChange(TObject *Sender);
 
 private:	// User declarations
 #if DEBUG_ON
@@ -328,7 +333,7 @@ private:	// User declarations
   bool __fastcall InitFileCaching(void);
 
   // property vars (mostly!)
-  int FfadeAt;
+  int FfadePoint, FfadeRate;;
   int FvolA, FvolB;
   int FcurrentVolA, FcurrentVolB; // volume as it transitions during a fade
 
@@ -443,7 +448,8 @@ public:		// User declarations
   __property bool CacheEnabled = {read = bFileCacheEnabled, write = bFileCacheEnabled};
   __property int VolA = {read = FvolA};
   __property int VolB = {read = FvolB};
-  __property int FadeAt = {read = FfadeAt};
+  __property int FadePoint = {read = FfadePoint};
+  __property int FadeRate = {read = FfadeRate};
   __property unsigned FilesAddedCount = {read = FFilesAddedCount};
   __property int MaxCacheFiles = {read = FMaxCacheFiles};
   __property TList* MyFileCopyList = {read = pTMyFileCopyList};

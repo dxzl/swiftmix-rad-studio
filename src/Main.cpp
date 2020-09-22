@@ -51,7 +51,8 @@ __fastcall TMainForm::TMainForm(TComponent* Owner) : TForm(Owner)
   Application->HintHidePause = 4000;
   Application->ShowHint = true;
 
-  FfadeAt = 10; // start fade 10 seconds before end
+  FfadePoint = DEF_FADE_POINT; // start fade 5 seconds before end
+  FfadeRate = DEF_FADE_RATE;
 
   GPlaylistForm = NULL;
 
@@ -339,6 +340,8 @@ void __fastcall TMainForm::FormClose(TObject* Sender, TCloseAction &Action)
       pReg->WriteSetting(SM_REGKEY_SHUFFLE_A, bShuffleModeA);
       pReg->WriteSetting(SM_REGKEY_SHUFFLE_B, bShuffleModeB);
       pReg->WriteSetting(SM_REGKEY_CACHE_ENABLED, bFileCacheEnabled);
+      pReg->WriteSetting(SM_REGKEY_FADEPOINT, FPUpDown->Position);
+      pReg->WriteSetting(SM_REGKEY_FADERATE, FRUpDown->Position);
       pReg->WriteSetting(SM_REGKEY_CACHE_MAX_FILES, FMaxCacheFiles);
       pReg->WriteSetting(SM_REGKEY_VOL_A, FvolA);
       pReg->WriteSetting(SM_REGKEY_VOL_B, FvolB);
@@ -404,6 +407,11 @@ void __fastcall TMainForm::InitRegistryVars(void)
       pReg->ReadSetting(SM_REGKEY_SHUFFLE_A, bShuffleModeA, false);
       pReg->ReadSetting(SM_REGKEY_SHUFFLE_B, bShuffleModeB, false);
       pReg->ReadSetting(SM_REGKEY_CACHE_ENABLED, bFileCacheEnabled, true);
+
+      pReg->ReadSetting(SM_REGKEY_FADEPOINT, FfadePoint, DEF_FADE_POINT);
+      FPUpDown->Position = FfadePoint;
+      pReg->ReadSetting(SM_REGKEY_FADERATE, FfadeRate, DEF_FADE_RATE);
+      FRUpDown->Position = FfadeRate;
 
       pReg->ReadSetting(SM_REGKEY_CACHE_MAX_FILES, FMaxCacheFiles, MAX_CACHE_FILES);
       if (FMaxCacheFiles < MAX_CACHE_FILES)
@@ -1418,7 +1426,7 @@ void __fastcall TMainForm::MenuForceFadeClick(TObject* Sender)
   ForceFade();
 }
 //---------------------------------------------------------------------------
-bool __fastcall TMainForm::ForceFade(void)
+bool __fastcall TMainForm::ForceFade()
 // Manually initiate an "auto-fade"
 {
   if (!ListA || !ListB || bModeManualFade)
@@ -1426,39 +1434,72 @@ bool __fastcall TMainForm::ForceFade(void)
 
   try
   {
-    // this is the case where we are fading and user unchecks a song that's
-    // playing... reverse
-    if (AutoFadeTimer->Enabled)
+    try
     {
-      bFadeRight = !bFadeRight; // reverse
-      if (bFadeRight)
-        ListB->NextSong();
-      else
-        ListA->NextSong();
-      return true;
+      // this is the case where we are fading and user unchecks a song that's
+      // playing... reverse
+      if (AutoFadeTimer->Enabled)
+      {
+        bFadeRight = !bFadeRight; // reverse
+        if (bFadeRight)
+          ListB->NextSong();
+        else
+          ListA->NextSong();
+        return true;
+      }
+
+      RestoreFocus();
+
+      // AutoFadeTimer is not running...
+      if (FPUpDown->Position == 0) // playing to end of song - no fade
+      {
+       if (FaderTrackBar->Position >= (FaderTrackBar->Max-FaderTrackBar->Min)/2)
+       {
+         FaderTrackBar->Position = FaderTrackBar->Min;
+         bFadeRight = false;
+         if (ListB->IsPlayOrPause())
+            ListB->StopPlayer();
+         if (!ListA->IsPlayOrPause() && ListA->PlayIdx >= 0)
+            ListA->StartPlayer();
+       }
+       else // fader leans toward Player A...
+       {
+         FaderTrackBar->Position = FaderTrackBar->Max;
+         bFadeRight = true;
+         if (ListA->IsPlayOrPause())
+            ListA->StopPlayer();
+         if (!ListB->IsPlayOrPause() && ListB->PlayIdx >= 0)
+            ListB->StartPlayer();
+       }
+       return true;
+      }
+
+      if (ListA->IsPlayOrPause() && ListB->PlayIdx >= 0)
+      {
+        // Start Player 2
+        if (!ListB->IsPlayOrPause())
+          ListB->StartPlayer();
+
+        bFadeRight = true; // Set fade-direction
+        AutoFadeTimer->Enabled = true; // Start a fade
+        return true;
+      }
+
+      // player 2 on now?
+      if (ListB->IsPlayOrPause() && ListA->PlayIdx >= 0)
+      {
+        // Start Player 1
+        if (!ListA->IsPlayOrPause())
+          ListA->StartPlayer();
+
+        bFadeRight = false; // Set fade-direction
+        AutoFadeTimer->Enabled = true; // Start a fade
+        return true;
+      }
     }
-
-    if (ListA->IsPlayOrPause() && ListB->PlayIdx >= 0)
+    __finally
     {
-      // Start Player 2
-      if (!ListB->IsPlayOrPause())
-        ListB->StartPlayer();
-
-      bFadeRight = true; // Set fade-direction
-      AutoFadeTimer->Enabled = true; // Start a fade
-      return true;
-    }
-
-    // player 2 on now?
-    if (ListB->IsPlayOrPause() && ListA->PlayIdx >= 0)
-    {
-      // Start Player 1
-      if (!ListA->IsPlayOrPause())
-        ListA->StartPlayer();
-
-      bFadeRight = false; // Set fade-direction
-      AutoFadeTimer->Enabled = true; // Start a fade
-      return true;
+      Application->ProcessMessages();
     }
   }
   catch(...)
@@ -2897,7 +2938,21 @@ long __fastcall TMainForm::MyGFS(String sPath)
 void __fastcall TMainForm::FPUpDownChangingEx(TObject *Sender, bool &AllowChange,
           int NewValue, TUpDownDirection Direction)
 {
-  FfadeAt = NewValue;
+  FfadePoint = NewValue;
+}
+//---------------------------------------------------------------------------
+void __fastcall TMainForm::EditFadePointChange(TObject *Sender)
+{
+  if (FfadePoint == 0)
+  {
+    EditFadeRate->Enabled = false;
+    FRUpDown->Enabled = false;
+  }
+  else
+  {
+    EditFadeRate->Enabled = true;
+    FRUpDown->Enabled = true;
+  }
 }
 //---------------------------------------------------------------------------
 // NOTE: If the UpDown fade-rate is 0, we force it to be 1 to avoid
@@ -2906,13 +2961,15 @@ void __fastcall TMainForm::FPUpDownChangingEx(TObject *Sender, bool &AllowChange
 void __fastcall TMainForm::FRUpDownChangingEx(TObject *Sender, bool &AllowChange,
           int NewValue, TUpDownDirection Direction)
 {
-  if (NewValue < 0)
+  FfadeRate = NewValue;
+
+  if (FfadeRate < 0)
   {
-    if (NewValue > FRUpDown->Min)
+    if (FfadeRate > FRUpDown->Min)
     {
       int PrevPos = ((TUpDown*)Sender)->Position;
 
-      if (NewValue < PrevPos)
+      if (FfadeRate < PrevPos)
       {
         if (FPUpDown->Position < FPUpDown->Max)
           FPUpDown->Position += 3;
@@ -2924,13 +2981,13 @@ void __fastcall TMainForm::FRUpDownChangingEx(TObject *Sender, bool &AllowChange
       }
     }
 
-    AutoFadeTimer->Interval = -NewValue*40;
+    AutoFadeTimer->Interval = -FfadeRate*40;
     FaderTrackBar->Frequency = 1;
   }
   else
   {
     AutoFadeTimer->Interval = 50;
-    FaderTrackBar->Frequency = NewValue;
+    FaderTrackBar->Frequency = FfadeRate;
   }
 }
 //---------------------------------------------------------------------------
@@ -3697,5 +3754,6 @@ void __fastcall TMainForm::CWrite(String S)
   WriteConsole(m_Screen, String(S).w_str(),S.Length(),0,0);
 }
 #endif
+//---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 

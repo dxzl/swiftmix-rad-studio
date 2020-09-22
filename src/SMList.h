@@ -19,7 +19,7 @@
 // Timer times
 #define TIME_2000 1000  // used to exit edit mode after up/down/left/right scroll-keys were pressed
 #define TIME_300  300  // used to sort out what kind of check-box click we got
-#define TIME_100  100  // used to delay for start/stop player
+#define TIME_50  50  // used to delay for start/stop player
 
 // Timer modes
 #define TM_NULL                 0
@@ -155,7 +155,6 @@ private:  // User declarations
 
   int __fastcall GetTrailingDigits(String s, String &sNamePart, String &sExt);
   int __fastcall IndexOfSmallestNumber(TStringList* sl);
-  bool __fastcall UnplayedSongsInOtherList(void);
   String __fastcall GetMediaTags(void);
   void __fastcall MyMoveSelected(TCheckListBox* DestList, TCheckListBox* SourceList, int x=-1, int y=-1);
 //  bool __fastcall InsertNewDeleteOld(TCheckListBox* SourceList,
@@ -170,7 +169,7 @@ private:  // User declarations
   void __fastcall QueueToIndex(int Index);
   void __fastcall UpdatePlayerStatus(void);
   bool __fastcall SendToSwiftMix(void * sms, int size, int msg);
-  void __fastcall SetTimer(int mode, int time);
+  void __fastcall SetTimer(int mode, int time=TIME_50);
   void __fastcall CheckAllItems(void);
   void __fastcall WMListDropFile(TWMDropFiles &Msg);
 //  void __fastcall WMVListScroll(TWMScroll &Msg);
@@ -234,6 +233,7 @@ END_MESSAGE_MAP(TForm)
 
 public:  // User declarations
 
+  bool __fastcall UnplayedSongsInList(void);
   void __fastcall DestroyImportDialog(void);
   void __fastcall DestroyExportDialog(void);
   void __fastcall DestroyProgressForm(void);
