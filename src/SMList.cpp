@@ -528,18 +528,45 @@ void __fastcall TPlaylistForm::MyMoveSelected(TCheckListBox* DestList, TCheckLis
     TPlaylistForm* SourceForm = (TPlaylistForm*)SourceList->Parent;
     TPlaylistForm* DestForm = (TPlaylistForm*)DestList->Parent;
 
+    // get destination list index
+    int DestIndex;
+    if (x >= 0 && y >= 0)
+      DestIndex = DestList->ItemAtPos(Point(x, y), true);
+    else
+      DestIndex = DestList->Items->Count; // insert at bottom
+
+    // mark the DestIndex item so we can find it after deleting
+    // selected items...
+    TObject* SavePointer;
+    if (DestIndex < DestList->Items->Count && DestIndex >= 0)
+    {
+      SavePointer = DestList->Items->Objects[DestIndex];
+      DestList->Items->Objects[DestIndex] = NULL; // mark it with NULL
+    }
+    else
+      SavePointer = NULL;
+
     sl = new TStringList();
 
     int iCount = SourceList->Count;
     pProgress->Init(iCount);
 
-    // add selected items to sl
-    for (int ii = 0; ii < iCount; ii++)
+    // add selected items to sl and delete them
+    for (int ii = iCount-1; ii >= 0; ii--)
     {
       if (SourceList->Selected[ii])
       {
-        // skip move of playing song to dest-list
-        if (IsStateChecked(SourceList, ii) && SourceForm != DestForm)
+        // prevent move to a selected item in same list
+        if (SourceForm == DestForm)
+        {
+          if (DestIndex == ii)
+          {
+            ShowMessage("You can't move selected items onto a selected item!");
+            return; // __ finally will clean up...
+          }
+        }
+        // skip move of playing song to other player's list
+        else if (IsStateChecked(SourceList, ii))
           continue;
 
         TPlayerURL* p = (TPlayerURL*)SourceList->Items->Objects[ii];
@@ -550,34 +577,37 @@ void __fastcall TPlaylistForm::MyMoveSelected(TCheckListBox* DestList, TCheckLis
         }
 
         sl->AddObject(SourceList->Items->Strings[ii], (TObject*)p);
+        SourceList->Items->Delete(ii);
       }
 
       if (pProgress->Move(ii))
         return;
     }
 
-    // delete selected items (have to go in reverse order!)
-    for (int ii = sl->Count-1; ii >= 0; ii--)
+    // find the new location of DestIndex from our NULL marker...
+    DestIndex = DestList->Items->Count; // if NULL not found use end of list
+    for (int ii = 0; ii < DestList->Items->Count; ii++)
     {
-      TPlayerURL* p = (TPlayerURL*)sl->Objects[ii];
-      if (p)
-        SourceList->Items->Delete(p->listIndex);
+      if (DestList->Items->Objects[ii] == NULL)
+      {
+         DestList->Items->Objects[ii] = SavePointer; // restore pointer
+         DestIndex = ii; // new DestIndex!
+         break;
+      }
     }
 
-    // get destination item's mouse-index AFTER items deleted!
-    int DestIndex;
-    if (x >= 0 && y >= 0)
-      DestIndex = DestList->ItemAtPos(Point(x, y), true);
-    else
-      DestIndex = DestList->Count; // insert at bottom
+    if (DestIndex < 0)
+    {
+      ShowMessage("Error: DestIndex < 0!");
+      return; // __ finally will clean up...
+    }
 
     // add stringlist items into destination list
-    for (int ii = sl->Count-1; ii >= 0; ii--)
+    for (int ii = 0; ii < sl->Count; ii++)
     {
       TPlayerURL* p = (TPlayerURL*)sl->Objects[ii];
       DestList->Items->InsertObject(DestIndex, sl->Strings[ii], (TObject*)p);
-      if (DestIndex < 0)
-        DestIndex = DestList->Count-1;
+
       if (p)
       {
         // reassign the cache-number to the other list's (ever-increasing) counter
@@ -588,6 +618,11 @@ void __fastcall TPlaylistForm::MyMoveSelected(TCheckListBox* DestList, TCheckLis
         }
 
         DestList->State[DestIndex] = p->state;
+      }
+      else
+      {
+        ShowMessage("Error: Missing TPlayerURL object! (" + String(ii) + ")");
+        return; // __ finally will clean up...
       }
     }
 
@@ -668,7 +703,8 @@ void __fastcall TPlaylistForm::MyMoveSelected(TCheckListBox* DestList, TCheckLis
     // (it deletes all the history of prior progressbar nestings)
     pProgress->UnInit(true);
 
-    MainForm->ShowPlaylist(OtherForm);
+//    if (DestForm != SourceForm)
+//      MainForm->ShowPlaylist(DestForm);
   }
 }
 //---------------------------------------------------------------------------

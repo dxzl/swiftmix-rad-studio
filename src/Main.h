@@ -1,8 +1,12 @@
+// TODO:
+// mp3 and wma tag library:
+//https://github.com/DanielGausi/AudioWerkzeugeBibliothek
+// (I have this in the misc folder under MP3Lib)
 //---------------------------------------------------------------------------
 #ifndef MainH
 #define MainH
 //---------------------------------------------------------------------------
-#define VERSION "1.90"
+#define VERSION "1.91"
 #define FREEWARE_EDITION true
 #define DEBUG_ON false // Include a debug console, use MainForm->CWrite("")
 //---------------------------------------------------------------------------
