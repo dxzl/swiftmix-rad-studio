@@ -1221,31 +1221,28 @@ void __fastcall TPlaylistForm::NextSong(bool bForceStartPlay)
     // Old checkbox may need to be cleared...
     ClearCheckState(savePlayIdx);
 
-    if (bWasPlaying)
+    if (!sFile.IsEmpty())
     {
-      if (!sFile.IsEmpty())
+      Wmp->URL = sFile;
+
+#if DEBUG_ON
+      MainForm->CWrite("\r\nCall SetTitle\r\n");
+#endif
+      SetTitle();
+
+      if (bWasPlaying || bForceStartPlay)
       {
-        Wmp->URL = sFile;
+        m_bSkipFilePrompt = true;
 
-  #if DEBUG_ON
-        MainForm->CWrite("\r\nCall SetTitle\r\n");
-  #endif
-        SetTitle();
-
-        if (bWasPlaying || bForceStartPlay)
-        {
-          m_bSkipFilePrompt = true;
-
-  #if DEBUG_ON
-          MainForm->CWrite("\r\nCall StartPlayer\r\n");
-  #endif
-          // Start player
-          StartPlayer();
-        }
+#if DEBUG_ON
+        MainForm->CWrite("\r\nCall StartPlayer\r\n");
+#endif
+        // Start player
+        StartPlayer();
       }
-      else if (!MainForm->ForceFade())  // no more checked items
-        StopPlayer(); // Stop player
     }
+    else if (!MainForm->ForceFade())  // no more checked items
+      StopPlayer(); // Stop player
   }
   catch(...)
   {
