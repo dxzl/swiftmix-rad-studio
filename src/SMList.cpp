@@ -221,7 +221,7 @@ void __fastcall TPlaylistForm::Timer1Timer(TObject* Sender)
         Wmp->URL = GetNext();
 
         // Currently playing song's checkbox may need to be cleared...
-        ClearCheckState(savePlayIdx);
+        ClearCheckState(savePlayIdx, false);
 
         if (FPlayIdx >= 0)
         {
@@ -255,7 +255,7 @@ void __fastcall TPlaylistForm::Timer1Timer(TObject* Sender)
         }
         else
         {
-          ClearCheckState(FCheckBox->ItemIndex);
+          ClearCheckState(FCheckBox->ItemIndex, false);
 
           // nothing playing?
           if (FPlayIdx < 0 || !IsPlayOrPause())
@@ -491,9 +491,16 @@ void __fastcall TPlaylistForm::CheckBoxMouseDown(TObject* Sender,
     {
       int Index = FCheckBox->ItemAtPos(Point(X,Y), true);
 
-      // Drag-drop, need to store the index in the source-object
+      // FTempIndex is used in timer-event TM_CHECKBOX_CLICK
+      // and in MyMoveSelected() for non-EditMode drag-drop
       if (Index >= 0 && Index < FCheckBox->Count)
+      {
         FTempIdx = Index;
+
+        // MyMoveSelected() needs a selected item!
+        if (!InEditMode)
+          FCheckBox->Selected[FTempIdx] = true;
+      }
     }
   }
   catch(...) { }
@@ -2420,6 +2427,13 @@ void __fastcall TPlaylistForm::MenuDeleteOddIndiciesClick(TObject *Sender)
 //---------------------------------------------------------------------------
 void __fastcall TPlaylistForm::MenuFixOrderofTrailingNumbersClick(TObject *Sender)
 {
+  // Return if no items or a song is playing
+  if (Wmp == NULL || FCheckBox->Count == 0 || Wmp->playState == WMPPlayState::wmppsPlaying)
+  {
+    ShowMessage(STR[3]);
+    return;
+  }
+
   int ct = FCheckBox->Count;
   if (ct < 2)
     return;
