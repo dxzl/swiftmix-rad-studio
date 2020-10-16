@@ -74,7 +74,7 @@ struct STRUCT_B
 class TPlayerURL
 {
   public:
-    String cachePath;
+    String path, cachePath;
     TColor color;
     bool bDownloaded, bIsUri;
     long cacheNumber; // has the current count of m_NumCachedFiles from FormMain
@@ -110,6 +110,7 @@ __published:  // IDE-managed Components
   TMenuItem *MenuFixOrderofTrailingNumbers;
   TMenuItem *MenuDeleteEvenIndices;
   TMenuItem *MenuDeleteOddIndicies;
+  TCheckListBox *CheckBox;
   void __fastcall Timer1Timer(TObject *Sender);
   void __fastcall FlashTimerEvent(TObject *Sender);
   void __fastcall FormHide(TObject *Sender);
@@ -122,6 +123,7 @@ __published:  // IDE-managed Components
   void __fastcall CheckBoxClickCheck(TObject *Sender);
   void __fastcall CheckBoxDblClick(TObject *Sender);
   void __fastcall CheckBoxMouseDown(TObject *Sender, TMouseButton Button, TShiftState Shift, int X, int Y);
+  void __fastcall CheckBoxContextPopup(TObject *Sender, TPoint &MousePos, bool &Handled);
   void __fastcall CheckBoxDragDrop(TObject *Sender, TObject *Source, int X, int Y);
   void __fastcall CheckBoxDragOver(TObject *Sender, TObject *Source, int X, int Y, TDragState State, bool &Accept);
   void __fastcall FormCreate(TObject *Sender);
@@ -146,13 +148,16 @@ __published:  // IDE-managed Components
   void __fastcall MediaError(LPDISPATCH Item);
   void __fastcall FormClose(TObject *Sender, TCloseAction &Action);
   void __fastcall FormCloseQuery(TObject *Sender, bool &CanClose);
-  void __fastcall SearchandUncheck1Click(TObject *Sender);
+  void __fastcall SearchandUncheckClick(TObject *Sender);
   void __fastcall MenuFixOrderofTrailingNumbersClick(TObject *Sender);
   void __fastcall MenuDeleteEvenIndicesClick(TObject *Sender);
   void __fastcall MenuDeleteOddIndiciesClick(TObject *Sender);
 
+
 private:  // User declarations
 
+  bool __fastcall QueueToIndex(int Index);
+  String __fastcall GetTags(TPlayerURL* p);
   int __fastcall GetTrailingDigits(String s, String &sNamePart, String &sExt);
   int __fastcall IndexOfSmallestNumber(TStringList* sl);
   String __fastcall GetMediaTags(void);
@@ -166,7 +171,6 @@ private:  // User declarations
   void __fastcall SetCheckedState(int idx);
   void __fastcall SetItemState(int idx);
   void __fastcall ClearCheckState(int idx, bool bRequeueIfRepeatMode=true);
-  void __fastcall QueueToIndex(int Index);
   void __fastcall UpdatePlayerStatus(void);
   bool __fastcall SendToSwiftMix(void * sms, int size, int msg);
   void __fastcall SetTimer(int mode, int time=TIME_50);
@@ -274,7 +278,6 @@ public:  // User declarations
   __property bool IsOpenDlg = {read = GetIsOpenDlg};
   __property TColor TextColor = {read = FTextColor};
   __property long CacheCount = {read = FCacheCount, write = FCacheCount};
-  __property TCheckListBox* CheckBox = {read = FCheckBox};
   __property TProgressForm* Progress = {read = pProgress};
 };
 //---------------------------------------------------------------------------

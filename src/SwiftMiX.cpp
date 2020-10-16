@@ -6,19 +6,20 @@
 //---------------------------------------------------------------------------
 #include <Vcl.Styles.hpp>
 #include <Vcl.Themes.hpp>
-USEFORM("Progress.cpp", ProgressForm);
-USEFORM("Main.cpp", MainForm);
-USEFORM("FormSFDlg.cpp", SFDlgForm);
-USEFORM("FormSearchUncheck.cpp", SearchUncheckForm);
-USEFORM("SMList.cpp", PlaylistForm);
-USEFORM("AutoSize.cpp", AutoSizeForm);
-USEFORM("About.cpp", AboutForm);
-USEFORM("FormDirDlg.cpp", DirDlgForm);
-USEFORM("FormOFMSDlg.cpp", OFMSDlgForm);
-USEFORM("FormImportMode.cpp", ImportModeForm);
-USEFORM("FormImport.cpp", ImportForm);
-USEFORM("FormExportMode.cpp", ExportModeForm);
 USEFORM("FormExport.cpp", ExportForm);
+USEFORM("FormExportMode.cpp", ExportModeForm);
+USEFORM("FormImport.cpp", ImportForm);
+USEFORM("FormImportMode.cpp", ImportModeForm);
+USEFORM("FormOFMSDlg.cpp", OFMSDlgForm);
+USEFORM("FormDirDlg.cpp", DirDlgForm);
+USEFORM("About.cpp", AboutForm);
+USEFORM("AutoSize.cpp", AutoSizeForm);
+USEFORM("SMList.cpp", PlaylistForm);
+USEFORM("FormSearchUncheck.cpp", SearchUncheckForm);
+USEFORM("FormSFDlg.cpp", SFDlgForm);
+USEFORM("Main.cpp", MainForm);
+USEFORM("Progress.cpp", ProgressForm);
+USEFORM("TagEditForm.cpp", FormTags);
 //---------------------------------------------------------------------------
 int WINAPI _tWinMain(HINSTANCE, HINSTANCE, LPTSTR, int)
 {

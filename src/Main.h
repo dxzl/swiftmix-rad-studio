@@ -6,7 +6,7 @@
 #ifndef MainH
 #define MainH
 //---------------------------------------------------------------------------
-#define VERSION "1.93"
+#define VERSION "1.94"
 #define FREEWARE_EDITION true
 #define DEBUG_ON false // Include a debug console, use MainForm->CWrite("")
 //---------------------------------------------------------------------------
@@ -48,9 +48,11 @@
 #include "FormOFMSDlg.h"
 #include "FormImport.h" // include FormOFDlg.h and SMList.h before this
 #include "FormExport.h"
+#include "Z_TagLibSource\AudioFiles.hpp"
+#include "TagEditForm.h"
 //#include "..\..\20.0\Imports\MediaPlayer_OCX.h"
 #include "..\..\20.0\Imports\MediaPlayer_TLB.h"
-#include "WMPLib_OCX.h"
+#include "..\..\20.0\Imports\WMPLib_OCX.h"
 //---------------------------------------------------------------------------
 
 #define HELPSITE L"http://www.yahcolorize.com/swiftmix/help/help.htm"

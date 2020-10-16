@@ -59,8 +59,8 @@
         <Icon_MainIcon>$(BDS)\bin\cbuilder_PROJECTICON.ico</Icon_MainIcon>
         <UWP_CppLogo44>$(BDS)\bin\Artwork\Windows\UWP\cppreg_UwpDefault_44.png</UWP_CppLogo44>
         <UWP_CppLogo150>$(BDS)\bin\Artwork\Windows\UWP\cppreg_UwpDefault_150.png</UWP_CppLogo150>
-        <IncludePath>..\..\20.0\Imports\;Swiftmixer\;$(IncludePath)</IncludePath>
-        <ILINK_LibraryPath>..\..\20.0\Imports\;Swiftmixer\;$(ILINK_LibraryPath)</ILINK_LibraryPath>
+        <IncludePath>Z_TagLibSource\;..\..\20.0\Imports\;Swiftmixer\;$(IncludePath)</IncludePath>
+        <ILINK_LibraryPath>Z_TagLibSource\;..\..\20.0\Imports\;Swiftmixer\;$(ILINK_LibraryPath)</ILINK_LibraryPath>
         <SanitizedProjectName>SwiftMiX</SanitizedProjectName>
         <Custom_Styles>&quot;Golden Graphite|VCLSTYLE|$(BDSCOMMONDIR)\Styles\GoldenGraphite.vsf&quot;</Custom_Styles>
     </PropertyGroup>
@@ -125,13 +125,14 @@
         <Icon_MainIcon>SwiftMiX.ico</Icon_MainIcon>
         <LinkPackageStatics>rtl.lib;vcl.lib;vclx.lib;MyControls.lib</LinkPackageStatics>
         <_TCHARMapping>wchar_t</_TCHARMapping>
-        <VerInfo_MinorVer>93</VerInfo_MinorVer>
-        <VerInfo_Keys>CompanyName=Discrete-Time Systems;FileDescription=$(MSBuildProjectName);FileVersion=1.93.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=SwiftMiX.exe;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.93.0.0;Comments=</VerInfo_Keys>
+        <VerInfo_MinorVer>94</VerInfo_MinorVer>
+        <VerInfo_Keys>CompanyName=Discrete-Time Systems;FileDescription=$(MSBuildProjectName);FileVersion=1.94.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=SwiftMiX.exe;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.94.0.0;Comments=</VerInfo_Keys>
         <BRCC_IncludePath>$(BDSINCLUDE)\windows\sdk;$(BRCC_IncludePath)</BRCC_IncludePath>
         <AppDPIAwarenessMode>PerMonitor</AppDPIAwarenessMode>
         <ILINK_LibraryPath>..\MyControls\;$(ILINK_LibraryPath)</ILINK_LibraryPath>
         <BT_BuildType>Debug</BT_BuildType>
         <BCC_OutputDir>OBJ</BCC_OutputDir>
+        <DCC_UnitSearchPath>Z_TagLibSource;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
     </PropertyGroup>
     <ItemGroup>
         <CppCompile Include="About.cpp">
@@ -242,23 +243,96 @@
             <Form>SwiftMiX.res</Form>
             <BuildOrder>0</BuildOrder>
         </ResourceCompile>
+        <CppCompile Include="TagEditForm.cpp">
+            <Form>FormTags</Form>
+            <FormType>dfm</FormType>
+            <DependentOn>TagEditForm.h</DependentOn>
+            <BuildOrder>45</BuildOrder>
+        </CppCompile>
         <CppCompile Include="XmlTable.cpp">
             <DependentOn>XmlTable.h</DependentOn>
             <BuildOrder>12</BuildOrder>
         </CppCompile>
-        <FormResources Include="Progress.dfm"/>
-        <FormResources Include="Main.dfm"/>
-        <FormResources Include="FormSFDlg.dfm"/>
-        <FormResources Include="FormSearchUncheck.dfm"/>
-        <FormResources Include="SMList.dfm"/>
-        <FormResources Include="AutoSize.dfm"/>
-        <FormResources Include="About.dfm"/>
-        <FormResources Include="FormDirDlg.dfm"/>
-        <FormResources Include="FormOFMSDlg.dfm"/>
-        <FormResources Include="FormImportMode.dfm"/>
-        <FormResources Include="FormImport.dfm"/>
-        <FormResources Include="FormExportMode.dfm"/>
+        <DelphiCompile Include="Z_TagLibSource\ApeTagItem.pas">
+            <BuildOrder>22</BuildOrder>
+        </DelphiCompile>
+        <DelphiCompile Include="Z_TagLibSource\Apev2Tags.pas">
+            <BuildOrder>23</BuildOrder>
+        </DelphiCompile>
+        <DelphiCompile Include="Z_TagLibSource\AudioFileBasics.pas">
+            <BuildOrder>24</BuildOrder>
+        </DelphiCompile>
+        <DelphiCompile Include="Z_TagLibSource\AudioFiles.pas">
+            <BuildOrder>25</BuildOrder>
+        </DelphiCompile>
+        <DelphiCompile Include="Z_TagLibSource\FlacFiles.pas">
+            <BuildOrder>26</BuildOrder>
+        </DelphiCompile>
+        <DelphiCompile Include="Z_TagLibSource\Id3Basics.pas">
+            <BuildOrder>27</BuildOrder>
+        </DelphiCompile>
+        <DelphiCompile Include="Z_TagLibSource\ID3GenreList.pas">
+            <BuildOrder>28</BuildOrder>
+        </DelphiCompile>
+        <DelphiCompile Include="Z_TagLibSource\Id3v2Frames.pas">
+            <BuildOrder>29</BuildOrder>
+        </DelphiCompile>
+        <DelphiCompile Include="Z_TagLibSource\M4aAtoms.pas">
+            <BuildOrder>30</BuildOrder>
+        </DelphiCompile>
+        <DelphiCompile Include="Z_TagLibSource\M4aFiles.pas">
+            <BuildOrder>31</BuildOrder>
+        </DelphiCompile>
+        <DelphiCompile Include="Z_TagLibSource\MonkeyFiles.pas">
+            <BuildOrder>32</BuildOrder>
+        </DelphiCompile>
+        <DelphiCompile Include="Z_TagLibSource\Mp3Files.pas">
+            <BuildOrder>33</BuildOrder>
+        </DelphiCompile>
+        <DelphiCompile Include="Z_TagLibSource\Mp3FileUtils.pas">
+            <BuildOrder>34</BuildOrder>
+        </DelphiCompile>
+        <DelphiCompile Include="Z_TagLibSource\MusePackFiles.pas">
+            <BuildOrder>35</BuildOrder>
+        </DelphiCompile>
+        <DelphiCompile Include="Z_TagLibSource\OggVorbisFiles.pas">
+            <BuildOrder>36</BuildOrder>
+        </DelphiCompile>
+        <DelphiCompile Include="Z_TagLibSource\OptimFrogFiles.pas">
+            <BuildOrder>37</BuildOrder>
+        </DelphiCompile>
+        <DelphiCompile Include="Z_TagLibSource\TrueAudioFiles.pas">
+            <BuildOrder>38</BuildOrder>
+        </DelphiCompile>
+        <DelphiCompile Include="Z_TagLibSource\U_CharCode.pas">
+            <BuildOrder>39</BuildOrder>
+        </DelphiCompile>
+        <DelphiCompile Include="Z_TagLibSource\VorbisComments.pas">
+            <BuildOrder>40</BuildOrder>
+        </DelphiCompile>
+        <DelphiCompile Include="Z_TagLibSource\WavFiles.pas">
+            <BuildOrder>41</BuildOrder>
+        </DelphiCompile>
+        <DelphiCompile Include="Z_TagLibSource\WavPackFiles.pas">
+            <BuildOrder>42</BuildOrder>
+        </DelphiCompile>
+        <DelphiCompile Include="Z_TagLibSource\WmaFiles.pas">
+            <BuildOrder>43</BuildOrder>
+        </DelphiCompile>
         <FormResources Include="FormExport.dfm"/>
+        <FormResources Include="FormExportMode.dfm"/>
+        <FormResources Include="FormImport.dfm"/>
+        <FormResources Include="FormImportMode.dfm"/>
+        <FormResources Include="FormOFMSDlg.dfm"/>
+        <FormResources Include="FormDirDlg.dfm"/>
+        <FormResources Include="About.dfm"/>
+        <FormResources Include="AutoSize.dfm"/>
+        <FormResources Include="SMList.dfm"/>
+        <FormResources Include="TagEditForm.dfm"/>
+        <FormResources Include="FormSearchUncheck.dfm"/>
+        <FormResources Include="FormSFDlg.dfm"/>
+        <FormResources Include="Main.dfm"/>
+        <FormResources Include="Progress.dfm"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>
@@ -289,6 +363,9 @@
                     <Excluded_Packages Name="$(BDSBIN)\bcboffice2k260.bpl">Embarcadero C++Builder Office 2000 Servers Package</Excluded_Packages>
                     <Excluded_Packages Name="$(BDSBIN)\bcbofficexp260.bpl">Embarcadero C++Builder Office XP Servers Package</Excluded_Packages>
                 </Excluded_Packages>
+                <Folders>
+                    <Folder Path="C:\Users\Scott\Documents\Embarcadero\Studio\Projects\Swiftmixer\Z_TagLibSource" Masks="*.*" ShowSubdirectories="false"/>
+                </Folders>
             </CPlusPlusBuilder.Personality>
             <Platforms>
                 <Platform value="Win32">True</Platform>

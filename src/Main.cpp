@@ -2630,24 +2630,23 @@ __int64 __fastcall TMainForm::ComputeDiskSpace(int Mode)
 
   try
   {
-    String sPath;
-
     ListA->Progress->Init(cA);
     ClearFailedToCopyList();
 
     // Total size for list A
     for (int ii = 0; ii < cA; ii++)
     {
-      sPath = ListA->CheckBox->Items->Strings[ii];
+      TPlayerURL* p = (TPlayerURL*)ListA->CheckBox->Items->Objects[ii];
+      if (!p) continue;
 
-      if (FileExists(sPath))
+      if (FileExists(p->path))
       {
-        long file_size = MyGetFileSize(sPath);
+        long file_size = MyGetFileSize(p->path);
 
         if (file_size > 0)
           total_size_A += file_size;
         else
-          AddFailure(sPath, ii);
+          AddFailure(p->path, ii);
       }
 
       if (ListA->Progress->Move(ii))
@@ -2661,16 +2660,17 @@ __int64 __fastcall TMainForm::ComputeDiskSpace(int Mode)
     // Total size for list B
     for (int ii = 0; ii < cB; ii++)
     {
-      sPath = ListB->CheckBox->Items->Strings[ii];
+      TPlayerURL* p = (TPlayerURL*)ListB->CheckBox->Items->Objects[ii];
+      if (!p) continue;
 
-      if (FileExists(sPath))
+      if (FileExists(p->path))
       {
-        long file_size = MyGetFileSize(sPath);
+        long file_size = MyGetFileSize(p->path);
 
         if (file_size > 0)
           total_size_B += file_size;
         else
-          AddFailure(sPath, ii);
+          AddFailure(p->path, ii);
       }
 
       if (ListB->Progress->Move(ii))
@@ -2836,7 +2836,10 @@ __int64 __fastcall TMainForm::RandomRemove(__int64 TargetBytes)
     {
       int rand_idx = ::Random(fp->Count);
 
-      String sUrl = fp->CheckBox->Items->Strings[rand_idx];
+      TPlayerURL* p = (TPlayerURL*)fp->CheckBox->Items->Objects[rand_idx];
+      if (!p) continue;
+
+      String sUrl = p->path;
 
       if (FileExists(sUrl))
       {
@@ -3251,10 +3254,7 @@ bool __fastcall TMainForm::DeleteCacheFile(TPlaylistForm* f, long cacheNumber)
       {
         TPlayerURL* p = (TPlayerURL*)f->CheckBox->Items->Objects[listIdx];
 
-        // be extra careful not to delete the original music file!
-        String sOrigPath = f->CheckBox->Items->Strings[listIdx];
-
-        if (p && p->cacheNumber > 0 && FileExists(p->cachePath) && p->cachePath != sOrigPath)
+        if (p && p->cacheNumber > 0 && FileExists(p->cachePath) && p->cachePath != p->path)
         {
           //ShowMessage(sDelFile);
           //String sCopy;
@@ -3298,7 +3298,7 @@ bool __fastcall TMainForm::DeleteCacheFile(TPlaylistForm* f, long cacheNumber)
           //  ShowMessage("failed to delete: \"" + String(sCopy) + "\"");
 
           // very important to restore original URL and dequeue this!!!!
-          p->cachePath = sOrigPath;
+          p->cachePath = p->path;
           p->cacheNumber = 0;
 
           bRet = true; // return success
@@ -3321,30 +3321,23 @@ String __fastcall TMainForm::GetURL(TCheckListBox* l, int idx)
     return "";
   }
 
-  String sPath;
+  TPlayerURL* p = (TPlayerURL*)l->Items->Objects[idx];
+  if (!p) return "";
+
+  String sPath = p->path;
 
   try
   {
-    if (bFileCacheEnabled)
+    if (bFileCacheEnabled && p->cacheNumber > 0)
     {
-      TPlayerURL* p = (TPlayerURL*)l->Items->Objects[idx];
-
-      if (p && p->cacheNumber > 0)
-      {
-        if (FileExists(p->cachePath))
-          sPath = p->cachePath;
-        else
-        {
-          sPath = l->Items->Strings[idx];
-          p->cacheNumber = 0;
-          p->cachePath = sPath;
-        }
-      }
+      if (FileExists(p->cachePath))
+        sPath = p->cachePath;
       else
-        sPath = l->Items->Strings[idx];
+      {
+        p->cacheNumber = 0;
+        p->cachePath = sPath;
+      }
     }
-    else
-      sPath = l->Items->Strings[idx];
   }
   catch(...) {};
 
@@ -3362,11 +3355,10 @@ int __fastcall TMainForm::MyFileCopy(TPlaylistForm* f, String &sDestDir, int idx
   if (!f || !pTMyFileCopyList || idx < 0 || idx >= f->CheckBox->Count || !sDestDir.Length())
     return -2;
 
-  String sSourcePath = f->CheckBox->Items->Strings[idx];
   TPlayerURL* p = (TPlayerURL*)f->CheckBox->Items->Objects[idx];
-
-  if (!p || !sSourcePath.Length())
-    return -3;
+  if (!p) return -3;
+  String sSourcePath = p->path;
+  if (!sSourcePath.Length()) return -4;
 
   p->bDownloaded = false;
 

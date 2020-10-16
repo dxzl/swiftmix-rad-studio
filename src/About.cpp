@@ -18,7 +18,7 @@ __fastcall TAboutForm::TAboutForm(TComponent* Owner)
 
   Label1->Caption = "SwiftMiX by\n"
             "Discrete-Time Systems,\n"
-            "Mister Swift, " + String(Date().DateString()) + "\n"
+            "Scott Swift, " + String(Date().DateString()) + "\n"
             + String(EMAIL);
 
   RevLabel->Caption = String(VERSION);
