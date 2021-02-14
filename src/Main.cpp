@@ -2386,12 +2386,18 @@ void __fastcall TMainForm::MenuExportSongFilesandListsClick(TObject* Sender)
       pDirDlgForm->AutoScroll = false; // turn off autoscroll
 
       // Setting CSIDL_MYMUSIC works but the user can't go up from there!
-      String sRootDir = pDirDlgForm->Execute(CSIDL_DESKTOPDIRECTORY) + "\\"; // no trailing backslash!
+      String sRootDir = pDirDlgForm->Execute(CSIDL_DESKTOPDIRECTORY);
 
       pDirDlgForm->Close();
 
-      if (sRootDir.IsEmpty())
+      int len = sRootDir.Length();
+
+      // detect Cancel
+      if (!len)
         return;
+
+      if (sRootDir[len] != '\\')
+        sRootDir += '\\'; // add trailing backslash!
 
       String sExportDir = sRootDir + String(EXPORT_DIR);
 
