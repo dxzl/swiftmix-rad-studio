@@ -2376,7 +2376,8 @@ void __fastcall TMainForm::MenuExportSongFilesandListsClick(TObject* Sender)
       if (lBytesNeeded <= 0)
         return;
 
-      AutoFitToDVD(lBytesNeeded);
+      if (AutoFitToDVD(lBytesNeeded) < 0)
+        return;
 
       Application->CreateForm(__classid(TDirDlgForm), &pDirDlgForm);
 
@@ -2403,10 +2404,14 @@ void __fastcall TMainForm::MenuExportSongFilesandListsClick(TObject* Sender)
 
       if (DirectoryExists(sExportDir))
       {
-        String wMsg = "Old directory already exists:\n\n" +
-          sExportDir + "\n\nPlease delete it first...";
-        ShowMessage(wMsg);
-        return;
+        String s = "Directory already exists:\n\n" + sExportDir +
+        "\n\nPress OK to add songs to it or press Cancel to abort." +
+        " Please delete the directory manually, then retry!";
+
+        int button = MessageBox(Handle, s.w_str(), L"Directory Exists",
+                  MB_ICONQUESTION + MB_OKCANCEL + MB_DEFBUTTON2);
+        if (button == IDCANCEL)
+          return;
       }
       else
         CreateDirectory(sExportDir.c_str(), NULL); // Create base directory
@@ -2549,7 +2554,7 @@ void __fastcall TMainForm::MenuAutoFitToDVDCDClick(TObject* Sender)
     AutoFitToDVD(lBytesNeeded);
 }
 //---------------------------------------------------------------------------
-void __fastcall TMainForm::AutoFitToDVD(__int64 lBytesNeeded)
+int __fastcall TMainForm::AutoFitToDVD(__int64 lBytesNeeded)
 {
   TAutoSizeForm* pAutoSizeForm = NULL;
 
@@ -2559,9 +2564,11 @@ void __fastcall TMainForm::AutoFitToDVD(__int64 lBytesNeeded)
     {
       Application->CreateForm(__classid(TAutoSizeForm), &pAutoSizeForm);
 
-      if (pAutoSizeForm == NULL) return;
+      if (pAutoSizeForm == NULL) return -1;
 
-      if (pAutoSizeForm->ShowModal() == mrOk)
+      int retCode = pAutoSizeForm->ShowModal();
+
+      if (retCode == mrOk)
       {
         if (lBytesNeeded > pAutoSizeForm->BytesOnMedia)
         {
@@ -2600,9 +2607,12 @@ void __fastcall TMainForm::AutoFitToDVD(__int64 lBytesNeeded)
   //      ShowMessage("Under media size-limit by: " + SizeStr + " Bytes");
   //    }
       }
+      else if (retCode == mrCancel)
+        return -1; // cancel
     }
     catch(...)
     {
+      return -1;
     }
   }
   __finally
@@ -2611,6 +2621,7 @@ void __fastcall TMainForm::AutoFitToDVD(__int64 lBytesNeeded)
     if (pAutoSizeForm)
       pAutoSizeForm->Release();
   }
+  return 0;
 }
 //---------------------------------------------------------------------------
 // Add up # bytes needed by songs on both lists

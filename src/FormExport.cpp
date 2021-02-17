@@ -199,7 +199,10 @@ int __fastcall TExportForm::NoDialog(TPlaylistForm* f, String sListPath,
       {
         try
         {
-          String sName = f->CheckBox->Items->Strings[ii];
+          TPlayerURL* p = (TPlayerURL*)f->CheckBox->Items->Objects[ii];
+          if (!p) continue;
+
+          String sName = p->path;
 
           if (sName.IsEmpty()) continue;
 
@@ -238,7 +241,10 @@ int __fastcall TExportForm::NoDialog(TPlaylistForm* f, String sListPath,
       {
         try
         {
-          String sName = f->CheckBox->Items->Strings[ii];
+          TPlayerURL* p = (TPlayerURL*)f->CheckBox->Items->Objects[ii];
+          if (!p) continue;
+
+          String sName = p->path;
 
           if (sName.IsEmpty()) continue;
 
@@ -282,7 +288,10 @@ int __fastcall TExportForm::NoDialog(TPlaylistForm* f, String sListPath,
       {
         try
         {
-          String sName = f->CheckBox->Items->Strings[ii];
+          TPlayerURL* p = (TPlayerURL*)f->CheckBox->Items->Objects[ii];
+          if (!p) continue;
+
+          String sName = p->path;
 
           if (sName.IsEmpty()) continue;
 
@@ -318,7 +327,10 @@ int __fastcall TExportForm::NoDialog(TPlaylistForm* f, String sListPath,
       {
         try
         {
-          String sName = f->CheckBox->Items->Strings[ii];
+          TPlayerURL* p = (TPlayerURL*)f->CheckBox->Items->Objects[ii];
+          if (!p) continue;
+
+          String sName = p->path;
 
           if (sName.IsEmpty()) continue;
 
@@ -357,7 +369,10 @@ int __fastcall TExportForm::NoDialog(TPlaylistForm* f, String sListPath,
       {
         try
         {
-          String sName = f->CheckBox->Items->Strings[ii];
+          TPlayerURL* p = (TPlayerURL*)f->CheckBox->Items->Objects[ii];
+          if (!p) continue;
+
+          String sName = p->path;
 
           if (sName.IsEmpty()) continue;
 

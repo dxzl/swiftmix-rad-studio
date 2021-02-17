@@ -6,7 +6,7 @@
 #ifndef MainH
 #define MainH
 //---------------------------------------------------------------------------
-#define VERSION "1.95"
+#define VERSION "1.96"
 #define FREEWARE_EDITION true
 #define DEBUG_ON false // Include a debug console, use MainForm->CWrite("")
 //---------------------------------------------------------------------------
@@ -312,7 +312,7 @@ private:	// User declarations
   void __fastcall PromptRetry(void);
   int __fastcall CopyMusicFiles(TPlaylistForm* f, String sUserDir);
   long __fastcall MyGFS(String sPath); // MyGetFileSize retry-portion
-  void __fastcall AutoFitToDVD(__int64 lBytesNeeded);
+  int __fastcall AutoFitToDVD(__int64 lBytesNeeded);
   String __fastcall DirectoryDialogW(String sInitialDir, String sTitle);
   bool __fastcall IsWinVistaOrHigher(void);
   void __fastcall ErrorCode(int Code);
