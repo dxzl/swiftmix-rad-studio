@@ -2426,34 +2426,34 @@ void __fastcall TMainForm::MenuExportSongFilesandListsClick(TObject* Sender)
         int retCode = ShowFailures(); // show what's left after retries
 
         if (retCode < 0)
-          return;
-      }
+		  return;
+	  }
 
-      ClearFailedToCopyList();
+	  ClearFailedToCopyList();
 
-      // user cancel? return
-      if (CopyMusicFiles(ListB, sExportDir) == -1)
-        return;
+	  // user cancel? return
+	  if (CopyMusicFiles(ListB, sExportDir) == -1)
+		return;
 
-      if (pTFailedToCopyList->Count)
-      {
-        PromptRetry();
-        int retCode = ShowFailures(); // show what's left after retries
+	  if (pTFailedToCopyList->Count)
+	  {
+		PromptRetry();
+		int retCode = ShowFailures(); // show what's left after retries
 
-        if (retCode < 0)
-          return;
-      }
+		if (retCode < 0)
+		  return;
+	  }
 
-      // Save the playlists
-      Application->CreateForm(__classid(TExportForm), &pExportForm);
+	  // Save the playlists
+	  Application->CreateForm(__classid(TExportForm), &pExportForm);
 
-      if (pExportForm == NULL)
-        return;
+	  if (pExportForm == NULL)
+		return;
 
-      // EXPORT_EXT is wpl so we need to set the bSaveAsUtf8 flag... since all the files will be
-      // copied into the same directory with the associated lists, we just want the file-name in the list,
-      // not the path
-      // We write in utf8 without BOM
+	  // EXPORT_EXT is wpl so we need to set the bSaveAsUtf8 flag... since all the files will be
+	  // copied into the same directory with the associated lists, we just want the file-name in the list,
+	  // not the path
+	  // We write in utf8 without BOM
 
 // S.S. we used to write lists into the same directory with music - better to have them one level up...
 // By the way, SwiftMiX "can re-pathacize" music lists! - Just Import the list and then export
@@ -2463,14 +2463,14 @@ void __fastcall TMainForm::MenuExportSongFilesandListsClick(TObject* Sender)
 //      ExportForm->NoDialog(ListA, wFile, EXPORT_PATH_NONE, EXPORT_MODE_UTF8, false, false);
 //      wFile = wUserDir + "\\SwiftMiXB." + EXPORT_EXT;
 //      ExportForm->NoDialog(ListB, wFile,  EXPORT_PATH_NONE, EXPORT_MODE_UTF8, false, false);
-      String sFile = sRootDir + String(EXPORT_FILE) + "A." + String(EXPORT_EXT);
-      pExportForm->NoDialog(ListA, sFile, EXPORT_PATH_SWIFTMIX, EXPORT_MODE_UTF8, false, false);
-      sFile = sRootDir + String(EXPORT_FILE) + "B." + String(EXPORT_EXT);
-      pExportForm->NoDialog(ListB, sFile,  EXPORT_PATH_SWIFTMIX, EXPORT_MODE_UTF8, false, false);
-    }
-    catch(...)
-    {
-    }
+	  String sFile = sRootDir + String(EXPORT_FILE) + "A." + String(EXPORT_EXT);
+	  pExportForm->NoDialog(ListA, sFile, EXPORT_PATH_SWIFTMIX, EXPORT_MODE_UTF8, false, false, false);
+	  sFile = sRootDir + String(EXPORT_FILE) + "B." + String(EXPORT_EXT);
+	  pExportForm->NoDialog(ListB, sFile,  EXPORT_PATH_SWIFTMIX, EXPORT_MODE_UTF8, false, false, false);
+	}
+	catch(...)
+	{
+	}
   }
   __finally
   {

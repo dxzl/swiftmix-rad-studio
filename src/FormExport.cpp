@@ -9,7 +9,7 @@
 // See also: _wsplitpath, _wfnsplit, _wfnmerge, _wchdir, _wgetcwd, _wgetcurdir, _wmakepath, _wfullpath
 //---------------------------------------------------------------------------
 __fastcall TExportForm::TExportForm(TComponent* Owner)
-  : TForm(Owner)
+	: TForm(Owner)
 {
 }
 //---------------------------------------------------------------------------
@@ -20,15 +20,15 @@ __fastcall TExportForm::~TExportForm()
 void __fastcall TExportForm::FormDestroy(TObject *Sender)
 {
 #if DEBUG_ON
-  MainForm->CWrite( "\r\nFormDestroy() in TExportForm()!\r\n");
+	MainForm->CWrite( "\r\nFormDestroy() in TExportForm()!\r\n");
 #endif
 }
 //---------------------------------------------------------------------------
 void __fastcall TExportForm::FormClose(TObject *Sender,
-      TCloseAction &Action)
+			TCloseAction &Action)
 {
 #if DEBUG_ON
-  MainForm->CWrite( "\r\nFormClose() in TExportForm()!\r\n");
+	MainForm->CWrite( "\r\nFormClose() in TExportForm()!\r\n");
 #endif
 }
 //---------------------------------------------------------------------------
@@ -36,101 +36,102 @@ int __fastcall TExportForm::Dialog(TPlaylistForm* f, String d, String t)
 // Title (t) and Initial directory (d) are UTF-8
 {
 #if (FREEWARE_EDITION == false)
-  if (PK->ComputeDaysRemaining() <= 0)
-  {
-    ShowMessage("Trial Expired, visit:\n" + String(WEBSITE));
-    return -1;
-  }
+	if (PK->ComputeDaysRemaining() <= 0)
+	{
+		ShowMessage("Trial Expired, visit:\n" + String(WEBSITE));
+		return -1;
+	}
 #endif
 
-  if (f == NULL)
-    return 0;
+	if (f == NULL)
+		return 0;
 
-  if (f->Count == 0 || f->PlayIdx < 0)
-    return 0;
+	if (f->Count == 0 || f->PlayIdx < 0)
+	return 0;
 
-  int Count = -1;
+	int Count = -1;
 
-  TSFDlgForm* pSFDlg = NULL;
-  TExportModeForm* pExpModeDlg = NULL;
+	TSFDlgForm* pSFDlg = NULL;
+	TExportModeForm* pExpModeDlg = NULL;
 
-  try
-  {
-    try
-    {
-      Application->CreateForm(__classid(TSFDlgForm), &pSFDlg);
-      Application->CreateForm(__classid(TExportModeForm), &pExpModeDlg);
+	try
+	{
+		try
+		{
+			Application->CreateForm(__classid(TSFDlgForm), &pSFDlg);
+			Application->CreateForm(__classid(TExportModeForm), &pExpModeDlg);
 
-      if (pSFDlg == NULL || pExpModeDlg == NULL)
-        return -2;
+			if (pSFDlg == NULL || pExpModeDlg == NULL)
+				return -2;
 
-      pSFDlg->Filters = String("All Files (*.*)|*.*|"
-                    "Windows Media (wpl)|*.wpl|"
-                    "MPEG UTF-8 (m3u8)|*.m3u8|"
-                    "MPEG ANSI (m3u)|*.m3u|"
-                    "Adv Stream XML (asx)|*.asx|"
-                    "XML Shareable (xspf)|*.xspf|"
-                    "Win Audio XML (wax)|*.wax|"
-                    "Windows XML (wmx)|*.wmx|"
-                    "Winamp (pls)|*.pls|"
-                    "Text (txt)|*.txt");
+			pSFDlg->Filters = String("All Files (*.*)|*.*|"
+										"Windows Media (wpl)|*.wpl|"
+										"MPEG UTF-8 (m3u8)|*.m3u8|"
+										"MPEG ANSI (m3u)|*.m3u|"
+										"Adv Stream XML (asx)|*.asx|"
+										"XML Shareable (xspf)|*.xspf|"
+										"Win Audio XML (wax)|*.wax|"
+										"Windows XML (wmx)|*.wmx|"
+					"Winamp (pls)|*.pls|"
+										"Text (txt)|*.txt");
 
-      // Run the TSaveDialog and get a file name...
-      String sPlayer = (f == ListA) ? "A" : "B";
-      String sDefFile = String(EXPORT_FILE) + sPlayer + "." + String(EXPORT_EXT);
+			// Run the TSaveDialog and get a file name...
+			String sPlayer = (f == ListA) ? "A" : "B";
+			String sDefFile = String(EXPORT_FILE) + sPlayer + "." + String(EXPORT_EXT);
 
-      if (pSFDlg->Execute(sDefFile, d, t) == FALSE)
-        return -1; // -1 will suppress an error-message
+			if (pSFDlg->Execute(sDefFile, d, t) == FALSE)
+				return -1; // -1 will suppress an error-message
 
-      String sName = pSFDlg->FileName; // Get UTF-8 filepath
+			String sName = pSFDlg->FileName; // Get UTF-8 filepath
 
-      if (sName.IsEmpty())
-        return -1;
+			if (sName.IsEmpty())
+				return -1;
 
-      pExpModeDlg->Title = "Export Player " + sPlayer + " List";
-      pExpModeDlg->FileName = sName;
-      pExpModeDlg->Mode = EXPORT_PATH_ABSOLUTE;
+			pExpModeDlg->Title = "Export Player " + sPlayer + " List";
+			pExpModeDlg->FileName = sName;
+			pExpModeDlg->Mode = EXPORT_PATH_ABSOLUTE;
 
-      if (pExpModeDlg->ShowModal() == mrCancel)
-        return -1;
+			if (pExpModeDlg->ShowModal() == mrCancel)
+				return -1;
 
-      bool bFileExists = FileExists(sName);
+			bool bFileExists = FileExists(sName);
 
-      if (bFileExists)
-      {
-        String sMsg = String("File Already Exists:\n\n\"") +  sName +
-                                              String("\"\n\nOverwrite it?");
+			if (bFileExists)
+		{
+				String sMsg = String("File Already Exists:\n\n\"") +  sName +
+																							String("\"\n\nOverwrite it?");
 
-        int button = MessageBox(MainForm->Handle, sMsg.c_str(),
-                L"File Exists", MB_YESNO + MB_ICONQUESTION + MB_DEFBUTTON1);
+				int button = MessageBox(MainForm->Handle, sMsg.c_str(),
+								L"File Exists", MB_YESNO + MB_ICONQUESTION + MB_DEFBUTTON1);
 
-        if (button == IDNO)
-          return -1; // Don't print error message
-      }
+				if (button == IDNO)
+					return -1; // Don't print error message
+			}
 
-      // Gets the count of items exported
-      Count = NoDialog(f, sName, pExpModeDlg->Mode, pExpModeDlg->Encoding,
-                      pExpModeDlg->UncPathFmt, pExpModeDlg->WriteBOM);
-    }
-    catch(...)
-    {
-      return -3;
-    }
-  }
-  __finally
-  {
-    if (pExpModeDlg != NULL)
-      pExpModeDlg->Release();
+			// Gets the count of items exported
+			Count = NoDialog(f, sName, pExpModeDlg->Mode, pExpModeDlg->Encoding,
+								pExpModeDlg->UncPathFmt, pExpModeDlg->WriteBOM,
+													 pExpModeDlg->CheckedOnly);
+	}
+	catch(...)
+	{
+		return -3;
+	}
+	}
+	__finally
+	{
+	if (pExpModeDlg != NULL)
+		pExpModeDlg->Release();
 
-    if (pSFDlg != NULL)
-      pSFDlg->Release();
-  }
+	if (pSFDlg != NULL)
+		pSFDlg->Release();
+	}
 
-  return Count;
+	return Count;
 }
 //---------------------------------------------------------------------------
 int __fastcall TExportForm::NoDialog(TPlaylistForm* f, String sListPath,
-                  int Mode, int Enc, bool bUncPathFormat, bool bWriteBOM)
+	 int Mode, int Enc, bool bUncPathFormat, bool bWriteBOM, bool bCheckedOnly)
 //
 // sListPath must be UTF-8 (we use MainForm->WriteStringToFileW() to save the UTF-8 TStringList()...
 // (we use the vcl's ansi string-parsing functions on sListPath - they work on a utf-8 string
@@ -144,288 +145,288 @@ int __fastcall TExportForm::NoDialog(TPlaylistForm* f, String sListPath,
 // EXPORT_PATH_ROOTED         1
 // EXPORT_PATH_ABSOLUTE       2
 {
-  if (f == NULL)
-    return 0;
+	if (f == NULL)
+	return 0;
 
-  if (f->Count == 0 || f->PlayIdx < 0)
-    return 0;
+	if (f->Count == 0 || f->PlayIdx < 0)
+	return 0;
 
-  int Count = 0;
+	int TotalCount = 0;
 
-  TStringList* sl = new TStringList();
+	TStringList* sl = new TStringList();
 
-  if (sl == NULL)
-    return 0;
+	if (sl == NULL)
+	return 0;
 
-  try
-  {
-    int len = f->Count;
-    f->Progress->Init(len);
+	try
+	{
+		int len = f->Count;
+		f->Progress->Init(len);
 
-    String Ext = ExtractFileExt(sListPath).LowerCase();
+		String Ext = ExtractFileExt(sListPath).LowerCase();
 
-    if (Ext.Length() > 0 && Ext.Pos(".") == 1)
-      Ext.Delete(1, 1);
+		if (Ext.Length() > 0 && Ext.Pos(".") == 1)
+			Ext.Delete(1, 1);
 
-    MainForm->ExportExt = Ext; // Save as UTF-8
+		MainForm->ExportExt = Ext; // Save as UTF-8
 
-    String sTemp, sSavePrefix;
+		String sTemp, sSavePrefix;
 
-    String sEnc;
-    if (Enc == EXPORT_MODE_ANSI)
-      sEnc = "\"ANSI\"";
-    else if (Enc == EXPORT_MODE_UTF16BE)
-      sEnc ="\"UTF-16BE\"";
-    else if (Enc == EXPORT_MODE_UTF16)
-      sEnc ="\"UTF-16\"";
-    else
-      sEnc ="\"UTF-8\"";
+		String sEnc;
+		if (Enc == EXPORT_MODE_ANSI)
+			sEnc = "\"ANSI\"";
+		else if (Enc == EXPORT_MODE_UTF16BE)
+			sEnc ="\"UTF-16BE\"";
+		else if (Enc == EXPORT_MODE_UTF16)
+			sEnc ="\"UTF-16\"";
+		else
+			sEnc ="\"UTF-8\"";
 
-    if (Ext == "wpl")
-    {
-      sl->Add("<?wpl version=\"1.0\"?>");
-      sl->Add("<smil>");
-      sl->Add(" <head>");
-      // From a file generated by Windows Media Player:
-      // <meta name="Generator" content="Microsoft Windows Media Player -- 12.0.9600.17415"/>
-      // <meta name="ItemCount" content="85"/>
-      sl->Add("   <meta name=\"Generator\" content=\"SwiftMiX Player -- " + String(VERSION) + "\"/>");
-      sl->Add("   <title>" + ExtractFileName(sListPath) + "</title>");
-      sl->Add(" </head>");
-      sl->Add(" <body>");
-      sl->Add("   <seq>");
+		if (Ext == "wpl")
+		{
+			sl->Add("<?wpl version=\"1.0\"?>");
+			sl->Add("<smil>");
+			sl->Add(" <head>");
+			// From a file generated by Windows Media Player:
+			// <meta name="Generator" content="Microsoft Windows Media Player -- 12.0.9600.17415"/>
+			// <meta name="ItemCount" content="85"/>
+			sl->Add("   <meta name=\"Generator\" content=\"SwiftMiX Player -- " + String(VERSION) + "\"/>");
+			sl->Add("   <title>" + ExtractFileName(sListPath) + "</title>");
+			sl->Add(" </head>");
+			sl->Add(" <body>");
+			sl->Add("   <seq>");
 
-      for (int ii = 0; ii < len; ii++)
-      {
-        try
-        {
-          TPlayerURL* p = (TPlayerURL*)f->CheckBox->Items->Objects[ii];
-          if (!p) continue;
+			for (int ii = 0; ii < len; ii++)
+			{
+				if (f->Progress->Move(ii))
+					break;
 
-          String sName = p->path;
+				try
+				{
+					TPlayerURL* p = (TPlayerURL*)f->CheckBox->Items->Objects[ii];
+					if (!p || (bCheckedOnly && p->state == cbUnchecked)) continue;
 
-          if (sName.IsEmpty()) continue;
+					String sName = p->path;
 
-          // tack on a leading "file://", ProcessFileName will strip it off then add it back...
-          if (bUncPathFormat && !MainForm->IsUri(sName))
-              sName = sName.Insert("file://", 1);
+					if (sName.IsEmpty()) continue;
 
-          // Note: sName is returned as a ref with the song-title (filename)
-          sTemp = ProcessFileName(sListPath, sName, Mode, bUncPathFormat);
+					// tack on a leading "file://", ProcessFileName will strip it off then add it back...
+					if (bUncPathFormat && !MainForm->IsUri(sName))
+						sName = sName.Insert("file://", 1);
 
-          if (!sTemp.IsEmpty())
-          {
-            sTemp = InsertXMLSpecialCodes(sTemp); // replace "&" with "&amp;"
+					// Note: sName is returned as a ref with the song-title (filename)
+					sTemp = ProcessFileName(sListPath, sName, Mode, bUncPathFormat);
 
-            sl->Add("     <media src=\"" + sTemp + "\"/>");
-            Count++;
-          }
-        }
-        catch(...) { }
+					if (!sTemp.IsEmpty())
+					{
+						sTemp = InsertXMLSpecialCodes(sTemp); // replace "&" with "&amp;"
 
-        if (f->Progress->Move(ii))
-          break;
-      }
+						sl->Add("     <media src=\"" + sTemp + "\"/>");
+						TotalCount++;
+					}
+				}
+				catch(...) { }
+			}
 
-      sl->Add("   </seq>");
-      sl->Add(" </body>");
-      sl->Add("</smil>");
-    }
-    else if (Ext == "xspf") // Save as Windows-Media-Player XML file
-    {
-      sl->Add("<?xml version=\"1.0\" encoding=" + sEnc + "?>");
-      sl->Add("<playlist version=\"1\" xmlns=\"http://xspf.org/ns/0/\">");
-      sl->Add(" <tracklist>");
+			sl->Add("   </seq>");
+			sl->Add(" </body>");
+			sl->Add("</smil>");
+		}
+		else if (Ext == "xspf") // Save as Windows-Media-Player XML file
+		{
+			sl->Add("<?xml version=\"1.0\" encoding=" + sEnc + "?>");
+			sl->Add("<playlist version=\"1\" xmlns=\"http://xspf.org/ns/0/\">");
+			sl->Add(" <tracklist>");
 
-      for (int ii = 0 ; ii < len ; ii++)
-      {
-        try
-        {
-          TPlayerURL* p = (TPlayerURL*)f->CheckBox->Items->Objects[ii];
-          if (!p) continue;
+			for (int ii = 0 ; ii < len ; ii++)
+			{
+				if (f->Progress->Move(ii))
+					break;
 
-          String sName = p->path;
+				try
+				{
+					TPlayerURL* p = (TPlayerURL*)f->CheckBox->Items->Objects[ii];
+					if (!p || (bCheckedOnly && p->state == cbUnchecked)) continue;
 
-          if (sName.IsEmpty()) continue;
+					String sName = p->path;
 
-          // tack on a leading "file://", ProcessFileName will strip it off then add it back...
-          if (bUncPathFormat && !MainForm->IsUri(sName))
-            sName = sName.Insert("file://", 1);
+					if (sName.IsEmpty()) continue;
 
-          // Note: sName is returned as a ref with the song-title (filename)
-          sTemp = ProcessFileName(sListPath, sName, Mode, bUncPathFormat);
+					// tack on a leading "file://", ProcessFileName will strip it off then add it back...
+					if (bUncPathFormat && !MainForm->IsUri(sName))
+					sName = sName.Insert("file://", 1);
 
-          if (!sTemp.IsEmpty())
-          {
-            if (bUncPathFormat)
-              sTemp = PercentEncode(sTemp, PERCENTCHARS, true); // also encode chars above 127
-            else
-              sTemp = InsertXMLSpecialCodes(sTemp); // replace "&" with "&amp;"
+					// Note: sName is returned as a ref with the song-title (filename)
+					sTemp = ProcessFileName(sListPath, sName, Mode, bUncPathFormat);
 
-            sl->Add("   <track>");
-            sl->Add("     <title>" + sName + "</title>");
-            sl->Add("     <location>" + sTemp + "</location>");
-            sl->Add("   </track>");
-            Count++;
-          }
-        }
-        catch(...) { }
+					if (!sTemp.IsEmpty())
+					{
+						if (bUncPathFormat)
+							sTemp = PercentEncode(sTemp, PERCENTCHARS, true); // also encode chars above 127
+						else
+							sTemp = InsertXMLSpecialCodes(sTemp); // replace "&" with "&amp;"
 
-        if (f->Progress->Move(ii))
-          break;
-      }
+						sl->Add("   <track>");
+						sl->Add("     <title>" + sName + "</title>");
+						sl->Add("     <location>" + sTemp + "</location>");
+						sl->Add("   </track>");
+						TotalCount++;
+					}
+				}
+				catch(...) { }
+			}
 
-      sl->Add(" </tracklist>");
-      sl->Add("</playlist>");
-    }
-    else if (Ext == "asx" || Ext == "wax" || Ext == "wmx") // Save as Windows-Media-Player XML file
-    {
-      sl->Add("<ASX version = \"3.0\">");
-      sl->Add("   <PARAM name = \"encoding\" value = " + sEnc + " />");
-      sl->Add("   <TITLE>" + ExtractFileName(sListPath) + "</TITLE>");
+			sl->Add(" </tracklist>");
+			sl->Add("</playlist>");
+		}
+		else if (Ext == "asx" || Ext == "wax" || Ext == "wmx") // Save as Windows-Media-Player XML file
+		{
+			sl->Add("<ASX version = \"3.0\">");
+			sl->Add("   <PARAM name = \"encoding\" value = " + sEnc + " />");
+			sl->Add("   <TITLE>" + ExtractFileName(sListPath) + "</TITLE>");
 
-      for (int ii = 0 ; ii < len ; ii++)
-      {
-        try
-        {
-          TPlayerURL* p = (TPlayerURL*)f->CheckBox->Items->Objects[ii];
-          if (!p) continue;
+			for (int ii = 0 ; ii < len ; ii++)
+			{
+				if (f->Progress->Move(ii))
+					break;
 
-          String sName = p->path;
+				try
+				{
+					TPlayerURL* p = (TPlayerURL*)f->CheckBox->Items->Objects[ii];
+					if (!p || (bCheckedOnly && p->state == cbUnchecked)) continue;
 
-          if (sName.IsEmpty()) continue;
+					String sName = p->path;
 
-          // tack on a leading "file://", ProcessFileName will strip it off then add it back...
-          if (bUncPathFormat && !MainForm->IsUri(sName))
-              sName = sName.Insert("file://", 1);
+					if (sName.IsEmpty()) continue;
 
-          // sName is returned by reference with the Title (filename)
-          sTemp = ProcessFileName(sListPath, sName, Mode, bUncPathFormat);
+					// tack on a leading "file://", ProcessFileName will strip it off then add it back...
+					if (bUncPathFormat && !MainForm->IsUri(sName))
+						sName = sName.Insert("file://", 1);
 
-          if (!sTemp.IsEmpty())
-          {
-            sl->Add("   <ENTRY>");
-            sl->Add("     <TITLE>" + sName + "</TITLE>");
-            sl->Add("     <REF HREF = \"" + sTemp + "\" />");
-            sl->Add("   </ENTRY>");
-            Count++;
-          }
-        }
-        catch(...) { }
+					// sName is returned by reference with the Title (filename)
+					sTemp = ProcessFileName(sListPath, sName, Mode, bUncPathFormat);
 
-        if (f->Progress->Move(ii))
-          break;
-      }
+					if (!sTemp.IsEmpty())
+					{
+						sl->Add("   <ENTRY>");
+						sl->Add("     <TITLE>" + sName + "</TITLE>");
+						sl->Add("     <REF HREF = \"" + sTemp + "\" />");
+						sl->Add("   </ENTRY>");
+						TotalCount++;
+					}
+				}
+				catch(...) { }
+			}
 
-      sl->Add("</ASX>");
-    }
-    else if (Ext == "pls") // Save as PLSv2 (Winamp)
-    {
-      sl->Add("[playlist]");
+			sl->Add("</ASX>");
+		}
+		else if (Ext == "pls") // Save as PLSv2 (Winamp)
+		{
+			sl->Add("[playlist]");
 
-      for (int ii = 0 ; ii < len ; ii++)
-      {
-        try
-        {
-          TPlayerURL* p = (TPlayerURL*)f->CheckBox->Items->Objects[ii];
-          if (!p) continue;
+			for (int ii = 0 ; ii < len ; ii++)
+			{
+				if (f->Progress->Move(ii))
+					break;
 
-          String sName = p->path;
+				try
+				{
+					TPlayerURL* p = (TPlayerURL*)f->CheckBox->Items->Objects[ii];
+					if (!p || (bCheckedOnly && p->state == cbUnchecked)) continue;
 
-          if (sName.IsEmpty()) continue;
+					String sName = p->path;
 
-          // tack on a leading "file://", ProcessFileName will strip it off then add it back...
-          if (bUncPathFormat && !MainForm->IsUri(sName))
-              sName = sName.Insert("file://", 1);
+					if (sName.IsEmpty()) continue;
 
-          // Note: sName is returned as a ref with the song-title (filename)
-          sTemp = ProcessFileName(sListPath, sName, Mode, bUncPathFormat);
+					// tack on a leading "file://", ProcessFileName will strip it off then add it back...
+					if (bUncPathFormat && !MainForm->IsUri(sName))
+						sName = sName.Insert("file://", 1);
 
-          if (!sTemp.IsEmpty())
-          {
-            if (bUncPathFormat)
-              sTemp = PercentEncode(sTemp, PERCENTCHARS, true); // also encode chars above 127
+					// Note: sName is returned as a ref with the song-title (filename)
+					sTemp = ProcessFileName(sListPath, sName, Mode, bUncPathFormat);
 
-            String sCount = String(Count+1) + "=";
-            sl->Add("File" + sCount + sTemp);
-            sl->Add("Title" + sCount + UniversalExtractFileName(sTemp));
-            sl->Add("Length" + sCount + "-1"); // ignore length (usually for streaming)
-            Count++;
-          }
-        }
-        catch(...) { }
+					if (!sTemp.IsEmpty())
+					{
+						if (bUncPathFormat)
+							sTemp = PercentEncode(sTemp, PERCENTCHARS, true); // also encode chars above 127
 
-        if (f->Progress->Move(ii))
-          break;
-      }
+						String sCount = String(TotalCount+1) + "=";
+						sl->Add("File" + sCount + sTemp);
+						sl->Add("Title" + sCount + UniversalExtractFileName(sTemp));
+						sl->Add("Length" + sCount + "-1"); // ignore length (usually for streaming)
+						TotalCount++;
+					}
+				}
+				catch(...) { }
+			}
 
-      sl->Add("NumberOfEntries=" + String(Count));
-      sl->Add("Version=2");
-    }
-    else // handle m3u and m3u8
-    {
-      // Save as plain-text file
-      for (int ii = 0 ; ii < len ; ii++)
-      {
-        try
-        {
-          TPlayerURL* p = (TPlayerURL*)f->CheckBox->Items->Objects[ii];
-          if (!p) continue;
+			sl->Add("NumberOfEntries=" + String(TotalCount));
+			sl->Add("Version=2");
+		}
+		else // handle m3u and m3u8
+		{
+			// Save as plain-text file
+			for (int ii = 0 ; ii < len ; ii++)
+			{
+				if (f->Progress->Move(ii))
+					break;
 
-          String sName = p->path;
+				try
+				{
+					TPlayerURL* p = (TPlayerURL*)f->CheckBox->Items->Objects[ii];
+					if (!p || (bCheckedOnly && p->state == cbUnchecked)) continue;
 
-          if (sName.IsEmpty()) continue;
+					String sName = p->path;
 
-          // tack on a leading "file://", ProcessFileName will strip it off then add it back...
-          if (bUncPathFormat && !MainForm->IsUri(sName))
-              sName = sName.Insert("file://", 1);
+					if (sName.IsEmpty()) continue;
 
-          // Note: sName is returned as a ref with the song-title (filename)
-          sTemp = ProcessFileName(sListPath, sName, Mode, bUncPathFormat);
+					// tack on a leading "file://", ProcessFileName will strip it off then add it back...
+					if (bUncPathFormat && !MainForm->IsUri(sName))
+						sName = sName.Insert("file://", 1);
 
-          if (!sTemp.IsEmpty())
-          {
-            if (bUncPathFormat)
-              sTemp = PercentEncode(sTemp, PERCENTCHARS, true); // also encode chars above 127
+					// Note: sName is returned as a ref with the song-title (filename)
+					sTemp = ProcessFileName(sListPath, sName, Mode, bUncPathFormat);
 
-            sl->Add(sTemp);
-            Count++;
-          }
-        }
-        catch(...) { }
+					if (!sTemp.IsEmpty())
+					{
+						if (bUncPathFormat)
+							sTemp = PercentEncode(sTemp, PERCENTCHARS, true); // also encode chars above 127
 
-        if (f->Progress->Move(ii))
-          break;
-      }
-    }
+						sl->Add(sTemp);
+						TotalCount++;
+					}
+				}
+				catch(...) { }
+			}
+		}
 
-    if (sl->Count > 0)
-    {
-      sl->WriteBOM = bWriteBOM;
+		if (sl->Count > 0)
+		{
+			sl->WriteBOM = bWriteBOM;
 
-      TEncoding* enc;
-      if (Enc == EXPORT_MODE_ANSI)
-        enc = TEncoding::ANSI;
-      else if (Enc == EXPORT_MODE_UTF8)
-        enc = TEncoding::UTF8;
-      else if (Enc == EXPORT_MODE_UTF16)
-        enc = TEncoding::Unicode;
-      else if (Enc == EXPORT_MODE_UTF16BE)
-        enc = TEncoding::BigEndianUnicode;
+			TEncoding* enc;
+			if (Enc == EXPORT_MODE_ANSI)
+			enc = TEncoding::ANSI;
+			else if (Enc == EXPORT_MODE_UTF8)
+			enc = TEncoding::UTF8;
+			else if (Enc == EXPORT_MODE_UTF16)
+			enc = TEncoding::Unicode;
+			else if (Enc == EXPORT_MODE_UTF16BE)
+			enc = TEncoding::BigEndianUnicode;
 
-      sl->SaveToFile(sListPath, enc);
-    }
+			sl->SaveToFile(sListPath, enc);
+		}
 
-    f->Progress->UnInit();
-  }
-  catch(...) { ShowMessage("Error In NoDialog()"); }
+		f->Progress->UnInit();
+	}
+	catch(...) { ShowMessage("Error In NoDialog()"); }
 
-  delete sl;
-  return Count;
+	delete sl;
+	return TotalCount;
 }
 //---------------------------------------------------------------------------
 String __fastcall TExportForm::ProcessFileName(String sListPath,
-                            String &sName, int Mode, bool bUncPathFormat)
+														String &sName, int Mode, bool bUncPathFormat)
 // sName is the full utf-8 file path from the list-box. It can be in
 // "file:/localhost/drive/path/file.ext" format
 // or like "C:\path\song.wma", "relative-path\song.wma",
@@ -434,15 +435,15 @@ String __fastcall TExportForm::ProcessFileName(String sListPath,
 // sName contains the File name only on return
 // We return the path we want to write into to the playlist
 {
-  try
-  {
-    String sSongPath = sName;
+	try
+	{
+		String sSongPath = sName;
 
-    // Return the title (filename) in reference-variable sName
-    sName = UniversalExtractFileName(sSongPath);
+		// Return the title (filename) in reference-variable sName
+		sName = UniversalExtractFileName(sSongPath);
 
-    // If it's a non-file URL like HTTP://, just return it as-is...
-    if (MainForm->IsUri(sSongPath) && !MainForm->IsFileUri(sSongPath))
+		// If it's a non-file URL like HTTP://, just return it as-is...
+		if (MainForm->IsUri(sSongPath) && !MainForm->IsFileUri(sSongPath))
       return sSongPath;
 
     // Convert to "normal" file-path we can work with

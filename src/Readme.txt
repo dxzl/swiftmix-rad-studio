@@ -1,4 +1,4 @@
-Software by Scott Swift 2017 This program is distributed under the
+Software by Scott Swift 2017-2021 This program is distributed under the
 terms of the GNU General Public License. Distribute freely.
 
 # swiftmix-borland-cpp

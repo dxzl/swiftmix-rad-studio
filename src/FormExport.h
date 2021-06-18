@@ -37,7 +37,7 @@ public:		// User declarations
 
   int __fastcall Dialog(TPlaylistForm* f, String d, String t);
   int __fastcall NoDialog(TPlaylistForm* f, String sListFullPath, int Mode,
-                               int Enc, bool bUncPathFormat, bool bWriteBOM);
+               int Enc, bool bUncPathFormat, bool bWriteBOM, bool bCheckedOnly);
 };
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
