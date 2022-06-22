@@ -17,7 +17,7 @@
 //---------------------------------------------------------------------------
 class TImportModeForm : public TForm
 {
-__published:	// IDE-managed Components
+__published:  // IDE-managed Components
   TRadioGroup *RadioGroup;
   TButton *ButtonOk;
   TButton *ButtonCancel;
@@ -26,14 +26,14 @@ __published:	// IDE-managed Components
   void __fastcall FormClose(TObject *Sender, TCloseAction &Action);
   void __fastcall ButtonCancelClick(TObject *Sender);
   void __fastcall FormDestroy(TObject *Sender);
-private:	// User declarations
+private:  // User declarations
 
   int FMode;
   String FTitle;
 
   void __fastcall SetTitle(String sTitle);
 
-public:		// User declarations
+public:    // User declarations
   __fastcall TImportModeForm(TComponent* Owner);
 
   __property int Mode = {read = FMode, write = FMode};

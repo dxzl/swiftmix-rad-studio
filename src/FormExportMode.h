@@ -22,7 +22,7 @@
 //---------------------------------------------------------------------------
 class TExportModeForm : public TForm
 {
-__published:	// IDE-managed Components
+__published:  // IDE-managed Components
     TRadioGroup *RGPathType;
   TButton *ButtonOk;
   TButton *Cancel;
@@ -31,14 +31,14 @@ __published:	// IDE-managed Components
   TCheckBox *WriteBOMCheckBox;
   TRadioGroup *RGEncoding;
   TLabel *LabelHint;
-	TCheckBox *CheckedSongsOnlyCheckBox;
+  TCheckBox *CheckedSongsOnlyCheckBox;
   void __fastcall FormCreate(TObject *Sender);
   void __fastcall FormShow(TObject *Sender);
   void __fastcall FormClose(TObject *Sender, TCloseAction &Action);
   void __fastcall CancelClick(TObject *Sender);
   void __fastcall FormDestroy(TObject *Sender);
 
-private:	// User declarations
+private:  // User declarations
 
   String Ext;
 
@@ -49,7 +49,7 @@ private:	// User declarations
 
 protected:
 
-public:		// User declarations
+public:    // User declarations
   __fastcall TExportModeForm(TComponent* Owner);
 
   __property int Encoding = {read = FEncoding, write = FEncoding};

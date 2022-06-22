@@ -12,7 +12,7 @@
 //---------------------------------------------------------------------------
 class TAutoSizeForm : public TForm
 {
-__published:	// IDE-managed Components
+__published:  // IDE-managed Components
   TButton *OkButton;
   TButton *CancelButton;
   TRadioGroup *RadioGroup1;
@@ -24,11 +24,11 @@ __published:	// IDE-managed Components
   void __fastcall FormShow(TObject *Sender);
   void __fastcall FormClose(TObject *Sender, TCloseAction &Action);
   void __fastcall FormDestroy(TObject *Sender);
-private:	// User declarations
+private:  // User declarations
 
   __int64 m_size64;
 
-public:		// User declarations
+public:    // User declarations
   __fastcall TAutoSizeForm(TComponent* Owner);
 
   __property __int64 BytesOnMedia = {read = m_size64};

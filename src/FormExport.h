@@ -15,11 +15,11 @@ class TPlaylistForm;
 
 class TExportForm : public TForm
 {
-__published:	// IDE-managed Components
+__published:  // IDE-managed Components
   void __fastcall FormClose(TObject *Sender, TCloseAction &Action);
   void __fastcall FormDestroy(TObject *Sender);
 
-private:	// User declarations
+private:  // User declarations
   String __fastcall PercentEncode(String sIn, const WideChar* table, bool bEncodeAbove127);
   String __fastcall InsertXMLSpecialCodes(String sIn);
   String __fastcall XmlSpecialCharEncode(WideChar c);
@@ -31,7 +31,7 @@ private:	// User declarations
   String __fastcall ProcessFileName(String sListFullPath, String &sName,
                             int Mode, bool bUncPathFormat);
 
-public:		// User declarations
+public:    // User declarations
   __fastcall TExportForm(TComponent* Owner);
   __fastcall ~TExportForm();
 

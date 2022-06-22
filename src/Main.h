@@ -1,12 +1,8 @@
-// TODO:
-// mp3 and wma tag library:
-//https://github.com/DanielGausi/AudioWerkzeugeBibliothek
-// (I have this in the misc folder under MP3Lib)
 //---------------------------------------------------------------------------
 #ifndef MainH
 #define MainH
 //---------------------------------------------------------------------------
-#define VERSION "1.97"
+#define VERSION "1.99"
 #define FREEWARE_EDITION true
 #define DEBUG_ON false // Include a debug console, use MainForm->CWrite("")
 //---------------------------------------------------------------------------
@@ -26,8 +22,15 @@
 #include <OleCtrls.hpp>
 #include <StdCtrls.hpp>
 #include <StrUtils.hpp>
+#include <IOUtils.hpp>
+#include <SysUtils.hpp>
 #include <wininet.h>
 
+//https://docs.microsoft.com/en-us/windows/win32/menurc/resource-types
+// resource types...
+#include <Winuser.h>
+
+#include "Resource.h"
 #include "DefaultStrings.h"
 #include "CWindowDock.h"
 #include "XmlTable.h"
@@ -50,12 +53,12 @@
 #include "FormExport.h"
 #include "Z_TagLibSource\AudioFiles.hpp"
 #include "TagEditForm.h"
+#include "Help.h"
 //#include "..\..\20.0\Imports\MediaPlayer_OCX.h"
-#include "..\..\20.0\Imports\MediaPlayer_TLB.h"
-#include "..\..\20.0\Imports\WMPLib_OCX.h"
+#include "..\..\21.0\Imports\MediaPlayer_TLB.h"
+#include "..\..\21.0\Imports\WMPLib_OCX.h"
 //---------------------------------------------------------------------------
 
-#define HELPSITE L"http://www.yahcolorize.com/swiftmix/help/help.htm"
 #define WEBSITE L"http://www.yahcolorize.com/swiftmix/index.htm"
 #define EMAIL L"dxzl@live.com"
 #define REGISTRY_KEY L"Software\\Discrete-Time Systems\\MusicMixer\\"
@@ -158,7 +161,7 @@
 
 class TMainForm : public TForm
 {
-__published:	// IDE-managed Components
+__published:  // IDE-managed Components
 
   TWindowsMediaPlayer *WindowsMediaPlayer1;
   TWindowsMediaPlayer *WindowsMediaPlayer2;
@@ -301,7 +304,7 @@ __published:	// IDE-managed Components
   void __fastcall FormCloseQuery(TObject *Sender, bool &CanClose);
   void __fastcall EditFadePointChange(TObject *Sender);
 
-private:	// User declarations
+private:  // User declarations
 #if DEBUG_ON
   void __fastcall CInit(void);
 #endif
@@ -384,7 +387,7 @@ BEGIN_MESSAGE_MAP
 //  VCL_MESSAGE_HANDLER(WM_MOVE, TWMMove, WMMove)
 END_MESSAGE_MAP(TForm)
 
-public:		// User declarations
+public:    // User declarations
 
   __fastcall TMainForm(TComponent* Owner);
 
@@ -430,6 +433,7 @@ public:		// User declarations
   bool __fastcall CopyFileToCache(TPlaylistForm* f, int idx);
   bool __fastcall DeleteCacheFile(TPlaylistForm* f, long cacheNumber=0);
   String __fastcall GetURL(TCheckListBox* l, int idx);
+  bool __fastcall ReleaseForm(TForm* f);
 
   int RWM_SwiftMixPlay, RWM_SwiftMixTime, RWM_SwiftMixState;
   bool bFadeRight, bAutoSizePrompt;

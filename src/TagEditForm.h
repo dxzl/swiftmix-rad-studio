@@ -15,7 +15,7 @@ class TPlayerURL;
 
 class TFormTags : public TForm
 {
-__published:	// IDE-managed Components
+__published:  // IDE-managed Components
   TGroupBox *GroupBox2;
   TLabel *Label1;
   TLabel *Label2;
@@ -40,7 +40,7 @@ __published:	// IDE-managed Components
   void __fastcall ButtonPasteTagsClick(TObject *Sender);
   void __fastcall ButtonCopyTagsClick(TObject *Sender);
   void __fastcall BtnSaveClick(TObject *Sender);
-private:	// User declarations
+private:  // User declarations
   TGeneralAudioFile* f;
   String TagPath;
   bool ReadOnly;
@@ -48,7 +48,7 @@ private:	// User declarations
   int __fastcall SetTagsFromString(String sIn);
   String __fastcall GetTagsAsString(void);
   String __fastcall StripTab(String sIn);
-public:		// User declarations
+public:    // User declarations
   __fastcall TFormTags(TComponent* Owner);
   void __fastcall ShowTags(TPlayerURL* p);
 };

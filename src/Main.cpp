@@ -1,4 +1,6 @@
 // EDIT UNIT8.h TO CHANGE TRIAL-KEY!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+// Windows shell api documentation:
+// https://docs.microsoft.com/en-us/windows/win32/api/_shell/
 //---------------------------------------------------------------------------
 #include <vcl.h>
 #include "Main.h"
@@ -14,6 +16,22 @@ TMainForm* MainForm;
 KeyClass* PK;
 #endif
 
+//---------------------------------------------------------------------------
+bool __fastcall TMainForm::ReleaseForm(TForm* f)
+{
+  if (f != NULL)
+  {
+    try{
+      f->Close();
+      f->Release();
+      Application->ProcessMessages();
+    }
+    catch(...){
+      return false;
+    }
+  }
+  return true;
+}
 //---------------------------------------------------------------------------
 __fastcall TMainForm::TMainForm(TComponent* Owner) : TForm(Owner)
 {
@@ -206,6 +224,8 @@ void __fastcall TMainForm::FormShow(TObject *Sender)
   ListB->OtherForm = ListA;
   ListB->PlayerA = false; // this list is not for the A player
 
+  FsDeskDir = GetSpecialFolder(CSIDL_DESKTOPDIRECTORY);
+
   // need ListA and ListB to InitFileCacheing()
   if (bFileCacheEnabled) // if it's enabled in registry...
     bFileCacheEnabled = InitFileCaching();
@@ -308,17 +328,10 @@ void __fastcall TMainForm::FormCloseQuery(TObject *Sender, bool &CanClose)
 //---------------------------------------------------------------------------
 void __fastcall TMainForm::FormClose(TObject* Sender, TCloseAction &Action)
 {
-  if (SFDlgForm)
-  {
-    SFDlgForm->Release();
+  if (ReleaseForm((TForm*)SFDlgForm))
     SFDlgForm = NULL;
-  }
-
-  if (OFMSDlgForm)
-  {
-    OFMSDlgForm->Release();
+  if (ReleaseForm((TForm*)OFMSDlgForm))
     OFMSDlgForm = NULL;
-  }
 
   TRegHelper* pReg = NULL;
 
@@ -354,16 +367,10 @@ void __fastcall TMainForm::FormClose(TObject* Sender, TCloseAction &Action)
 
   // Each list has a TProgressForm and other forms like TImportForm/TExportForm
   // that might be used during file-copy, etc - so delete these last.
-  if (ListA)
-  {
-    ListA->Release();
+  if (ReleaseForm((TForm*)ListA))
     ListA = NULL;
-  }
-  if (ListB)
-  {
-    ListB->Release();
+  if (ReleaseForm((TForm*)ListB))
     ListB = NULL;
-  }
 
 #if DEBUG_ON
   MainForm->CWrite("\r\nFormClose() in FormMain()\r\n");
@@ -459,8 +466,6 @@ void __fastcall TMainForm::InitRegistryVars(void)
 // returns true if enabled
 bool __fastcall TMainForm::InitFileCaching(void)
 {
-  FsDeskDir = GetSpecialFolder(CSIDL_DESKTOPDIRECTORY);
-
   // if we can find or make a Temp directory, enable custom file-cacheing
   FsCacheDir = GetSpecialFolder(CSIDL_LOCAL_APPDATA);
   if (DirectoryExists(FsCacheDir))
@@ -604,14 +609,12 @@ void __fastcall TMainForm::File1Click(TObject* Sender)
 {
   if (FileDialog(ListA, SaveDirA, ADD_A_TITLE))
     ListA->QueueFirst();
-//  if (FileDialog(ListA, ADD_A_FILES, SaveDirA)) ListA->QueueFirst();
 }
 //---------------------------------------------------------------------------
 void __fastcall TMainForm::File2Click(TObject* Sender)
 {
   if (FileDialog(ListB, SaveDirB, ADD_B_TITLE))
     ListB->QueueFirst();
-//  if (FileDialog(ListB, ADD_B_FILES, SaveDirB)) ListB->QueueFirst();
 }
 //---------------------------------------------------------------------------
 bool __fastcall TMainForm::FileDialog(TPlaylistForm* f, String &d, String t)
@@ -643,7 +646,8 @@ bool __fastcall TMainForm::FileDialog(TPlaylistForm* f, String &d, String t)
         fd->Filters = "All Files (*.*)|*.*|"
                     "Windows Media (*.wma)|*.wma|"
                     "MP3 (*.mp3)|*.mp3|"
-                    "WAV (*.wav)|*.wav";
+                    "WAV (*.wav)|*.wav|"
+                    "OGG (*.ogg)|*.ogg"; // need codecs from xiph.org
 
         FFilesAddedCount = 0;
 
@@ -835,7 +839,7 @@ void __fastcall TMainForm::LoadListWithDroppedFiles(TPlaylistForm* f, TWMDropFil
       sl->Exchange(0, sl->Count-1);
 
     // Press and hold Shift to bypass the file-extention filtering
-    this->GBypassFilters = (GetKeyState(VK_SHIFT) & 0x8000);
+    GBypassFilters = (GetKeyState(VK_SHIFT) & 0x8000);
 
     String SaveDir = GetCurrentDir(); // Save
 
@@ -862,7 +866,8 @@ void __fastcall TMainForm::LoadListWithDroppedFiles(TPlaylistForm* f, TWMDropFil
   }
   __finally
   {
-    try { if (ImportForm != NULL) ImportForm->Release(); } catch(...) {}
+    if (ReleaseForm((TForm*)ImportForm))
+      ImportForm = NULL;
     try { if (pBuf != NULL) delete [] pBuf; } catch(...) {}
     try { if (sl != NULL) delete sl; } catch(...) {}
 
@@ -1272,7 +1277,7 @@ bool __fastcall TMainForm::IsAudioFile(String sSourcePath)
 
   if (sExt.IsEmpty()) return false;
 
-  return sExt == "mp3" || sExt == "wma" || sExt == "asf" || sExt == "wav" ||
+  return sExt == "mp3" || sExt == "wma" || sExt == "ogg" ||sExt == "asf" || sExt == "wav" ||
           sExt == "mpa" || sExt == "mpe" || sExt == "m3u" || sExt == "avi" || sExt == "aac" ||
           sExt == "adt" || sExt == "adts" || sExt == "mp2" || sExt == "cda" ||
           sExt == "au" || sExt == "snd" || sExt == "aif" || sExt == "aiff" || sExt == "aifc" ||
@@ -1294,9 +1299,11 @@ bool __fastcall TMainForm::IsPlaylistExtension(String sExt)
 {
   if (sExt.IsEmpty()) return false;
 
-  return sExt == "wpl" || sExt == "m3u8" || sExt == "m3u" ||
-        sExt == "asx" || sExt == "xspf" || sExt == "wax" ||
-          sExt == "wmx" || sExt == "wvx" ||  sExt == "pls" || sExt == "txt";
+  String sLc = sExt.LowerCase();
+
+  return sLc == "wpl" || sLc == "m3u8" || sLc == "m3u" ||
+        sLc == "asx" || sLc == "xspf" || sLc == "wax" ||
+          sLc == "wmx" || sLc == "wvx" ||  sLc == "pls" || sLc == "txt";
 }
 //---------------------------------------------------------------------------
 // Could have "file:/laptop/D:/path/file.wma" so the key to telling a URL from
@@ -1318,7 +1325,7 @@ bool __fastcall TMainForm::IsSourcePathUri(String sIn)
   return sIn.LowerCase().Pos("file:/") == 1;
 }
 //---------------------------------------------------------------------------
-// returns extension (without the period!)
+// returns lower-case extension (without the period!)
 String __fastcall TMainForm::MyExtractFileExt(String sPath)
 {
   int len = sPath.Length();
@@ -1411,14 +1418,26 @@ void __fastcall TMainForm::VB_100Click(TObject* Sender)
 //---------------------------------------------------------------------------
 void __fastcall TMainForm::Player1Next1Click(TObject* Sender)
 {
-  ListA->NextIndex = ListA->TargetIndex;
-  ListA->NextSong();
+  if (ListA->IsPlayOrPause()){
+    ListA->NextIndex = ListA->TargetIndex;
+    ListA->NextSong();
+  }
+  else if (ListA->Count > 0)
+    ShowMessage("Click the play button or double-click a song to start Player A!");
+  else
+    ShowMessage("You need to add some songs to Player A!");
 }
 //---------------------------------------------------------------------------
 void __fastcall TMainForm::Player2Next1Click(TObject* Sender)
 {
-  ListB->NextIndex = ListB->TargetIndex;
-  ListB->NextSong();
+  if (ListB->IsPlayOrPause()){
+    ListB->NextIndex = ListB->TargetIndex;
+    ListB->NextSong();
+  }
+  else if (ListB->Count > 0)
+    ShowMessage("Click the play button or double-click a song to start Player B!");
+  else
+    ShowMessage("You need to add some songs to Player B!");
 }
 //---------------------------------------------------------------------------
 void __fastcall TMainForm::MenuForceFadeClick(TObject* Sender)
@@ -1823,17 +1842,20 @@ void __fastcall TMainForm::MenuAboutClick(TObject* Sender)
 {
   Application->CreateForm(__classid(TAboutForm), &AboutForm);
   AboutForm->ShowModal();
-  AboutForm->Release();
+  if (ReleaseForm((TForm*)AboutForm))
+    AboutForm = NULL;
 }
 //---------------------------------------------------------------------------
 void __fastcall TMainForm::ClearPlaylistStop1Click(TObject* Sender)
 {
-  if (ListA != NULL) ListA->ClearAndStop();
+  if (ListA != NULL)
+    ListA->ClearAndStop();
 }
 //---------------------------------------------------------------------------
 void __fastcall TMainForm::ClearPlaylistStop2Click(TObject* Sender)
 {
-  if (ListB != NULL) ListB->ClearAndStop();
+  if (ListB != NULL)
+    ListB->ClearAndStop();
 }
 //---------------------------------------------------------------------------
 void __fastcall TMainForm::MenuFaderModeAutoClick(TObject* Sender)
@@ -1946,7 +1968,8 @@ void __fastcall TMainForm::ShowPlaylist(TPlaylistForm* f)
       f->Top -= diff;
 
     f->Show();
-    MainForm->SetFocus();
+// 6/2022 added PlayPreview - release of ctrl key requires playlist form's focus!
+//    MainForm->SetFocus();
 
 //    GDock->WindowMoved(f->Handle);
   }
@@ -2097,8 +2120,10 @@ void __fastcall TMainForm::Pause2Click(TObject* Sender)
 //---------------------------------------------------------------------------
 void __fastcall TMainForm::RestoreFocus(void)
 {
-  if (ListA->Visible && ListA->Active && ListA->WindowState == wsMaximized) MainForm->SetFocus();
-  else if (ListB->Visible && ListB->Active && ListB->WindowState == wsMaximized) MainForm->SetFocus();
+  if (!ListA->InPlayPreview && ListA->Visible && ListA->Active && ListA->WindowState == wsMaximized)
+    MainForm->SetFocus();
+  else if (!ListB->InPlayPreview && ListB->Visible && ListB->Active && ListB->WindowState == wsMaximized)
+    MainForm->SetFocus();
 }
 //---------------------------------------------------------------------------
 void __fastcall TMainForm::ImportPlaylist1Click(TObject* Sender)
@@ -2128,6 +2153,7 @@ void __fastcall TMainForm::ImportPlaylist2Click(TObject* Sender)
 {
   if (ListB == NULL)
     return;
+
   Application->CreateForm(__classid(TImportForm), &ImportForm);
 
   int Count = ImportForm->Dialog(ListB, FsDeskDir, "Import PlayerB Playlist");
@@ -2143,7 +2169,8 @@ void __fastcall TMainForm::ImportPlaylist2Click(TObject* Sender)
   else if (Count == 0)
     ShowMessage("Unable to load playlist (is it empty?)\nIs your music drive plugged in?");
 
-  ImportForm->Release();
+  if (ReleaseForm((TForm*)ImportForm))
+    ImportForm = NULL;
 }
 //---------------------------------------------------------------------------
 void __fastcall TMainForm::ExportPlaylist1Click(TObject* Sender)
@@ -2161,7 +2188,7 @@ void __fastcall TMainForm::ExportPlaylist1Click(TObject* Sender)
   }
   __finally
   {
-    pExportForm->Release();
+    ReleaseForm((TForm*)pExportForm);
   }
 }
 
@@ -2180,15 +2207,47 @@ void __fastcall TMainForm::ExportPlaylist2Click(TObject* Sender)
   }
   __finally
   {
-    pExportForm->Release();
+    ReleaseForm((TForm*)pExportForm);
   }
 }
 //---------------------------------------------------------------------------
+//__fastcall TResourceStream(NativeUInt Instance, const System::UnicodeString ResName, System::WideChar * ResType);
+//__fastcall TResourceStream(NativeUInt Instance, int ResID, System::WideChar * ResType);
 void __fastcall TMainForm::MenuHelpClick(TObject* Sender)
 {
-  // launch default web-browser
-  //ShellExecute(Handle, "open", "iexplore.exe", HELPSITE, NULL, SW_SHOW);
-  ShellExecute(NULL, L"open", HELPSITE, NULL, NULL, SW_SHOWNORMAL);
+  String sTemp = TPath::GetTempPath();
+  if (!sTemp.IsEmpty()){
+    sTemp += HELP_FILE_NAME;
+  }
+
+  if (FileExists(sTemp)){
+    DeleteFile(sTemp);
+  }
+
+  int LineCount = 0;
+  for (;;)
+    if (LineCount >= MAX_HELP_LINES || HELPHTMLTEXT[LineCount++][0] == 0x04)
+      break;
+
+  if (LineCount >= MAX_HELP_LINES){
+    ShowMessage("Too many lines in help text!");
+    return;
+  }
+
+  TStringList* sl = NULL;
+  try{
+    sl = new TStringList();
+    for (int ii=0; ii < LineCount; ii++)
+      sl->Add(HELPHTMLTEXT[ii]);
+    sl->SaveToFile(sTemp);
+    // launch default web-browser
+    sTemp = "file://" + sTemp;
+    // launch default web-browser
+    ShellExecute(NULL, L"open", sTemp.c_str(), NULL, NULL, SW_SHOWNORMAL);
+  }
+  __finally{
+    if (sl) delete sl;
+  }
 }
 //---------------------------------------------------------------------------
 void __fastcall TMainForm::MenuRepeatModeAClick(TObject* Sender)
@@ -2426,34 +2485,34 @@ void __fastcall TMainForm::MenuExportSongFilesandListsClick(TObject* Sender)
         int retCode = ShowFailures(); // show what's left after retries
 
         if (retCode < 0)
-		  return;
-	  }
+        return;
+      }
 
-	  ClearFailedToCopyList();
+      ClearFailedToCopyList();
 
-	  // user cancel? return
-	  if (CopyMusicFiles(ListB, sExportDir) == -1)
-		return;
+      // user cancel? return
+      if (CopyMusicFiles(ListB, sExportDir) == -1)
+        return;
 
-	  if (pTFailedToCopyList->Count)
-	  {
-		PromptRetry();
-		int retCode = ShowFailures(); // show what's left after retries
+      if (pTFailedToCopyList->Count)
+      {
+        PromptRetry();
+        int retCode = ShowFailures(); // show what's left after retries
 
-		if (retCode < 0)
-		  return;
-	  }
+        if (retCode < 0)
+          return;
+      }
 
-	  // Save the playlists
-	  Application->CreateForm(__classid(TExportForm), &pExportForm);
+      // Save the playlists
+      Application->CreateForm(__classid(TExportForm), &pExportForm);
 
-	  if (pExportForm == NULL)
-		return;
+      if (pExportForm == NULL)
+        return;
 
-	  // EXPORT_EXT is wpl so we need to set the bSaveAsUtf8 flag... since all the files will be
-	  // copied into the same directory with the associated lists, we just want the file-name in the list,
-	  // not the path
-	  // We write in utf8 without BOM
+      // EXPORT_EXT is wpl so we need to set the bSaveAsUtf8 flag... since all the files will be
+      // copied into the same directory with the associated lists, we just want the file-name in the list,
+      // not the path
+      // We write in utf8 without BOM
 
 // S.S. we used to write lists into the same directory with music - better to have them one level up...
 // By the way, SwiftMiX "can re-pathacize" music lists! - Just Import the list and then export
@@ -2463,21 +2522,19 @@ void __fastcall TMainForm::MenuExportSongFilesandListsClick(TObject* Sender)
 //      ExportForm->NoDialog(ListA, wFile, EXPORT_PATH_NONE, EXPORT_MODE_UTF8, false, false);
 //      wFile = wUserDir + "\\SwiftMiXB." + EXPORT_EXT;
 //      ExportForm->NoDialog(ListB, wFile,  EXPORT_PATH_NONE, EXPORT_MODE_UTF8, false, false);
-	  String sFile = sRootDir + String(EXPORT_FILE) + "A." + String(EXPORT_EXT);
-	  pExportForm->NoDialog(ListA, sFile, EXPORT_PATH_SWIFTMIX, EXPORT_MODE_UTF8, false, false, false);
-	  sFile = sRootDir + String(EXPORT_FILE) + "B." + String(EXPORT_EXT);
-	  pExportForm->NoDialog(ListB, sFile,  EXPORT_PATH_SWIFTMIX, EXPORT_MODE_UTF8, false, false, false);
-	}
-	catch(...)
-	{
-	}
+      String sFile = sRootDir + String(EXPORT_FILE) + "A." + String(EXPORT_EXT);
+      pExportForm->NoDialog(ListA, sFile, EXPORT_PATH_SWIFTMIX, EXPORT_MODE_UTF8, false, false, false);
+      sFile = sRootDir + String(EXPORT_FILE) + "B." + String(EXPORT_EXT);
+      pExportForm->NoDialog(ListB, sFile,  EXPORT_PATH_SWIFTMIX, EXPORT_MODE_UTF8, false, false, false);
+    }
+    catch(...)
+    {
+    }
   }
   __finally
   {
-    if (pExportForm)
-      pExportForm->Release();
-    if (pDirDlgForm)
-      pDirDlgForm->Release();
+    ReleaseForm((TForm*)pExportForm);
+    ReleaseForm((TForm*)pDirDlgForm);
     ClearFailedToCopyList();
     ListA->Progress->UnInit(true);
     ListB->Progress->UnInit(true);
@@ -2618,8 +2675,7 @@ int __fastcall TMainForm::AutoFitToDVD(__int64 lBytesNeeded)
   __finally
   {
     // Release the resources
-    if (pAutoSizeForm)
-      pAutoSizeForm->Release();
+    ReleaseForm((TForm*)pAutoSizeForm);
   }
   return 0;
 }
@@ -3763,6 +3819,5 @@ void __fastcall TMainForm::CWrite(String S)
   WriteConsole(m_Screen, String(S).w_str(),S.Length(),0,0);
 }
 #endif
-//---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 

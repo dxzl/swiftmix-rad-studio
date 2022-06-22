@@ -9,11 +9,11 @@
 //---------------------------------------------------------------------------
 class TDirDlgForm : public TForm
 {
-__published:	// IDE-managed Components
+__published:  // IDE-managed Components
   void __fastcall FormActivate(TObject *Sender);
   void __fastcall FormCreate(TObject *Sender);
   void __fastcall FormDestroy(TObject *Sender);
-private:	// User declarations
+private:  // User declarations
   bool FAutoScroll;
   HWND FDlgHandle;
 protected:

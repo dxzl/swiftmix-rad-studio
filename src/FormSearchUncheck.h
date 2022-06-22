@@ -10,16 +10,16 @@
 //---------------------------------------------------------------------------
 class TSearchUncheckForm : public TForm
 {
-__published:	// IDE-managed Components
+__published:  // IDE-managed Components
   TEdit *Edit1;
   TButton *ButtonOk;
   TButton *ButtonCancel;
   void __fastcall ButtonOkClick(TObject *Sender);
   void __fastcall FormCreate(TObject *Sender);
   void __fastcall ButtonCancelClick(TObject *Sender);
-private:	// User declarations
+private:  // User declarations
   String FText;
-public:		// User declarations
+public:    // User declarations
   __fastcall TSearchUncheckForm(TComponent* Owner);
 
 

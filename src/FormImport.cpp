@@ -123,11 +123,8 @@ int __fastcall TImportForm::Dialog(TPlaylistForm* f, String d, String t)
   }
   __finally
   {
-    if (pOFMSDlg != NULL)
-      pOFMSDlg->Release();
-
-    if (pImpModeDlg != NULL)
-      pImpModeDlg->Release();
+    MainForm->ReleaseForm(pOFMSDlg);
+    MainForm->ReleaseForm(pImpModeDlg);
   }
 
   return -1; // canceled

@@ -14,11 +14,11 @@
 //---------------------------------------------------------------------------
 class TImportForm : public TForm
 {
-__published:	// IDE-managed Components
+__published:  // IDE-managed Components
   void __fastcall FormClose(TObject *Sender, TCloseAction &Action);
   void __fastcall FormDestroy(TObject *Sender);
 
-private:	// User declarations
+private:  // User declarations
 //  String __fastcall TrimAndReplaceSpecial(String sIn);
 //  char __fastcall XmlSpecialCharDecode(String In);
 //  String __fastcall UriDecode(String sSrc);
@@ -38,7 +38,7 @@ private:	// User declarations
 
   int XMLCHARSLEN;
 
-public:		// User declarations
+public:    // User declarations
   __fastcall TImportForm(TComponent* Owner);
   __fastcall ~TImportForm();
 

@@ -149,7 +149,7 @@ typedef enum _FILEOPENDIALOGOPTIONS {
 //---------------------------------------------------------------------------
 class TOFMSDlgForm : public TForm
 {
-__published:	// IDE-managed Components
+__published:  // IDE-managed Components
   void __fastcall FormDestroy(TObject *Sender);
   void __fastcall FormActivate(TObject *Sender);
 
@@ -219,7 +219,7 @@ protected:
   static LRESULT CALLBACK DefViewSubClass(HWND hDlg, UINT uMsg, WPARAM wParam,
                            LPARAM lParam, UINT* uIdSubclass, DWORD* dwRefData);
 
-public:		// User declarations
+public:    // User declarations
   __fastcall TOFMSDlgForm(TComponent* Owner);
   virtual __fastcall ~TOFMSDlgForm();
 

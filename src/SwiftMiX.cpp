@@ -15,11 +15,11 @@ USEFORM("FormDirDlg.cpp", DirDlgForm);
 USEFORM("About.cpp", AboutForm);
 USEFORM("AutoSize.cpp", AutoSizeForm);
 USEFORM("SMList.cpp", PlaylistForm);
+USEFORM("TagEditForm.cpp", FormTags);
 USEFORM("FormSearchUncheck.cpp", SearchUncheckForm);
 USEFORM("FormSFDlg.cpp", SFDlgForm);
 USEFORM("Main.cpp", MainForm);
 USEFORM("Progress.cpp", ProgressForm);
-USEFORM("TagEditForm.cpp", FormTags);
 //---------------------------------------------------------------------------
 int WINAPI _tWinMain(HINSTANCE, HINSTANCE, LPTSTR, int)
 {

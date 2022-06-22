@@ -11,7 +11,7 @@
 //---------------------------------------------------------------------------
 class TAboutForm : public TForm
 {
-__published:	// IDE-managed Components
+__published:  // IDE-managed Components
   TButton *Button1;
   TButton *Button2;
   TPanel *Panel1;
@@ -27,9 +27,9 @@ __published:	// IDE-managed Components
   void __fastcall FormShow(TObject *Sender);
   void __fastcall FormDestroy(TObject *Sender);
 
-private:	// User declarations
+private:  // User declarations
   void __fastcall DisplayDaysRemaining( void );
-public:		// User declarations
+public:    // User declarations
   __fastcall TAboutForm(TComponent* Owner);
   __fastcall ~TAboutForm();
 };

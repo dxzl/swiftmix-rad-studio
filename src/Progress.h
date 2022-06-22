@@ -24,7 +24,7 @@ class TProgressVars
 //---------------------------------------------------------------------------
 class TProgressForm : public TForm
 {
-__published:	// IDE-managed Components
+__published:  // IDE-managed Components
   TProgressBar *ProgressBar;
   TLabel *Label;
   TButton *ButtonCancel;
@@ -40,13 +40,13 @@ protected:
   bool __fastcall GetShowCancelButton(void);
   void __fastcall SetShowCancelButton(int Value);
 
-private:	// User declarations
+private:  // User declarations
 
   int FTotalExpectedIterations, FCumulativeIterations, FProgressMode;
   bool FCanceled;
   TList* pTProgressVarsList;
 
-public:		// User declarations
+public:    // User declarations
   __fastcall TProgressForm(TComponent* Owner);
 
   int __fastcall Init(int maxIterations);

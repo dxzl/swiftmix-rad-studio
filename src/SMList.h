@@ -12,9 +12,11 @@
 #include <Menus.hpp>
 #include <System.WideStrUtils.hpp>
 
-#include "..\..\19.0\Imports\WMPLib_OCX.h"
-#include "..\..\19.0\Imports\WMPLib_TLB.h"
+#include "..\..\21.0\Imports\WMPLib_OCX.h"
+#include "..\..\21.0\Imports\WMPLib_TLB.h"
 //---------------------------------------------------------------------------
+
+#define PLAY_PREVIEW_START_TIME 5.0 // start time into song for play-preview
 
 // Timer times
 #define TIME_2000 1000  // used to exit edit mode after up/down/left/right scroll-keys were pressed
@@ -28,8 +30,9 @@
 #define TM_NEXT_SONG_CHECK      3
 #define TM_FADE                 4
 #define TM_STOP_PLAYER          5
-#define TM_CHECKBOX_CLICK       6
-#define TM_SCROLL_KEY_PRESSED   7
+#define TM_STOP_PLAY_PREVIEW    6
+#define TM_CHECKBOX_CLICK       7
+#define TM_SCROLL_KEY_PRESSED   8
 
 #define RETRY_A 4
 #define RETRY_B 6
@@ -85,7 +88,7 @@ class TPlayerURL
 class TPlaylistForm : public TForm
 {
 __published:  // IDE-managed Components
-  TTimer *Timer1;
+  TTimer *GeneralPurposeTimer;
   TTimer *FlashTimer;
   TTimer *PositionTimer;
   TPopupMenu *PopupMenu1;
@@ -111,10 +114,10 @@ __published:  // IDE-managed Components
   TMenuItem *MenuDeleteEvenIndices;
   TMenuItem *MenuDeleteOddIndicies;
   TCheckListBox *CheckBox;
-  void __fastcall Timer1Timer(TObject *Sender);
+  TTimer *MouseMoveDebounceTimer;
+  void __fastcall GeneralPurposeTimerEvent(TObject *Sender);
   void __fastcall FlashTimerEvent(TObject *Sender);
   void __fastcall FormHide(TObject *Sender);
-//  void __fastcall CheckBoxMouseMove(TObject *Sender, TShiftState Shift, int X, int Y);
   void __fastcall FormActivate(TObject *Sender);
   void __fastcall FormDeactivate(TObject *Sender);
   void __fastcall FormKeyDown(TObject *Sender, WORD &Key, TShiftState Shift);
@@ -152,10 +155,15 @@ __published:  // IDE-managed Components
   void __fastcall MenuFixOrderofTrailingNumbersClick(TObject *Sender);
   void __fastcall MenuDeleteEvenIndicesClick(TObject *Sender);
   void __fastcall MenuDeleteOddIndiciesClick(TObject *Sender);
+  void __fastcall MouseMoveDebounceTimerEvent(TObject *Sender);
+  void __fastcall CheckBoxMouseMove(TObject *Sender, TShiftState Shift, int X, int Y);
+  void __fastcall FormKeyUp(TObject *Sender, WORD &Key, TShiftState Shift);
+  void __fastcall CheckBoxKeyDown(TObject *Sender, WORD &Key, TShiftState Shift);
 
 
 private:  // User declarations
 
+  void __fastcall StartPlayPreview(void);
   bool __fastcall QueueToIndex(int Index);
   String __fastcall GetTags(TPlayerURL* p);
   int __fastcall GetTrailingDigits(String s, String &sNamePart, String &sExt);
@@ -193,10 +201,10 @@ private:  // User declarations
   TCheckListBox* FCheckBox;
   TPlaylistForm* FOtherForm;
   TWindowsMediaPlayer *FWmp, *FOtherWmp;
-  int FNextIndex, FTargetIndex, FPlayIdx, FTempIdx;
+  int FNextIndex, FTargetIndex, FPlayIdx, FTempIdx, FOldMouseItemIndex;
   TColor FTextColor;
-  bool FEditMode;
-  bool FPlayerA;
+  bool FEditMode, FPlayPreview;
+  bool FPlayerA, FKeySpaceDisable;
   long FCacheCount;
 
   TOFMSDlgForm* pOFMSDlg;
@@ -260,6 +268,7 @@ public:  // User declarations
   bool __fastcall IsPlayOrPause(void);
   void __fastcall StopPlayer(void);
   void __fastcall StartPlayer(void);
+  void __fastcall StopPlayPreview(void);
 
   STRUCT_A MediaInfo;
 
@@ -273,6 +282,7 @@ public:  // User declarations
   __property int TargetIndex = {read = FTargetIndex, write = FTargetIndex};
   __property bool PlayerA = {read = FPlayerA, write = FPlayerA};
   __property bool InEditMode = {read = FEditMode};
+  __property bool InPlayPreview = {read = FPlayPreview};
   __property bool IsImportDlg = {read = GetIsImportDlg};
   __property bool IsExportDlg = {read = GetIsExportDlg};
   __property bool IsOpenDlg = {read = GetIsOpenDlg};
