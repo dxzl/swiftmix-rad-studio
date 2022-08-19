@@ -1,5 +1,6 @@
 /*------------------------------------------------------------------
-// Author: Mr. Swift 2015
+// Author: Scott Swift 2015
+// Last modification: 2022
 // Thanks to Scott Wisniewski for his 2010 C# subclassed file-dialog
 // and to Denis Ponomarenko for his 2007 COSFDlg class implementation.
 // I could not have done this without their excellent source-code
@@ -65,10 +66,12 @@
 typedef BOOL __stdcall (*tSetWindowSubclass)(HWND hDlg, MYSUBCLASSPROC pfnSubclass, LPUINT uIdSubclass, LPDWORD dwRefData);
 typedef BOOL __stdcall (*tRemoveWindowSubclass)(HWND hDlg, MYSUBCLASSPROC pfnSubclass, LPUINT uIdSubclass);
 typedef BOOL __stdcall (*tDefSubclassProc)(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+typedef BOOL __stdcall (*tInitCommonControlsEx)(LPINITCOMMONCONTROLSEX);
 
 tSetWindowSubclass pSetWindowSubclass;
 tRemoveWindowSubclass pRemoveWindowSubclass;
 tDefSubclassProc pDefSubclassProc;
+tInitCommonControlsEx pInitCommonControlsEx;
 
 UINT m_buttonWidth = 0;
 UINT m_buttonHeight = 0;
@@ -104,6 +107,20 @@ __fastcall TOFMSDlgForm::TOFMSDlgForm(TComponent* Owner)
   pSetWindowSubclass = (tSetWindowSubclass)GetProcAddress(m_hComCtl32, "SetWindowSubclass");
   pRemoveWindowSubclass = (tRemoveWindowSubclass)GetProcAddress(m_hComCtl32, "RemoveWindowSubclass");
   pDefSubclassProc = (tDefSubclassProc)GetProcAddress(m_hComCtl32, "DefSubclassProc");
+  pInitCommonControlsEx = (tInitCommonControlsEx)GetProcAddress(m_hComCtl32, "InitCommonControlsEx");
+
+  if (pInitCommonControlsEx != NULL)
+  {
+      INITCOMMONCONTROLSEX CommonCtrlEx = {0};
+      CommonCtrlEx.dwSize = sizeof(CommonCtrlEx);
+      if (pInitCommonControlsEx(&CommonCtrlEx) == FALSE)
+      {
+#if DEBUG_ON
+        OFDbg->CWrite( "\r\nUnable to InitCommonControlsEx!\r\n");
+#endif
+        return;
+      }
+  }
 
   ZeroMemory(&m_ofn, sizeof(OPENFILENAMEW));
 
@@ -124,7 +141,6 @@ __fastcall TOFMSDlgForm::TOFMSDlgForm(TComponent* Owner)
 #else
   m_ofn.lpTemplateName    = MYMIR(IDD_CustomOpenDialog);
 #endif
-
   p_filterBuf = NULL;
 
   FFilterCount = 0;
@@ -205,17 +221,18 @@ bool __fastcall TOFMSDlgForm::ExecuteW(int iFilter, WideString wInitialDir,
   m_ofn.lpstrTitle  = FDlgTitle.c_bstr();
   m_ofn.lpstrInitialDir = FInitialDir.c_bstr();
 
-  m_ofn.Flags = OFN_NOTESTFILECREATE|OFN_HIDEREADONLY|OFN_EXPLORER|
-    OFN_ENABLEHOOK|OFN_ENABLESIZING|OFN_ENABLETEMPLATE;
+  m_ofn.Flags = OFN_NOTESTFILECREATE|OFN_EXPLORER|OFN_ENABLEHOOK|
+                              OFN_ENABLESIZING|OFN_ENABLETEMPLATE;
 
   // Additional options for our custom multi-select version
+  if (!FSingleSelect)
+    m_ofn.Flags |= OFN_ALLOWMULTISELECT;
+
   // (setting OFN_NODEREFERENCELINKS will allow .lnk files to be selected
   // and passed to the caller... clearing it lets you double-click a
   // shortcut and go to its folder...)
-  if (!FSingleSelect)
-    m_ofn.Flags |= OFN_ALLOWMULTISELECT|OFN_NODEREFERENCELINKS;
-
-  //OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST;
+  // OFN_FILEMUSTEXIST|OFN_PATHMUSTEXIST|OFN_NODEREFERENCELINKS;
+  // OFN_HIDEREADONLY
 
   // If the user specifies a file name and clicks the OK button, the return
   // value is nonzero. The buffer pointed to by the lpstrFile member of the
@@ -1080,7 +1097,7 @@ bool __fastcall TOFMSDlgForm::MySetWindowSubclass(HWND hDlg, MYSUBCLASSPROC pfnS
   try
   {
     if (pSetWindowSubclass != NULL)
-      bRet = (*pSetWindowSubclass)(hDlg, pfnSubclass, (UINT*)uIdSubclass, (DWORD*)this);
+      bRet = pSetWindowSubclass(hDlg, pfnSubclass, (UINT*)uIdSubclass, (DWORD*)this);
   }
   catch(...) {}
 
@@ -1098,7 +1115,7 @@ bool __fastcall TOFMSDlgForm::MyRemoveWindowSubclass(HWND hDlg, MYSUBCLASSPROC p
     if (pRemoveWindowSubclass != NULL)
     {
       unsigned id = (unsigned)uIdSubclass;
-      bRet = (*pRemoveWindowSubclass)(hDlg, pfnSubclass, &id);
+      bRet = pRemoveWindowSubclass(hDlg, pfnSubclass, &id);
     }
   }
   catch(...) {}
@@ -1115,10 +1132,10 @@ bool __fastcall TOFMSDlgForm::MyDefSubclassProc(HWND hDlg, UINT msg, WPARAM wPar
   try
   {
     if (pDefSubclassProc != NULL)
-      bRet = (*pDefSubclassProc)(hDlg, msg, wParam, lParam);
+      bRet = pDefSubclassProc(hDlg, msg, wParam, lParam);
 #if DEBUG_ON
     else
-      OFDbg->CWrite("\r\nNULL MyDef Subclsaa!!!!!\r\n");
+      OFDbg->CWrite("\r\nNULL MyDef Subclass!!!!!\r\n");
 #endif
   }
   catch(...) {}
@@ -1498,10 +1515,9 @@ UINT CALLBACK TOFMSDlgForm::OFNHookProc(HWND hDlg, UINT msg, WPARAM wParam, LPAR
       if (p_ofn == NULL) break;
 
       TOFMSDlgForm* p_osfDlg = (TOFMSDlgForm*)p_ofn->lCustData;
+      if (p_osfDlg == NULL) break;
 
-      LPOFNOTIFY p_notify = (LPOFNOTIFY)lParam;
-
-      LRESULT r = p_osfDlg->ProcessNotifyMessage(hDlg, p_notify);
+      LRESULT r = p_osfDlg->ProcessNotifyMessage(hDlg, (LPOFNOTIFY)lParam);
 
       if (r != 0)
       {

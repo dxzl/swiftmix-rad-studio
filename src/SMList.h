@@ -164,7 +164,7 @@ __published:  // IDE-managed Components
 private:  // User declarations
 
   void __fastcall StartPlayPreview(void);
-  bool __fastcall QueueToIndex(int Index);
+  bool __fastcall QueueToIndex(int idx);
   String __fastcall GetTags(TPlayerURL* p);
   int __fastcall GetTrailingDigits(String s, String &sNamePart, String &sExt);
   int __fastcall IndexOfSmallestNumber(TStringList* sl);
@@ -201,7 +201,7 @@ private:  // User declarations
   TCheckListBox* FCheckBox;
   TPlaylistForm* FOtherForm;
   TWindowsMediaPlayer *FWmp, *FOtherWmp;
-  int FNextIndex, FTargetIndex, FPlayIdx, FTempIdx, FOldMouseItemIndex;
+  int FNextIdx, FTargetIdx, FPlayIdx, FTempIdx, FOldMouseItemIndex;
   TColor FTextColor;
   bool FEditMode, FPlayPreview;
   bool FPlayerA, FKeySpaceDisable;
@@ -278,8 +278,8 @@ public:  // User declarations
   __property TPlaylistForm* OtherForm = {read = FOtherForm, write = FOtherForm};
   __property TWindowsMediaPlayer* Wmp = {read = FWmp, write = FWmp};
   __property TWindowsMediaPlayer* OtherWmp = {read = FOtherWmp, write = FOtherWmp};
-  __property int NextIndex = {read = FNextIndex, write = FNextIndex};
-  __property int TargetIndex = {read = FTargetIndex, write = FTargetIndex};
+  __property int NextIndex = {read = FNextIdx, write = FNextIdx};
+  __property int TargetIndex = {read = FTargetIdx, write = FTargetIdx};
   __property bool PlayerA = {read = FPlayerA, write = FPlayerA};
   __property bool InEditMode = {read = FEditMode};
   __property bool InPlayPreview = {read = FPlayPreview};

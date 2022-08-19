@@ -116,8 +116,13 @@ bool __fastcall TSFDlgForm::Execute(String uDefFile,
   m_sfn.lpstrInitialDir = FInitialDir.w_str();
 
   m_sfn.Flags = OFN_NOTESTFILECREATE|OFN_HIDEREADONLY|OFN_EXPLORER|
-      OFN_PATHMUSTEXIST|OFN_ENABLEHOOK|OFN_ENABLESIZING|OFN_PATHMUSTEXIST;
-  //OFN_FILEMUSTEXIST | OFN_OVERWRITEPROMPT | OFN_NODEREFERENCELINKS;
+                                        OFN_ENABLEHOOK|OFN_ENABLESIZING;
+
+  // (setting OFN_NODEREFERENCELINKS will allow .lnk files to be selected
+  // and passed to the caller... clearing it lets you double-click a
+  // shortcut and go to its folder...)
+  // OFN_FILEMUSTEXIST|OFN_PATHMUSTEXIST|OFN_NODEREFERENCELINKS|OFN_OVERWRITEPROMPT
+  // OFN_HIDEREADONLY
 
   // If the user specifies a file name and clicks the OK button and the function is successful,
   // the return value is nonzero. The buffer pointed to by the lpstrFile member of the OPENFILENAME

@@ -13,6 +13,270 @@
 TPlaylistForm* ListA = NULL;
 TPlaylistForm* ListB = NULL;
 
+
+//---------------------------------------------------------------------------
+// TCheckListBox properties:
+//---------------------------------------------------------------------------
+// Align  published  Determines how the control aligns within its container (parent control).
+// AlignDisabled  public  Indicates child control realignment disabled.
+// AlignWithMargins  published  Specifies whether a control should be constrained by margins.
+// AllowGrayed  published  Determines whether a check box can have a dimmed appearance (be unavailable).
+// Anchors  published  Specifies how the control is anchored to its parent.
+// AutoComplete  published  Determines whether the user can give focus to items by typing in the list.
+// AutoCompleteDelay  public  Specifies the delay between a key press and an attempt to autocomplete the field.
+// BevelEdges  published  Specifies which edges of the control are beveled.
+// BevelInner  published  Specifies the cut of the inner bevel.
+// BevelKind  published  Specifies the control's bevel style.
+// BevelOuter  published  Specifies the cut of the outer bevel.
+// BevelWidth  published  Specifies the width of the inner and outer bevels.
+// BiDiMode  published  Specifies the bidirectional mode for the control.
+// BorderStyle  published  Determines whether the list box has a border.
+// BoundsRect  public  Specifies the bounding rectangle of the control, expressed in the coordinate system of the parent control.
+// Brush  public  Determines the color and pattern used for painting the background of the control.
+// Canvas  public  Provides a drawing surface when implementing a handler for the OnDrawItem event of an owner-draw list box.
+// CheckBoxPadding  published
+// Checked  public  Indicates which items are checked.
+// ClientHeight  public  Specifies the height of the control's client area in pixels.
+// ClientOrigin  public  Specifies the screen coordinates (in pixels) of the upper-left corner of a control's client area.
+// ClientRect  public  Specifies the size of a control's client area in pixels.
+// ClientWidth  public  Specifies the horizontal size of the control's client area in pixels.
+// Color  published  Specifies the background color of the control.
+// Columns  published  Specifies the number of columns, in a multi-column list box, that are visible without having to scroll.
+// ComObject  public  Specifies the interface reference implemented by the component.
+// ComponentCount  public  Indicates the number of components owned by the component.
+// ComponentIndex  public  Indicates the position of the component in its owner's Components property array.
+// Components  public  Lists all components owned by the component.
+// ComponentState  public  Describes the current state of the component, indicating when a component needs to avoid certain actions.
+// ComponentStyle  public  Governs the behavior of the component.
+// Constraints  published  Specifies the size constraints for the control.
+// ControlCount  public  Returns the number of child controls.
+// Controls  public  Lists all child controls.
+// ControlState  public  Specifies the current state of a control at run time.
+// ControlStyle  public  Determines style characteristics of the control.
+// Count  public  Indicates the number of items in the list box.
+// Ctl3D  published  Determines whether a control has a three-dimensional (3-D) or two-dimensional look.
+// CurrentPPI  public
+// Cursor  published  Specifies the image used to represent the mouse pointer when it passes into the region covered by the control.
+// CustomHint  published  CustomHint is a custom hint for the control.
+// DesignInfo  public  Contains information used by the Form designer.
+// DockClientCount  public  Specifies the number of controls that are docked on the windowed control.
+// DockClients  public  Lists the controls that are docked to the windowed control.
+// DockManager  public  Specifies the control's docking manager interface.
+// DockOrientation  public  DockOrientation specifies how the control is docked relative to other controls docked in the same parent.
+// DockSite  public  Specifies whether the control can be the target of drag-and-dock operations.
+// DoubleBuffered  published  Determines whether the control's image is rendered directly to the window or painted to an in-memory bitmap first.
+// DragCursor  published  Specifies the image used to represent the mouse pointer when the control is being dragged.
+// DragKind  published  Specifies whether the control is being dragged normally or for docking.
+// DragMode  published  Specifies how the control initiates drag-and-drop or drag-and-dock operations.
+// Enabled  published  Controls whether the control responds to mouse, keyboard, and timer events.
+// ExplicitHeight  public  Specifies the explicit vertical size of the control in pixels.
+// ExplicitLeft  public  Specifies the explicit horizontal pixel coordinate of the left edge of a component relative to its parent.
+// ExplicitTop  public  Specifies the explicit vertical pixel coordinate of the top edge of a component relative to its parent.
+// ExplicitWidth  public  Specifies the explicit horizontal size of the control in pixels.
+// Flat  published  Determines whether the check boxes appear three-dimensional.
+// Floating  public  Specifies whether the control is floating.
+// FloatingDockSiteClass  public  Specifies the class of the temporary control that hosts the control when it is floating.
+// Font  published  Specifies the attributes of text written on or in the control.
+// Handle  public  Provides access to the underlying Windows screen object for the control.
+// Header  public  Indicates which items act as headers.
+// HeaderBackgroundColor  published  Specifies the background color for a header item in the listbox.
+// HeaderColor  published  Specifies the font color for a header item in the list box.
+// Height  published  Specifies the vertical size of the control in pixels.
+// HelpContext  published  The HelpContext property contains the numeric context ID that identifies the Help topic for the control.
+// HelpKeyword  published  The HelpKeyword property contains the keyword string that identifies the Help topic for the control.
+// HelpType  published  Specifies whether the control's context-sensitive Help topic is identified by a context ID or by keyword.
+// Hint  published  Hint contains the text string that appears when the user moves the mouse over the control.
+// HostDockSite  public  Specifies the control in which the control is docked.
+// ImeMode  published  Determines the behavior of the input method editor (IME).
+// ImeName  published  Specifies the input method editor (IME) to use for converting keyboard input to Asian language characters.
+// IntegralHeight  published  Determines whether the list box displays the partial items.
+// ItemEnabled  public  Enables or disables individual items in the list.
+// ItemHeight  published  Specifies the height in pixels of an item in an owner-draw list box.
+// ItemIndex  public  Specifies the index of the selected item.
+// Items  published  Contains the strings that appear in the list box.
+// Left  published  Specifies the horizontal coordinate of the left edge of a component relative to its parent.
+// LRDockWidth  public  Specifies the width of the control when it is docked horizontally.
+// Margins  published  Specifies the margins of the control.
+// MouseInClient  public  Indicates whether the mouse pointer is currently in the client area of the control.
+// MultiSelect  public  Specifies whether the user can select more than one item.
+// Name  published  Specifies the name of the component as referenced in code.
+// Observers  public  Indicates the TObservers object added to the TComponent.
+// Owner  public  Indicates the component that is responsible for streaming and freeing this component.
+// Padding  public  Specifies the padding of a control.
+// Parent  public  Specifies the parent of the control.
+// ParentBiDiMode  published  Specifies whether the control uses its parent's BiDiMode.
+// ParentColor  published  Specifies where a control looks for its color information.
+// ParentCtl3D  published  Determines where a component looks to determine whether it should have a three-dimensional look.
+// ParentCustomHint  published  Specifies where a control looks for its custom hint.
+// ParentDoubleBuffered  published  ParentDoubleBuffered defers the DoubleBuffered property of this component to the value of the parent's DoubleBuffered property.
+// ParentFont  published  Specifies where a control looks for its font information.
+// ParentShowHint  published  Specifies where a control looks to find out if its Help Hint should be shown.
+// ParentWindow  public  Reference to parent's underlying control.
+// PopupMenu  published  Specifies the pop-up menu associated with the control.
+// ScaleFactor  public
+// ScrollWidth  published  Specifies the width, in pixels, by which the list box can scroll horizontally.
+// SelCount  public  Indicates the number of selected items.
+// Selected  public  Indicates whether a particular item is selected.
+// ShowHint  published  ShowHint specifies whether to show the Help Hint when the mouse pointer moves over the control.
+// Showing  public  Indicates whether the control is showing on the screen.
+// Sorted  published  Specifies whether the items in a list box are arranged alphabetically.
+// State  public  Indicates which items are checked.
+// Style  published  Determines whether the list box is standard or owner-draw and whether it is virtual.
+// StyleElements  published  Specifies the style elements that are used by the control.
+// StyleName  published
+// TabOrder  published  Indicates the position of the control in its parent's tab order.
+// TabStop  published  Determines whether the user can tab to a control.
+// TabWidth  published  Specifies the size of the tabs in the list box.
+// Tag  published  Stores a NativeInt integral value as a part of a component.
+// TBDockHeight  public  Specifies the height of the control when it is docked vertically.
+// Top  published  Specifies the Y coordinate of the upper-left corner of a control, relative to its parent or containing control in pixels.
+// TopIndex  public  Specifies the index number of the item that appears at the top of the list box.
+// Touch  published  Specifies the touch manager component associated with the control.
+// UndockHeight  public  Specifies the height of the control when it is floating.
+// UndockWidth  public  Specifies the width of the control when it is floating.
+// UseDockManager  public  Specifies whether the docking manager is used in drag-and-dock operations.
+// VCLComObject  public  Represents information used internally by components that support COM.
+// Visible  published  Specifies whether the component appears onscreen.
+// VisibleDockClientCount  public  Specifies the number of visible controls that are docked on the windowed control.
+// Width  published  Specifies the horizontal size of the control or form in pixels.
+//---------------------------------------------------------------------------
+//
+// TCheckListBox Methods
+//
+//AddItem  public  Adds an item to the list box
+//AfterConstruction  public  Responds after the last constructor has executed.
+//Assign  public  Copies the contents of another similar object.
+//BeforeDestruction  public  Performs any necessary actions before the first destructor is called.
+//BeginDrag  public  Starts the dragging of a control.
+//BeginInvoke  public  Performs an asynchronous call to the method specified by either AProc or AFunc.
+//BringToFront  public  Puts the control in front of all other controls in its parent control.
+//Broadcast  public  Sends a message to each of the child controls.
+//CanFocus  public  Indicates whether a control can receive focus.
+//CheckAll  public  Changes the state of the check boxes in the TCheckListBox control.
+//ClassInfo  public  Returns a pointer to the run-time type information (RTTI) table for the object type.
+//ClassName  public  Returns a string indicating the type of the object instance (as opposed to the type of the variable passed as an argument).
+//ClassNameIs  public  Determines whether an object is of a specific type.
+//ClassParent  public  Returns the type of the immediate ancestor of a class.
+//ClassType  public  Returns the class reference for the object's class.
+//CleanupInstance  public  Performs finalization on long strings, variants, and interface variables within a class.
+//Clear  public  Deletes all items from the list box.
+//ClearSelection  public  Deselects all selected items in the list box, if possible.
+//ClientToParent  public  Translates client coordinates to parent coordinates.
+//ClientToScreen  public  Translates a given point from client area coordinates to global screen coordinates.
+//ContainsControl  public  Indicates whether a specified control exists within the control.
+//ControlAtPos  public  Returns the child control located at a specified position within the control.
+//CopySelection  public  Copies the selected items to another list-type control.
+//Create  public
+//CreateParented  public  Creates and initializes a control as the child of a specified non-VCL container.
+//CreateParentedControl  public  Creates and initializes a control as the child of a specified non-VCL window.
+//DefaultHandler  public  Provides message handling for all messages that the control does not fully process by itself.
+//DeleteSelected  public  Deletes the selected items from the list box.
+//Destroy  public  Destroys the TCheckListBox instance and frees its memory.
+//DestroyComponents  public  Destroys all owned components.
+//Destroying  public  Indicates that the component and its owned components are about to be destroyed.
+//DisableAlign  public  Disables the realignment of child controls.
+//Dispatch  public  Calls message-handling methods for the object, based on the contents of the Message parameter.
+//DisposeOf  public  DisposeOf forces the execution of the destructor code in an object.
+//Dock  public  Used internally to dock the control.
+//DockDrop  public  Generates an OnDockDrop event.
+//DragDrop  public  Is an OnDragDrop event dispatcher.
+//Dragging  public  Indicates whether a control is being dragged.
+//DrawTextBiDiModeFlags  public  Returns the text flags that reflect the current setting of the BiDiMode property.
+//DrawTextBiDiModeFlagsReadingOnly  public  Returns the text flag to add that indicates whether the control's text should read from right to left.
+//EnableAlign  public  Decrements the reference count incremented by the DisableAlign method, eventually realigning the child controls.
+//EndDrag  public  Stops a control from being dragged any further.
+//EndFunctionInvoke  public  Blocks the caller until the specified ASyncResult completes.
+//EndInvoke  public  Blocks the caller until the specified ASyncResult completes.
+//Equals  public  Checks whether the current instance and the Obj parameter are equal.
+//ExecuteAction  public  Executes an action.
+//FieldAddress  public  Returns the address of a published object field.
+//FindChildControl  public  Returns a child control given its name.
+//FindComponent  public  Indicates whether a given component is owned by the component.
+//FlipChildren  public  Reverses the positions of child controls.
+//Focused  public  Determines whether the control has input focus.
+//Free  public  Destroys an object and frees its associated memory, if necessary.
+//FreeInstance  public  Deallocates memory allocated by a previous call to the NewInstance method.
+//FreeNotification  public  Ensures that AComponent is notified that the component is going to be destroyed.
+//FreeOnRelease  public  Frees the interface reference for components that were created from COM classes.
+//GetChildren  public  Calls a specified method for each child of the control.
+//GetControlsAlignment  public  Indicates how text is aligned within the control.
+//GetCount  public  Returns the value of the Count property.
+//GetEnumerator  public  Returns a TComponent enumerator.
+//GetHashCode  public  Returns an integer containing the hash code.
+//GetInterface  public  Retrieves a specified interface.
+//GetInterfaceEntry  public  Returns the entry for a specific interface implemented in a class.
+//GetInterfaceTable  public  Returns a pointer to a structure containing all of the interfaces implemented by a given class.
+//GetNamePath  public  Returns a string used by the Object Inspector.
+//GetParentComponent  public  Returns the parent of the control.
+//GetStyleName  public
+//GetSystemMetrics  public
+//GetTabControlList  public  Builds a list of owned controls.
+//GetTabOrderList  public  Builds a list of controls in tab order.
+//GetTextBuf  public  Retrieves the control's text, copies it into a buffer, and returns the number of characters copied.
+//GetTextLen  public  Returns the length of the control's text.
+//HandleAllocated  public  Reports whether a screen object handle exists for the control.
+//HandleNeeded  public  Creates a screen object for the control if it doesn't already exist.
+//HasParent  public  Indicates whether the control has a parent.
+//Hide  public  Makes the control invisible.
+//InheritsFrom  public  Determines the relationship of two object types.
+//InitiateAction  public  Calls the action link's Update method if the control is associated with an action link.
+//InitInstance  public  Initializes a newly allocated object instance to all zeros and initializes the instance's virtual method table pointer.
+//InsertComponent  public  Establishes the component as the owner of a specified component.
+//InsertControl  public  Inserts a control into the Controls array property.
+//InstanceSize  public  Returns the size in bytes of each instance of the object type.
+//Invalidate  public  Schedules a control repaint.
+//IsCustomStyleActive  public
+//IsImplementorOf  public  Indicates whether the component implements a specified interface.
+//IsLightStyleColor  public
+//IsRightToLeft  public  Indicates whether the control should be reversed right to left.
+//ItemAtPos  public  Returns the index of the list box item indicated by the coordinates of a point on the control.
+//ItemRect  public  Returns the rectangle that surrounds the item specified in the Item parameter.
+//ManualDock  public  Docks the control.
+//ManualFloat  public  Undocks the control.
+//MethodAddress  public  Returns the address of a class method by name.
+//MethodName  public  Returns the name of a class method by address.
+//MouseWheelHandler  public  Dispatches messages received from a mouse wheel.
+//MoveSelection  public  Moves all selected items to another list control.
+//NewInstance  public  Allocates memory for an instance of an object type and returns a pointer to that new instance.
+//operator ()  public  C++ conversion of a TComponent into a System.Classes.IInterfaceComponentReference or a System.IInterface, depending on casting.
+//PaintTo  public  Draws the windowed control to a device context.
+//ParentToClient  public  Translate parent coordinates to client coordinates.
+//Perform  public  Responds as if the control received a specified Windows message.
+//PreProcessMessage  public  Returns False, no matter the value of Msg.
+//QualifiedClassName  public  Returns the qualified name of the class.
+//Realign  public  Forces the control to realign children.
+//ReferenceInterface  public  Establishes or removes internal links that cause this component to be notified when the implementer of a specified interface is destroyed.
+//Refresh  public  Repaints the control on the screen.
+//RemoveComponent  public  Removes a specified component specified from the component's Components list.
+//RemoveControl  public  Removes a specified control from the Controls array.
+//RemoveFreeNotification  public  Disables the destruction notification that was enabled by FreeNotification.
+//Repaint  public  Repaints the entire control.
+//ReplaceDockedControl  public  Docks the control in the place where another control is already docked.
+//SafeCallException  public  Handles exceptions in methods declared using the safecall calling convention.
+//ScaleBy  public  Rescale control and its children.
+//ScaleForPPI  public
+//ScaleRectSize  public
+//ScaleValue  public
+//ScreenToClient  public  Converts the screen coordinates of a specified point on the screen to client coordinates.
+//ScrollBy  public  Scroll control contents.
+//SelectAll  public  Selects the entire block of text in the list box.
+//SendToBack  public  Puts a windowed control behind all other windowed controls, or puts a non-windowed control behind all other non-windowed controls.
+//SetBounds  public  Sets the windowed control's boundary properties all at once.
+//SetDesignVisible  public
+//SetFocus  public  Gives the input focus to the control.
+//SetParentComponent  public  Sets the parent for the control.
+//SetSubComponent  public  Identifies whether the component is a subcomponent.
+//SetTextBuf  public  Sets the text of the control.
+//Show  public  Makes a control visible.
+//ToString  public  Returns a string containing the class name.
+//UnitName  public  Returns the name of the unit where the class is defined.
+//UnitScope  public  Returns the class's unit scope.
+//Update  public  Forces the control to update.
+//UpdateAction  public  Updates the state of an action.
+//UpdateControlState  public  Respond to state change.
+//UseRightToLeftAlignment  public  Specifies whether the control's alignment should be reversed right-to-left.
+//UseRightToLeftReading  public  Specifies whether the control is using a right-to-left reading order.
+//UseRightToLeftScrollBar  public  Specifies whether the vertical scroll bar appears on the left side of the control.
 //---------------------------------------------------------------------------
 __fastcall STRUCT_A::STRUCT_A()
 {
@@ -53,8 +317,8 @@ void __fastcall TPlaylistForm::FormCreate(TObject* Sender)
 
   // properties
   FCacheCount = 0;
-  FNextIndex = -1;
-  FTargetIndex = -1;
+  FNextIdx = -1;
+  FTargetIdx = -1;
   FOldMouseItemIndex = -1;
   FTextColor = clBlack;
   FWmp = NULL;
@@ -134,7 +398,7 @@ void __fastcall TPlaylistForm::GeneralPurposeTimerEvent(TObject* Sender)
     // this will set the item to the one the user has scrolled to
     // when SetTitle() is called
     if (!IsPlayOrPause())
-    FPlayIdx = CheckBox->ItemIndex;
+      FPlayIdx = CheckBox->ItemIndex;
     FEditMode = false;
     QueueToIndex(CheckBox->ItemIndex);
     FEditMode = true;
@@ -142,7 +406,8 @@ void __fastcall TPlaylistForm::GeneralPurposeTimerEvent(TObject* Sender)
     ExitEditModeClick(NULL);
   }
 
-  if (FEditMode) return;
+  if (FEditMode)
+    return;
 
   switch(m_TimerMode)
   {
@@ -172,7 +437,7 @@ void __fastcall TPlaylistForm::GeneralPurposeTimerEvent(TObject* Sender)
 
       if (!OtherForm->UnplayedSongsInList())
       {
-//        FNextIndex = -1;
+//        FNextIdx = -1;
         NextSong(true);
       }
 
@@ -212,7 +477,7 @@ void __fastcall TPlaylistForm::GeneralPurposeTimerEvent(TObject* Sender)
 
         int savePlayIdx = FPlayIdx;
 
-        FNextIndex = CheckBox->ItemIndex; // tell GetNext() where to start search...
+        FNextIdx = CheckBox->ItemIndex; // tell GetNext() where to start search...
         Wmp->URL = GetNext();
 
         // Currently playing song's checkbox may need to be cleared...
@@ -260,7 +525,7 @@ void __fastcall TPlaylistForm::GeneralPurposeTimerEvent(TObject* Sender)
 #endif
             // if we unchecked an item that was queued, queue the
             // next item...
-            FNextIndex = CheckBox->ItemIndex; // start search here
+            FNextIdx = CheckBox->ItemIndex; // start search here
             GetNext();
           }
           else if (FPlayIdx == CheckBox->ItemIndex)
@@ -270,12 +535,12 @@ void __fastcall TPlaylistForm::GeneralPurposeTimerEvent(TObject* Sender)
 #endif
             SetTimer(TM_FADE);
           }
-          else if (FTargetIndex == CheckBox->ItemIndex)
+          else if (FTargetIdx == CheckBox->ItemIndex)
           {
 #if DEBUG_ON
             MainForm->CWrite("\r\nTM_CHECKBOX_CLICK:m_bCheckClick: 3 (State != cbGrayed): GetNext(true)\r\n");
 #endif
-            FNextIndex = CheckBox->ItemIndex; // start search here
+            FNextIdx = CheckBox->ItemIndex; // start search here
             GetNext(true);
           }
           else
@@ -352,7 +617,7 @@ void __fastcall TPlaylistForm::GeneralPurposeTimerEvent(TObject* Sender)
 bool __fastcall TPlaylistForm::UnplayedSongsInList(void)
 {
   GetNext(true); // set bNoSet since we're just checking
-  return (TargetIndex < 0) ? false : true;
+  return (FTargetIdx < 0) ? false : true;
 }
 //---------------------------------------------------------------------------
 void __fastcall TPlaylistForm::FlashTimerEvent(TObject* Sender)
@@ -363,15 +628,24 @@ void __fastcall TPlaylistForm::FlashTimerEvent(TObject* Sender)
   // 3=playing
   static bool bFlashOn = false;
 
-  if (FEditMode || FPlayPreview) return;
-
-  if (!Wmp || GeneralPurposeTimer->Enabled) return;
+  if (FEditMode || FPlayPreview || !Wmp || GeneralPurposeTimer->Enabled)
+  {
+    if (CheckBox->ItemIndex != -1)
+      CheckBox->ItemIndex = -1;
+    return;
+  }
 
   if (CheckBox->Focused())
-    CheckBox->ItemIndex = FTargetIndex;
+  {
+    if (CheckBox->ItemIndex != FTargetIdx)
+      CheckBox->ItemIndex = FTargetIdx;
+  }
   // if no items, or the player's index is -1, or player is in an unknown state, turn off selection
   else if (!CheckBox->Count || FPlayIdx < 0 || Wmp->playState == WMPOpenState::wmposUndefined)
-    CheckBox->ItemIndex = -1;
+  {
+    if (CheckBox->ItemIndex != -1)
+      CheckBox->ItemIndex = -1;
+  }
   // if player is in pause or in play-mode
   else if (IsPlayOrPause())
   {
@@ -381,12 +655,13 @@ void __fastcall TPlaylistForm::FlashTimerEvent(TObject* Sender)
       if (FlashTimer->Interval != 250)
         FlashTimer->Interval = 250;
     }
-  else if (FlashTimer->Interval != 500)
+    else if (FlashTimer->Interval != 500)
       FlashTimer->Interval = 500;
 
     if (bFlashOn)
     {
-      CheckBox->ItemIndex = -1;
+      if (CheckBox->ItemIndex != -1)
+        CheckBox->ItemIndex = -1;
       bFlashOn = false;
     }
     else
@@ -396,7 +671,7 @@ void __fastcall TPlaylistForm::FlashTimerEvent(TObject* Sender)
     }
   }
   // if player is in stop or ready mode
-  else
+  else if (CheckBox->ItemIndex != FPlayIdx)
     CheckBox->ItemIndex = FPlayIdx;
 }
 //---------------------------------------------------------------------------
@@ -407,7 +682,7 @@ void __fastcall TPlaylistForm::CheckBoxClickCheck(TObject* Sender)
     m_bCheckClick = true;
 
     // when clicking a check-box with the mouse, CheckBoxClick() (below)
-    // is also triggeres, which starts TM_CHECKBOX_CLICK - but just pressing the
+    // is also triggered, which starts TM_CHECKBOX_CLICK - but just pressing the
     // spacebar toggles the check-state and triggers CheckBoxClickCheck() but NOT
     // CheckBoxClick()! So - SetTimer(TM_CHECKBOX_CLICK, TIME_300) here also
     // fixes the problem - otherwise, the checkbox goes unprocessed...
@@ -421,12 +696,12 @@ void __fastcall TPlaylistForm::CheckBoxClickCheck(TObject* Sender)
 //---------------------------------------------------------------------------
 void __fastcall TPlaylistForm::CheckBoxClick(TObject* Sender)
 {
-// problem I'm having is that this event happens when mouse button is released on another
-// item after a list item drag-drop. need to ignore it if the index has changed.
-// the original index was saved in FTempIdx. The drop event might not have happened
-// yet - we need ItemAtPos and to get the mouse X,Y coordinates.
-//  if (FTempIdx != CheckBox->ItemAtPos(Mouse->CursorPos, true))
-//    ShowMessage("moved");
+  // problem I'm having is that this event happens when mouse button is released on another
+  // item after a list item drag-drop. need to ignore it if the index has changed.
+  // the original index was saved in FTempIdx. The drop event might not have happened
+  // yet - we need ItemAtPos and to get the mouse X,Y coordinates.
+  //  if (FTempIdx != CheckBox->ItemAtPos(Mouse->CursorPos, true))
+  //    ShowMessage("moved");
   if (!FEditMode && !FPlayPreview)
   {
     SetTimer(TM_CHECKBOX_CLICK, TIME_300);
@@ -727,19 +1002,19 @@ void __fastcall TPlaylistForm::DeleteListItem(int idx, bool bDeleteFromCache)
   // Is this song playing? If so, go to next song unless bDeleteFromCache is false.
 //    if (bDeleteFromCache && idx == FPlayIdx)
 //    {
-//      FNextIndex = FTargetIndex;
+//      FNextIdx = FTargetIdx;
 //      NextSong();
 //    }
 
-    int SaveTargetIndex = FTargetIndex;
+    int SaveTargetIdx = FTargetIdx;
 //    int SavePlayIndex = FPlayIdx;
 
-    if (FTargetIndex > idx)
-      FTargetIndex--;
+    if (FTargetIdx > idx)
+      FTargetIdx--;
     if (FPlayIdx > idx)
       FPlayIdx--;
-    if (FNextIndex > idx)
-      FNextIndex--;
+    if (FNextIdx > idx)
+      FNextIdx--;
 
     // delete TPlayerURL object
     if (MainForm->CacheEnabled)
@@ -760,16 +1035,16 @@ void __fastcall TPlaylistForm::DeleteListItem(int idx, bool bDeleteFromCache)
 
     if (!CheckBox->Count)
     {
-      FTargetIndex = -1;
-      FNextIndex = -1;
+      FTargetIdx = -1;
+      FNextIdx = -1;
       FPlayIdx = -1;
     }
 
-    if (SaveTargetIndex == idx)
+    if (SaveTargetIdx == idx)
     {
-      FNextIndex = idx; // start search here
-      if (NextIndex >= CheckBox->Count)
-        FNextIndex = 0;
+      FNextIdx = idx; // start search here
+      if (FNextIdx >= CheckBox->Count)
+        FNextIdx = 0;
       GetNext(true);
     }
   }
@@ -942,20 +1217,21 @@ bool __fastcall TPlaylistForm::QueueFirst(void)
   return QueueToIndex(0);
 }
 
-bool __fastcall TPlaylistForm::QueueToIndex(int Index)
+bool __fastcall TPlaylistForm::QueueToIndex(int idx)
 {
-  if (!Wmp || !CheckBox->Count) return false;
+  if (!Wmp || !CheckBox->Count)
+    return false;
 
   try
   {
-    FNextIndex = Index;
+    FNextIdx = idx;
 
     // Can't Set URL or we stop the player! If player playing or paused... don't set URL
     // because it will stop the current song
     if (!IsPlayOrPause())
       Wmp->URL = GetNext();
 
-  FTargetIndex = Index;
+    FTargetIdx = idx;
     SetTitle();
 
     return true;
@@ -981,19 +1257,19 @@ bool __fastcall TPlaylistForm::QueueToIndex(int Index)
 //    if (FPlayIdx >= CheckBox->Count)
 //      FPlayIdx = 0;
 //
-//    if (FNextIndex >= CheckBox->Count)
-//      FNextIndex = 0;
+//    if (FNextIdx >= CheckBox->Count)
+//      FNextIdx = 0;
 //
 //    int oldidx = FPlayIdx;
 //
-//    if (FNextIndex < 0)
-//      FNextIndex = FPlayIdx + 1;
+//    if (FNextIdx < 0)
+//      FNextIdx = FPlayIdx + 1;
 //
 //    String sFile = GetNext(false, true); // enable random
 //
 //  #if DEBUG_ON
 //    MainForm->CWrite("\r\nNextSong() FPlayIdx:" + String(FPlayIdx) +
-//     " Target:" + String(TargetIndex) + " File: \"" + String(sFile) +
+//     " Target:" + String(TargetIdx) + " File: \"" + String(sFile) +
 //      "\" bForceStartPlay: " + (bForceStartPlay ? "yes" : "no") + "\r\n");
 //  #endif
 //
@@ -1041,16 +1317,16 @@ void __fastcall TPlaylistForm::NextSong(bool bForceStartPlay)
 
     int savePlayIdx = FPlayIdx;
 
-    FNextIndex = FTargetIndex;
+    FNextIdx = FTargetIdx;
 
-    if (FNextIndex >= CheckBox->Count)
-      FNextIndex = 0;
+    if (FNextIdx >= CheckBox->Count)
+      FNextIdx = 0;
 
     String sFile = GetNext(false, true); // enable random
 
   #if DEBUG_ON
     MainForm->CWrite("\r\nNextSong() FPlayIdx:" + String(FPlayIdx) +
-     " Target:" + String(TargetIndex) + " File: \"" + String(sFile) +
+     " Target:" + String(FTargetIdx) + " File: \"" + String(sFile) +
       "\" bForceStartPlay: " + (bForceStartPlay ? "yes" : "no") + "\r\n");
   #endif
 
@@ -1094,22 +1370,22 @@ String __fastcall TPlaylistForm::GetNext(bool bNoSet, bool bEnableRandom)
 // that has its check-box grayed (queued song).
 //
 // Set bNoSet true to cause FPlayIdx to be unaffected, instead the next grey-checked
-// item is returned in FTargetIndex.
+// item is returned in FTargetIdx.
 //
-// BEFORE calling this function, set FNextIndex to a >= 0 value to force
-// searching to begin there. Set FNextIndex -1 to begin the search at FPlayIdx+1.
+// BEFORE calling this function, set FNextIdx to a >= 0 value to force
+// searching to begin there. Set FNextIdx -1 to begin the search at FPlayIdx+1.
 //
 // NOTE: this->FPlayIdx is used to hold the list-index of the currently playing song.
-// FNextIndex is the start-index of the search on entry. It's set to -1 on return.
-// On return, FPlayIdx set to the next available song and FTargetIndex is set to the
+// FNextIdx is the start-index of the search on entry. It's set to -1 on return.
+// On return, FPlayIdx set to the next available song and FTargetIdx is set to the
 // next available song (grey-checked item) that follows FPlayIdx.
 {
   String sFile;
 
 #if DEBUG_ON
-  MainForm->CWrite( "\r\nTPlaylistForm::GetNext() (onenter): NextIndex=" +
-      String(NextIndex) +  ", FPlayIdx=" + String(FPlayIdx) +  ", TargetIndex=" +
-       String(TargetIndex) + ", Player: " + (FPlayerA ? String("A") : String("B")) + "\r\n");
+  MainForm->CWrite( "\r\nTPlaylistForm::GetNext() (onenter): NextIdx=" +
+      String(FNextIdx) +  ", FPlayIdx=" + String(FPlayIdx) +  ", TargetIdx=" +
+       String(FTargetIdx) + ", Player: " + (FPlayerA ? String("A") : String("B")) + "\r\n");
 #endif
   try
   {
@@ -1126,7 +1402,7 @@ String __fastcall TPlaylistForm::GetNext(bool bNoSet, bool bEnableRandom)
         return "";
       }
 
-      bool bListReset = (FNextIndex >= 0) ? true : false;
+      bool bListReset = (FNextIdx >= 0) ? true : false;
 
       // Random (Shuffle) play?
       bool bRandom = false;
@@ -1145,9 +1421,9 @@ String __fastcall TPlaylistForm::GetNext(bool bNoSet, bool bEnableRandom)
         {
           for (int ii = 0 ; ii < c ; ii++)
           {
-            FNextIndex = ::Random(c);
+            FNextIdx = ::Random(c);
 
-            if (IsStateGrayed(CheckBox, FNextIndex))
+            if (IsStateGrayed(CheckBox, FNextIdx))
               break;
           }
         }
@@ -1157,10 +1433,10 @@ String __fastcall TPlaylistForm::GetNext(bool bNoSet, bool bEnableRandom)
 
       for (int ii = 0 ; ii < loops ; ii++)
       {
-        if (FNextIndex < 0)
-          FNextIndex = FPlayIdx; // start at current song if NextInxex is -1
+        if (FNextIdx < 0)
+          FNextIdx = FPlayIdx; // start at current song if NextInxex is -1
 
-        if (FNextIndex < 0)
+        if (FNextIdx < 0)
         {
 #if DEBUG_ON
           MainForm->CWrite("\r\nTPlaylistForm::GetNext: RETURNING EMPTY (FPlayIdx was -1)!!!!\r\n");
@@ -1169,20 +1445,20 @@ String __fastcall TPlaylistForm::GetNext(bool bNoSet, bool bEnableRandom)
         }
 
         int jj;
-        for (jj = 0 ; jj < c ; jj++, FNextIndex++)
+        for (jj = 0 ; jj < c ; jj++, FNextIdx++)
         {
-          if (FNextIndex >= c)
-            FNextIndex = 0;
+          if (FNextIdx >= c)
+            FNextIdx = 0;
 
-          if (IsStateGrayed(CheckBox, FNextIndex))
+          if (IsStateGrayed(CheckBox, FNextIdx))
           {
             if (ii == 0) // first loop...
             {
               if (!bNoSet && bListReset)
                 // prefetch the next file into our temporary cache directory
-                MainForm->CopyFileToCache(this, FNextIndex);
+                MainForm->CopyFileToCache(this, FNextIdx);
 
-              sFile = MainForm->GetURL(CheckBox, FNextIndex);
+              sFile = MainForm->GetURL(CheckBox, FNextIdx);
             }
 
             break;
@@ -1190,34 +1466,34 @@ String __fastcall TPlaylistForm::GetNext(bool bNoSet, bool bEnableRandom)
         }
 
         if (jj == c)
-          FNextIndex = -1; // no Play-flags set
+          FNextIdx = -1; // no Play-flags set
 
-        if (FNextIndex >= c)
+        if (FNextIdx >= c)
         {
           ShowMessage("GetNext() FPlayIdx Index is out-of-range!");
           FPlayIdx = -1;
-          FTargetIndex = -1;
+          FTargetIdx = -1;
         }
         else if (!bNoSet)
         {
           if (ii == 0) // first loop...
           {
-            FPlayIdx = FNextIndex;
-            FNextIndex = FPlayIdx+1;
+            FPlayIdx = FNextIdx;
+            FNextIdx = FPlayIdx+1;
           }
           else
           {
-            FTargetIndex = FNextIndex;
+            FTargetIdx = FNextIdx;
 
             // prefetch the next file into our temporary cache directory
-            MainForm->CopyFileToCache(this, FTargetIndex);
+            MainForm->CopyFileToCache(this, FTargetIdx);
           }
         }
         else
-          FTargetIndex = FNextIndex;
+          FTargetIdx = FNextIdx;
       }
 
-      FNextIndex = -1;
+      FNextIdx = -1;
       SetTitle();
   }
     catch(...) { ShowMessage("GetNext() threw an exception..."); }
@@ -1225,9 +1501,9 @@ String __fastcall TPlaylistForm::GetNext(bool bNoSet, bool bEnableRandom)
   __finally
   {
 #if DEBUG_ON
-    MainForm->CWrite( "TPlaylistForm::GetNext() (onexit): NextIndex=" +
-      String(NextIndex) +  ", FPlayIdx=" + String(FPlayIdx) +  ", TargetIndex=" +
-       String(TargetIndex) + "\r\n");
+    MainForm->CWrite( "TPlaylistForm::GetNext() (onexit): NextIdx=" +
+      String(FNextIdx) +  ", FPlayIdx=" + String(FPlayIdx) +  ", TargetIdx=" +
+       String(FTargetIdx) + "\r\n");
     MainForm->CWrite( "TPlaylistForm::GetNext() sFile: \"" + sFile +  "\"\r\n\r\n");
 #endif
   }
@@ -1341,7 +1617,7 @@ void __fastcall TPlaylistForm::OpenStateChange(WMPOpenState NewState)
     if (NewState == WMPOpenState::wmposMediaOpen) // Media Open
     {
 #if DEBUG_ON
-      MainForm->CWrite( "\r\nOpenStateChange():wmposMediaOpen: FPlayIdx:" + String(FPlayIdx) + " Target:" + String(TargetIndex) + "\r\n");
+      MainForm->CWrite( "\r\nOpenStateChange():wmposMediaOpen: FPlayIdx:" + String(FPlayIdx) + " Target:" + String(FTargetIdx) + "\r\n");
 #endif
 
       m_Duration = (int)Wmp->currentMedia->duration;
@@ -1364,14 +1640,14 @@ void __fastcall TPlaylistForm::OpenStateChange(WMPOpenState NewState)
     else if (NewState == WMPOpenState::wmposOpeningUnknownURL)
     {
 #if DEBUG_ON
-      MainForm->CWrite( "\r\nOpenStateChange():wmposOpeningUnknownURL: FPlayIdx:" + String(FPlayIdx) + " Target:" + String(TargetIndex) + "\r\n");
+      MainForm->CWrite( "\r\nOpenStateChange():wmposOpeningUnknownURL: FPlayIdx:" + String(FPlayIdx) + " Target:" + String(FTargetIdx) + "\r\n");
 #endif
       m_bOpening = true;
     }
     else if (NewState == WMPOpenState::wmposMediaOpening)
     {
 #if DEBUG_ON
-      MainForm->CWrite( "\r\nOpenStateChange():wmposMediaOpening: FPlayIdx:" + String(FPlayIdx) + " Target:" + String(TargetIndex) + "\r\n");
+      MainForm->CWrite( "\r\nOpenStateChange():wmposMediaOpening: FPlayIdx:" + String(FPlayIdx) + " Target:" + String(FTargetIdx) + "\r\n");
 #endif
       m_bOpening = true;
     }
@@ -1379,14 +1655,14 @@ void __fastcall TPlaylistForm::OpenStateChange(WMPOpenState NewState)
     {
       // Red
 #if DEBUG_ON
-      MainForm->CWrite( "\r\nOpenStateChange():wmposPlaylistOpenNoMedia: FPlayIdx:" + String(FPlayIdx) + " Target:" + String(TargetIndex) + "\r\n");
+      MainForm->CWrite( "\r\nOpenStateChange():wmposPlaylistOpenNoMedia: FPlayIdx:" + String(FPlayIdx) + " Target:" + String(FTargetIdx) + "\r\n");
 #endif
       m_bOpening = false;
     }
 #if DEBUG_ON
   else if (NewState == WMPOpenState::wmposMediaChanging)
     {
-      MainForm->CWrite( "\r\nOpenStateChange():wmposMediaChanging: FPlayIdx:" + String(FPlayIdx) + " Target:" + String(TargetIndex) + "\r\n");
+      MainForm->CWrite( "\r\nOpenStateChange():wmposMediaChanging: FPlayIdx:" + String(FPlayIdx) + " Target:" + String(FTargetIdx) + "\r\n");
     }
     else
     {
@@ -1620,7 +1896,7 @@ void __fastcall TPlaylistForm::PlayStateChange(WMPPlayState NewState)
     {
 #if DEBUG_ON
       MainForm->CWrite( "\r\nWMPPlayState():wmppsReady " + String(PlayerA ? "A" : "B") + ": FPlayIdx=" + String(FPlayIdx) + "\r\n");
-      if (TargetIndex < 0)
+      if (FTargetIdx < 0)
         MainForm->CWrite( "(Good place to prompt for more music files via timer???\r\n");
 #endif
     }
@@ -1702,7 +1978,7 @@ void __fastcall TPlaylistForm::PlayStateChange(WMPPlayState NewState)
         // we just started a manually queued (by single-click) song.
         // (So that when clicking the list-box we see the next
         // grey-checked song in the list queued...)
-        FNextIndex = FPlayIdx;
+        FNextIdx = FPlayIdx;
         GetNext(true, true); // allow random...
 
         m_bSkipFilePrompt = false;
@@ -1735,7 +2011,7 @@ void __fastcall TPlaylistForm::PlayStateChange(WMPPlayState NewState)
         MainForm->Pause2->Checked = false;
       }
 
-      QueueToIndex(FTargetIndex);
+      QueueToIndex(FTargetIdx);
       SetTitle();
       MainForm->SetCurrentPlayer();
     }
@@ -1791,7 +2067,7 @@ void __fastcall TPlaylistForm::PlayStateChange(WMPPlayState NewState)
         // start next player if media ended and fade-timer is not running
 //        else
         {
-          QueueToIndex(FTargetIndex);
+          QueueToIndex(FTargetIdx);
           SetTimer(TM_FADE); // NextSong
         }
 
@@ -1992,13 +2268,13 @@ void __fastcall TPlaylistForm::SetTitle(void)
       {
         if (FPlayIdx >= 0 && FPlayIdx < CheckBox->Count)
         {
-          if (CheckBox->State[FPlayIdx] == cbChecked) // playing?
+          if (IsStateChecked(CheckBox, FPlayIdx)) // playing?
           {
-            if (FTargetIndex >= 0 && FTargetIndex < CheckBox->Count)
+            if (FTargetIdx >= 0 && FTargetIdx < CheckBox->Count)
             {
               S1 += "(Q) ";
-              S2 = MainForm->GetURL(CheckBox, FTargetIndex);
-              SelectIdx = FTargetIndex;
+              S2 = MainForm->GetURL(CheckBox, FTargetIdx);
+              SelectIdx = FTargetIdx;
             }
           }
           else // not playing...
@@ -2122,7 +2398,11 @@ void __fastcall TPlaylistForm::StopPlayPreview(void)
   if (FPlayPreview){
     StopPlayer();
     FPlayPreview = false;
-    CheckBox->ItemIndex = FTargetIndex;
+// remove... 8/16/2022
+//    CheckBox->ItemIndex = FTargetIdx;
+// add...
+    QueueToIndex(FOldMouseItemIndex);
+
     Application->ProcessMessages();
   }
 }
@@ -2185,8 +2465,8 @@ void __fastcall TPlaylistForm::ClearListItems(void)
   CheckBox->Clear();
 
   FPlayIdx = -1;
-  FTargetIndex = -1;
-  FNextIndex = -1;
+  FTargetIdx = -1;
+  FNextIdx = -1;
   FTempIdx = -1;
   FCacheCount = 0;
 
@@ -2248,7 +2528,7 @@ void __fastcall TPlaylistForm::ClearListClick(TObject* Sender)
 void __fastcall TPlaylistForm::CheckAllItems(void)
 {
   for (int ii = 0 ; ii < CheckBox->Count ; ii++)
-    if (ii != FPlayIdx && ii != FTargetIndex)
+    if (ii != FPlayIdx && ii != FTargetIdx)
       SetGrayedState(ii);
 }
 //---------------------------------------------------------------------------
@@ -2262,7 +2542,7 @@ void __fastcall TPlaylistForm::UncheckAllClick(TObject* Sender)
 // PopupMenu1 F6
 {
   for (int ii = 0 ; ii < CheckBox->Count ; ii++)
-    if (ii != FPlayIdx && ii != FTargetIndex)
+    if (ii != FPlayIdx && ii != FTargetIdx)
       ClearCheckState(ii, false);
 }
 //---------------------------------------------------------------------------
@@ -2520,7 +2800,7 @@ void __fastcall TPlaylistForm::RemoveDuplicates1Click(TObject* Sender)
 */
 
   FPlayIdx = -1;
-  FTargetIndex = -1;
+  FTargetIdx = -1;
 
   // Probably don't want to reenable played items
   // CheckAllItems();
@@ -2602,7 +2882,7 @@ void __fastcall TPlaylistForm::RandomizeList1Click(TObject* Sender)
     pProgress->UnInit();
 
     FPlayIdx = -1;
-    FTargetIndex = -1;
+    FTargetIdx = -1;
 
     // Probably don't want to reenable played items
     //CheckAllItems();
@@ -2796,9 +3076,9 @@ void __fastcall TPlaylistForm::SearchandUncheckClick(TObject *Sender)
         {
           ClearCheckState(ii, false);
 
-          if (FTargetIndex == ii)
+          if (FTargetIdx == ii)
           {
-          FNextIndex = ii; // start search here
+          FNextIdx = ii; // start search here
           GetNext();
           }
         }
@@ -2967,12 +3247,12 @@ void __fastcall TPlaylistForm::FormKeyDown(TObject* Sender, WORD &Key, TShiftSta
         {
           if (IsStateUnchecked(CheckBox, ii))
           {
-            if (FTargetIndex >= ii)
-              FTargetIndex--;
+            if (FTargetIdx >= ii)
+              FTargetIdx--;
             if (FPlayIdx >= ii)
               FPlayIdx--;
-            if (NextIndex >= ii)
-              FNextIndex--;
+            if (FNextIdx >= ii)
+              FNextIdx--;
 
             DeleteListItem(ii);
           }
