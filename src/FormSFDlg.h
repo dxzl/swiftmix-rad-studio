@@ -66,7 +66,7 @@ private:
   WideChar* __fastcall SetFilter(void);
   wchar_t* __fastcall GetFilter(wchar_t* pFilterBuf, int iFilter, int iMax);
   int __fastcall FindFilter(wchar_t* pFilterBuf, wchar_t* pFilterToFind, int iMax);
-  String __fastcall GetTextFromCommonDialog(HWND hDlg, UINT msg);
+  String __fastcall GetFolderPath(HWND hDlg);
 
   WideChar* p_szFileName;
   WideChar* p_szTitleName;

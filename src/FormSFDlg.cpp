@@ -118,6 +118,7 @@ bool __fastcall TSFDlgForm::Execute(String uDefFile,
   m_sfn.Flags = OFN_NOTESTFILECREATE|OFN_HIDEREADONLY|OFN_EXPLORER|
                                         OFN_ENABLEHOOK|OFN_ENABLESIZING;
 
+  // https://docs.microsoft.com/en-us/windows/win32/shell/links#resolving-a-shortcut
   // (setting OFN_NODEREFERENCELINKS will allow .lnk files to be selected
   // and passed to the caller... clearing it lets you double-click a
   // shortcut and go to its folder...)
@@ -360,7 +361,7 @@ String __fastcall TSFDlgForm::GetTitle(void)
   return String(p_szTitleName);
 }
 //---------------------------------------------------------------------------
-String __fastcall TSFDlgForm::GetTextFromCommonDialog(HWND hDlg, UINT msg)
+String __fastcall TSFDlgForm::GetFolderPath(HWND hDlg)
 {
   try
   {
@@ -369,20 +370,21 @@ String __fastcall TSFDlgForm::GetTextFromCommonDialog(HWND hDlg, UINT msg)
 
     try
     {
-      buf = new WideChar[SF_BUFSIZE];
+      buf = new WideChar[MAX_PATH+1];
       buf[0] = C_NULL;
 
-      // NOTE: you are "supposed" to be able to get the required buffer size
-      // - I tried 0, -1 - null-pointer, a buffer of 40 bytes... function always
-      // just returns "1"
-//      DWORD ret = SendMessageW(hDlg, msg, 0, NULL);
-//#if DEBUG_ON
-//      SFDbg->CWrite("\r\nBufsize required: " + String(ret) + "\r\n");
-//#endif
+      int numChars = SendMessageW(hDlg, CDM_GETFOLDERPATH, MAX_PATH+1, (LPARAM)buf);
 
-      SendMessageW(hDlg, msg, SF_BUFSIZE, (LPARAM)buf);
-
-      str = String(buf);
+      if (numChars <= MAX_PATH+1)
+        str = String(buf);
+      else
+      {
+        delete [] buf;
+        buf = new WideChar[numChars];
+        buf[0] = C_NULL;
+        SendMessageW(hDlg, CDM_GETFOLDERPATH, numChars, (LPARAM)buf);
+        str = String(buf);
+      }
     }
     __finally
     {
@@ -478,7 +480,7 @@ UINT CALLBACK TSFDlgForm::SFNHookProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM
           HWND hParent = GetParent(hDlg);
 
           String newFolder =
-                  pThis->GetTextFromCommonDialog(hParent, CDM_GETFOLDERPATH);
+                  pThis->GetFolderPath(hParent);
 
           if (!newFolder.IsEmpty() && pThis->FCurrentFolder != newFolder)
           {

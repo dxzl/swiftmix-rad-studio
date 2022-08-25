@@ -2,33 +2,34 @@
 #ifndef MainH
 #define MainH
 //---------------------------------------------------------------------------
-#define VERSION "2.01"
+#define VERSION "2.03"
 #define FREEWARE_EDITION true
 #define DEBUG_ON false // Include a debug console, use MainForm->CWrite("")
 //---------------------------------------------------------------------------
-#include <Windows.hpp>
+#include <Winapi.Windows.hpp>
 
-// this has all the exceptions: EFOpenError, EFilerError etc.
-// and the TStringlist and TList! It's in Include\vcl
-#include <Classes.hpp>
-#include <Clipbrd.hpp>
-#include <Forms.hpp>
-#include <Dialogs.hpp>
-#include <shlobj.hpp>
-#include <ComCtrls.hpp>
-#include <Controls.hpp>
-#include <ExtCtrls.hpp>
-#include <Menus.hpp>
-#include <OleCtrls.hpp>
-#include <StdCtrls.hpp>
-#include <StrUtils.hpp>
-#include <IOUtils.hpp>
-#include <SysUtils.hpp>
 #include <wininet.h>
+#include <shlobj.hpp>
 
 //https://docs.microsoft.com/en-us/windows/win32/menurc/resource-types
 // resource types...
 #include <Winuser.h>
+
+// this has all the exceptions: EFOpenError, EFilerError etc.
+// and the TStringlist and TList! It's in Include\vcl
+#include <System.Classes.hpp>
+#include <System.StrUtils.hpp>
+#include <System.IOUtils.hpp>
+#include <System.SysUtils.hpp>
+#include <Vcl.Clipbrd.hpp>
+#include <Vcl.Forms.hpp>
+#include <Vcl.Dialogs.hpp>
+#include <Vcl.ComCtrls.hpp>
+#include <Vcl.Controls.hpp>
+#include <Vcl.ExtCtrls.hpp>
+#include <Vcl.Menus.hpp>
+#include <Vcl.OleCtrls.hpp>
+#include <Vcl.StdCtrls.hpp>
 
 #include "Resource.h"
 #include "DefaultStrings.h"
@@ -57,6 +58,13 @@
 //#include "..\..\20.0\Imports\MediaPlayer_OCX.h"
 #include "..\..\21.0\Imports\MediaPlayer_TLB.h"
 #include "..\..\21.0\Imports\WMPLib_OCX.h"
+#include <System.Classes.hpp>
+#include <Vcl.ComCtrls.hpp>
+#include <Vcl.Controls.hpp>
+#include <Vcl.ExtCtrls.hpp>
+#include <Vcl.Menus.hpp>
+#include <Vcl.OleCtrls.hpp>
+#include <Vcl.StdCtrls.hpp>
 //---------------------------------------------------------------------------
 
 #define WEBSITE L"http://www.yahcolorize.com/swiftmix/index.htm"

@@ -1,24 +1,26 @@
-/*------------------------------------------------------------------
-// Author: Scott Swift 2015
-// Last modification: 2022
+// ------------------------------------------------------------------
+// Author: Scott Swift 2015 (Last modification: August 2022)
 // Thanks to Scott Wisniewski for his 2010 C# subclassed file-dialog
 // and to Denis Ponomarenko for his 2007 COSFDlg class implementation.
-// I could not have done this without their excellent source-code
-// to "show me how".
 //
 // https://github.com/scottwis/OpenFileOrFolderDialog
 // http://www.codeproject.com/Articles/35529/CBrowseFolderDialog-Class
 // http://www.codeproject.com/Articles/17916/Simple-MFC-independent-Open-Save-File-Dialog-class
 // http://www.codeproject.com/Articles/3235/Multiple-Selection-in-a-File-Dialog
 //
-  ----------------------------------------------------------------*/
+// ------------------------------------------------------------------
 // NOTE: The original file-open dialog's code for Borland C++ Builder is in the source-code files:
 // OPENSAVE.CPP and DLGFILE.CPP
 //
-// https://msdn.microsoft.com/en-us/library/windows/desktop/ms646839%28v=vs.85%29.aspx?f=255&MSPPError=-2147217396
-// https://msdn.microsoft.com/en-us/library/windows/desktop/bb776913(v=vs.85).aspx#ok_button_options
-// https://msdn.microsoft.com/en-us/library/windows/desktop/ms644995%28v=vs.85%29.aspx
-// https://msdn.microsoft.com/en-us/library/windows/desktop/ms646960(v=vs.85).aspx#_win32_Explorer_Style_Custom_Templates
+// https://docs.microsoft.com/en-us/windows/win32/dlgbox/customizing-common-dialog-boxes
+// https://docs.microsoft.com/en-us/windows/win32/dlgbox/open-and-save-as-dialog-boxes
+// https://docs.microsoft.com/en-us/windows/win32/dlgbox/open-and-save-as-dialog-boxes#explorer-style-hook-procedures
+// https://docs.microsoft.com/en-us/windows/win32/dlgbox/open-and-save-as-dialog-boxes#explorer-style-custom-templates
+// https://docs.microsoft.com/en-us/windows/win32/dlgbox/open-and-save-as-dialog-boxes#explorer-style-control-identifiers
+// https://docs.microsoft.com/en-us/windows/win32/dlgbox/open-and-save-as-dialog-boxes#customizing-old-style-dialog-boxes
+// https://docs.microsoft.com/en-us/previous-versions/windows/desktop/legacy/ms646932(v=vs.85)
+// https://docs.microsoft.com/en-us/windows/win32/shell/common-file-dialog
+// https://github.com/microsoft/Windows-classic-samples
 //
 // Control Identifiers for the default Explorer-Style box
 //chx1 The read-only check box
@@ -73,17 +75,45 @@ tRemoveWindowSubclass pRemoveWindowSubclass;
 tDefSubclassProc pDefSubclassProc;
 tInitCommonControlsEx pInitCommonControlsEx;
 
-UINT m_buttonWidth = 0;
-UINT m_buttonHeight = 0;
-HMODULE m_hComCtl32 = NULL;
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
 #pragma resource "*.dfm"
 TOFMSDlgForm *OFMSDlgForm;
 //---------------------------------------------------------------------------
-__fastcall TOFMSDlgForm::TOFMSDlgForm(TComponent* Owner)
-  : TForm(Owner)
+//  typedef struct tagOFN {
+//    DWORD         lStructSize;
+//    HWND          hwndOwner;
+//    HINSTANCE     hInstance;
+//    LPCSTR        lpstrFilter;
+//    LPSTR         lpstrCustomFilter;
+//    DWORD         nMaxCustFilter;
+//    DWORD         nFilterIndex;
+//    LPSTR         lpstrFile;
+//    DWORD         nMaxFile;
+//    LPSTR         lpstrFileTitle;
+//    DWORD         nMaxFileTitle;
+//    LPCSTR        lpstrInitialDir;
+//    LPCSTR        lpstrTitle;
+//    DWORD         Flags;
+//    WORD          nFileOffset;
+//    WORD          nFileExtension;
+//    LPCSTR        lpstrDefExt;
+//    LPARAM        lCustData;
+//    LPOFNHOOKPROC lpfnHook;
+//    LPCSTR        lpTemplateName;
+//    LPEDITMENU    lpEditInfo;
+//    LPCSTR        lpstrPrompt;
+//    void          *pvReserved;
+//    DWORD         dwReserved;
+//    DWORD         FlagsEx;
+//  }
+//   OPENFILENAME, *LPOPENFILENAME;
+__fastcall TOFMSDlgForm::TOFMSDlgForm(TComponent* Owner) : TForm(Owner)
 {
+  m_buttonWidth = 0;
+  m_buttonHeight = 0;
+  m_hComCtl32 = NULL;
+
   FDlgHandle = NULL;
 
   FSingleSelect = false;
@@ -93,7 +123,36 @@ __fastcall TOFMSDlgForm::TOFMSDlgForm(TComponent* Owner)
   p_szFileName = new WideChar[OF_BUFSIZE];
   p_szTitleName = new WideChar[OF_BUFSIZE];
 
+  // https://docs.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-loadlibraryexa
+
   m_hComCtl32 = LoadLibraryW(L"Comctl32.dll");
+
+  // NOTE: the following works to load an alternate DLL when using Windows XP,
+  // unfortunately, loading that DLL did not solve the problem of styles missing
+  // from the open-file dialog!
+//  if (MainForm->VistaOrHigher)
+//    m_hComCtl32 = LoadLibraryW(L"Comctl32.dll");
+//  else // brute-force dll path for comctl32 version 6 on win xp with all patches
+//  {
+////    if (!MainForm->VistaOrHigher)
+////    ::ULONG_PTR activationCookie = EnableVisualStyles();
+//    EnableVisualStyles();
+//    Application->ProcessMessages();
+//
+//    wchar_t WinDir[256];
+//    GetWindowsDirectory(WinDir, 256);
+//    WideString wTemp = WideString(WinDir) + L"\\WinSxS\\x86_Microsoft.Windows."
+//                      "Common-Controls_6595b64144ccf1df_6.0.2600."
+//                                  "5508_x-ww_35d3ce4a\\comctl32.dll";
+//    //ShowMessage("about to load: \"" + String(wTemp) + "\"");
+//    m_hComCtl32 = LoadLibraryW(wTemp.c_bstr());
+//
+//    if (m_hComCtl32 == NULL)
+//      m_hComCtl32 = LoadLibraryW(L"Comctl32.dll");
+//    //else
+//    //  ShowMessage("XP DLL Loaded!");
+//  }
+
   p_fno = new TList();
 
   if (m_hComCtl32 == NULL || p_szFileName == NULL || p_szTitleName == NULL || p_fno == NULL)
@@ -113,6 +172,7 @@ __fastcall TOFMSDlgForm::TOFMSDlgForm(TComponent* Owner)
   {
       INITCOMMONCONTROLSEX CommonCtrlEx = {0};
       CommonCtrlEx.dwSize = sizeof(CommonCtrlEx);
+      CommonCtrlEx.dwICC = ICC_STANDARD_CLASSES|ICC_LISTVIEW_CLASSES;
       if (pInitCommonControlsEx(&CommonCtrlEx) == FALSE)
       {
 #if DEBUG_ON
@@ -148,9 +208,29 @@ __fastcall TOFMSDlgForm::TOFMSDlgForm(TComponent* Owner)
   FResult = IDCANCEL;
 
   m_hListView = NULL;
-  m_hChildWindow = NULL;
   m_hMyFileName = NULL;
 }
+// NOTE: It is recommended that you delay-load ComCtl32.dll (/DelayLoad:ComCtl32.dll)
+// and that you ensure this code runs before GUI components are loaded.
+// Otherwise, you may get weird issues, like black backgrounds in icons in image lists.
+//::ULONG_PTR __fastcall TOFMSDlgForm::EnableVisualStyles(void)
+//{
+//    TCHAR dir[MAX_PATH];
+//    ::ULONG_PTR ulpActivationCookie = FALSE;
+//    ::ACTCTX actCtx =
+//    {
+//        sizeof(actCtx),
+//        ACTCTX_FLAG_RESOURCE_NAME_VALID
+//            | ACTCTX_FLAG_SET_PROCESS_DEFAULT
+//            | ACTCTX_FLAG_ASSEMBLY_DIRECTORY_VALID,
+//        TEXT("shell32.dll"), 0, 0, dir, (LPCTSTR)124
+//    };
+//    UINT cch = GetSystemDirectory(dir, sizeof(dir) / sizeof(*dir));
+//    if (cch >= sizeof(dir) / sizeof(*dir)) { return FALSE; /*shouldn't happen*/ }
+//    dir[cch] = TEXT('\0');
+//    ActivateActCtx(CreateActCtx(&actCtx), &ulpActivationCookie);
+//    return ulpActivationCookie;
+//}
 //------------------- destructor -------------------------
 __fastcall TOFMSDlgForm::~TOFMSDlgForm()
 {
@@ -168,7 +248,12 @@ __fastcall TOFMSDlgForm::~TOFMSDlgForm()
   }
   catch(...) {}
 
-  try { if (m_hComCtl32 != NULL) FreeLibrary(m_hComCtl32); } catch(...) {}
+  try
+  {
+    if (m_hComCtl32 != NULL)
+      FreeLibrary(m_hComCtl32);
+  }
+  catch(...) {}
 }
 //---------------------------------------------------------------------------
 void __fastcall TOFMSDlgForm::FormDestroy(TObject *Sender)
@@ -222,17 +307,18 @@ bool __fastcall TOFMSDlgForm::ExecuteW(int iFilter, WideString wInitialDir,
   m_ofn.lpstrInitialDir = FInitialDir.c_bstr();
 
   m_ofn.Flags = OFN_NOTESTFILECREATE|OFN_EXPLORER|OFN_ENABLEHOOK|
-                              OFN_ENABLESIZING|OFN_ENABLETEMPLATE;
+                         OFN_HIDEREADONLY|OFN_ENABLESIZING|OFN_ENABLETEMPLATE;
 
   // Additional options for our custom multi-select version
   if (!FSingleSelect)
     m_ofn.Flags |= OFN_ALLOWMULTISELECT;
 
+  // https://docs.microsoft.com/en-us/windows/win32/shell/links#resolving-a-shortcut
+  //
   // (setting OFN_NODEREFERENCELINKS will allow .lnk files to be selected
   // and passed to the caller... clearing it lets you double-click a
   // shortcut and go to its folder...)
   // OFN_FILEMUSTEXIST|OFN_PATHMUSTEXIST|OFN_NODEREFERENCELINKS;
-  // OFN_HIDEREADONLY
 
   // If the user specifies a file name and clicks the OK button, the return
   // value is nonzero. The buffer pointed to by the lpstrFile member of the
@@ -389,75 +475,6 @@ int __fastcall TOFMSDlgForm::FindFilter(wchar_t* pFilterBuf, wchar_t* pFilterToF
 
   return 0;
 }
-/*---------------------------------------------------------------------------
-        GetNextFileName - function that returns results of
-              multiple selection one by one
-  ---------------------------------------------------------------------------*/
-// If the user selects more than one file, the lpstrFile buffer returns the path to the current directory
-// followed by the file names of the selected files. The nFileOffset member is the offset, in bytes or characters,
-// to the first file name, and the nFileExtension member is not used. For Explorer-style dialog boxes, the directory
-// and file name strings are NULL separated, with an extra NULL character after the last file name.
-/*
-WideString __fastcall TOFMSDlgForm::GetNextFileName(void)
-{
-  static WideChar szResult[MAX_PATH];
-  static WideChar szDirectory[MAX_PATH];
-  static int iPosition = 0;
-  static BOOL bFirstTime = TRUE;
-  static BOOL bLastName  = FALSE;
-  WideChar szFileName[MAX_PATH];
-
-  if(bFirstTime)
-  {
-    iPosition = 0;
-    for(unsigned short i = 0; i < m_ofn.nFileOffset; i++, iPosition++)
-    {
-      if((szDirectory[i] = p_szFileName[iPosition]) == WideChar('\0'))
-      {
-        if(szDirectory[iPosition - 1] != WideChar('\\'))
-          szDirectory[iPosition] = WideChar('\\');
-        break;
-      }
-    }
-  }
-  if(bLastName)
-  {
-    bLastName = FALSE;
-    bFirstTime = TRUE;
-    return "";
-  }
-  if(p_szFileName[iPosition] == WideChar('\0'))
-    iPosition++;
-
-  szFileName[0] = WideChar('\0');
-
-  for(unsigned int j = 0; j < sizeof(szFileName)/sizeof(szFileName[0]); j++, iPosition++)
-  {
-    if((szFileName[j] = p_szFileName[iPosition]) == WideChar('\0'))
-    {
-      if(p_szFileName[iPosition + 1] == WideChar('\0'))
-        bLastName = TRUE;
-
-      //-----------------making full file path -------------
-      unsigned short k = 0;
-      for(;k < m_ofn.nFileOffset; k++)
-      {
-        if((szResult[k] = szDirectory[k]) == WideChar('\0'))
-          break;
-      }
-      for(unsigned int u = 0; u < sizeof(szFileName) / sizeof(szFileName[0]); u++, k++)
-      {
-        if((szResult[k] = szFileName[u]) == WideChar('\0'))
-        {
-          bFirstTime = FALSE;
-          return WideString(szResult);
-        }
-      }
-    }
-  }
-  return "";
-}
-*/
 //---------------------------------------------------------------------------
 bool __fastcall TOFMSDlgForm::GetMultiSelect(void)
 {
@@ -495,7 +512,7 @@ bool __fastcall TOFMSDlgForm::InitDialog(HWND hDlg)
   {
     HWND hParent = GetParent(hDlg);
 
-    if (!this->MySetWindowSubclass(hParent, OpenFileSubClass, ID_FILE_SUBCLASS_PROC))
+    if (!MySetWindowSubclass(hParent, OpenFileSubClass, ID_FILE_SUBCLASS_PROC))
     {
 #if DEBUG_ON
       OFDbg->CWrite( "\r\nSubclassing file-dialog failed!\r\n");
@@ -747,6 +764,75 @@ bool __fastcall TOFMSDlgForm::PositionButton(HWND hDlg, int top, int left, int r
 
   return FALSE;
 }
+/*---------------------------------------------------------------------------
+        GetNextFileName - function that returns results of
+              multiple selection one by one
+  ---------------------------------------------------------------------------*/
+// If the user selects more than one file, the lpstrFile buffer returns the path to the current directory
+// followed by the file names of the selected files. The nFileOffset member is the offset, in bytes or characters,
+// to the first file name, and the nFileExtension member is not used. For Explorer-style dialog boxes, the directory
+// and file name strings are NULL separated, with an extra NULL character after the last file name.
+/*
+WideString __fastcall TOFMSDlgForm::GetNextFileName(void)
+{
+  static WideChar szResult[MAX_PATH];
+  static WideChar szDirectory[MAX_PATH];
+  static int iPosition = 0;
+  static BOOL bFirstTime = TRUE;
+  static BOOL bLastName  = FALSE;
+  WideChar szFileName[MAX_PATH];
+
+  if(bFirstTime)
+  {
+    iPosition = 0;
+    for(unsigned short i = 0; i < m_ofn.nFileOffset; i++, iPosition++)
+    {
+      if((szDirectory[i] = p_szFileName[iPosition]) == WideChar('\0'))
+      {
+        if(szDirectory[iPosition - 1] != WideChar('\\'))
+          szDirectory[iPosition] = WideChar('\\');
+        break;
+      }
+    }
+  }
+  if(bLastName)
+  {
+    bLastName = FALSE;
+    bFirstTime = TRUE;
+    return "";
+  }
+  if(p_szFileName[iPosition] == WideChar('\0'))
+    iPosition++;
+
+  szFileName[0] = WideChar('\0');
+
+  for(unsigned int j = 0; j < sizeof(szFileName)/sizeof(szFileName[0]); j++, iPosition++)
+  {
+    if((szFileName[j] = p_szFileName[iPosition]) == WideChar('\0'))
+    {
+      if(p_szFileName[iPosition + 1] == WideChar('\0'))
+        bLastName = TRUE;
+
+      //-----------------making full file path -------------
+      unsigned short k = 0;
+      for(;k < m_ofn.nFileOffset; k++)
+      {
+        if((szResult[k] = szDirectory[k]) == WideChar('\0'))
+          break;
+      }
+      for(unsigned int u = 0; u < sizeof(szFileName) / sizeof(szFileName[0]); u++, k++)
+      {
+        if((szResult[k] = szFileName[u]) == WideChar('\0'))
+        {
+          bFirstTime = FALSE;
+          return WideString(szResult);
+        }
+      }
+    }
+  }
+  return "";
+}
+*/
 //---------------------------------------------------------------------------
 bool __fastcall TOFMSDlgForm::GetSelectedItems(void)
 {
@@ -852,7 +938,7 @@ bool __fastcall TOFMSDlgForm::GetSelectedItems(void)
         catch(...)
         {
 #if DEBUG_ON
-          OFDbg->CWrite("\r\nException thrown ideletein nativeBuffer in GetSelectedItems()!\r\n");
+          OFDbg->CWrite("\r\nException thrown in delete nativeBuffer in GetSelectedItems()!\r\n");
 #endif
         };
       }
@@ -964,21 +1050,25 @@ WideString __fastcall TOFMSDlgForm::GetShortcutTarget(WideString wPath)
     IShellLinkW* psl = NULL;
     IPersistFile* ppf = NULL;
     TWin32FindDataW* wfs = NULL;
-
+    WideChar* pInfo = NULL;
+    
     try
     {
-      WideChar Info[MAX_PATH+1];
+      pInfo = new WideChar[MAX_PATH+1];
 
-      CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLinkW, (void**)&psl);
-      if (psl != NULL)
+      if (pInfo != NULL)
       {
-        if (psl->QueryInterface(IID_IPersistFile, (void**)&ppf) == 0)
+        CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLinkW, (void**)&psl);
+        if (psl != NULL)
         {
-          if (ppf != NULL)
+          if (psl->QueryInterface(IID_IPersistFile, (void**)&ppf) == 0)
           {
-            ppf->Load(wPath.c_bstr(), STGM_READ);
-            psl->GetPath(Info, MAX_PATH, wfs, SLGP_UNCPRIORITY);
-            wOut = WideString(Info);
+            if (ppf != NULL)
+            {
+              ppf->Load(wPath.c_bstr(), STGM_READ);
+              psl->GetPath(pInfo, MAX_PATH+1, wfs, SLGP_SHORTPATH);
+              wOut = WideString(pInfo);
+            }
           }
         }
       }
@@ -987,6 +1077,7 @@ WideString __fastcall TOFMSDlgForm::GetShortcutTarget(WideString wPath)
     {
       if (ppf) ppf->Release();
       if (psl) psl->Release();
+      if (pInfo) delete [] pInfo;
       CoUninitialize();
     }
   }
@@ -995,29 +1086,40 @@ WideString __fastcall TOFMSDlgForm::GetShortcutTarget(WideString wPath)
   return wOut;
 }
 //---------------------------------------------------------------------------
-WideString __fastcall TOFMSDlgForm::GetTextFromCommonDialog(HWND hDlg, UINT msg)
+String __fastcall TOFMSDlgForm::GetFilePath(HWND hDlg)
+{
+  return GetTextFromDialog(hDlg, CDM_GETFILEPATH);
+}
+//---------------------------------------------------------------------------
+String __fastcall TOFMSDlgForm::GetFolderPath(HWND hDlg)
+{
+  return GetTextFromDialog(hDlg, CDM_GETFOLDERPATH);
+}
+//---------------------------------------------------------------------------
+String __fastcall TOFMSDlgForm::GetTextFromDialog(HWND hDlg, int msg)
 {
   try
   {
     WideChar* buf = NULL;
-    WideString str;
+    String str;
 
     try
     {
-      buf = new WideChar[OF_BUFSIZE];
-      buf[0] = L'\0';
+      buf = new WideChar[MAX_PATH+1];
+      buf[0] = C_NULL;
 
-      // NOTE: you are "supposed" to be able to get the required buffer size
-      // - I tried 0, -1 - null-pointer, a buffer of 40 bytes... function always
-      // just returns "1"
-//      DWORD ret = SendMessageW(hDlg, msg, 0, NULL);
-//#if DEBUG_ON
-//      OFDbg->CWrite("\r\nBufsize required: " + String(ret) + "\r\n");
-//#endif
+      int numChars = SendMessageW(hDlg, msg, MAX_PATH+1, (LPARAM)buf);
 
-      SendMessageW(hDlg, msg, OF_BUFSIZE, (LPARAM)buf);
-
-      str = WideString(buf);
+      if (numChars > MAX_PATH+1)
+      {
+        delete [] buf;
+        buf = new WideChar[numChars];
+        buf[0] = C_NULL;
+        SendMessageW(hDlg, msg, numChars, (LPARAM)buf);
+        str = String(buf);
+      }
+      else
+        str = String(buf);
     }
     __finally
     {
@@ -1088,7 +1190,8 @@ bool __fastcall TOFMSDlgForm::DeleteFileNameObjects()
   }
 }
 //---------------------------------------------------------------------------
-bool __fastcall TOFMSDlgForm::MySetWindowSubclass(HWND hDlg, MYSUBCLASSPROC pfnSubclass, int uIdSubclass)
+bool __fastcall TOFMSDlgForm::MySetWindowSubclass(HWND hDlg,
+                             MYSUBCLASSPROC pfnSubclass, int uIdSubclass)
 {
   if (m_hComCtl32 == NULL) return false;
 
@@ -1097,14 +1200,15 @@ bool __fastcall TOFMSDlgForm::MySetWindowSubclass(HWND hDlg, MYSUBCLASSPROC pfnS
   try
   {
     if (pSetWindowSubclass != NULL)
-      bRet = pSetWindowSubclass(hDlg, pfnSubclass, (UINT*)uIdSubclass, (DWORD*)this);
+      bRet = pSetWindowSubclass(hDlg, pfnSubclass, (LPUINT)uIdSubclass, (DWORD*)this);
   }
   catch(...) {}
 
   return bRet;
 }
 //---------------------------------------------------------------------------
-bool __fastcall TOFMSDlgForm::MyRemoveWindowSubclass(HWND hDlg, MYSUBCLASSPROC pfnSubclass, int uIdSubclass)
+bool __fastcall TOFMSDlgForm::MyRemoveWindowSubclass(HWND hDlg,
+                              MYSUBCLASSPROC pfnSubclass, int uIdSubclass)
 {
   if (m_hComCtl32 == NULL) return false;
 
@@ -1113,10 +1217,7 @@ bool __fastcall TOFMSDlgForm::MyRemoveWindowSubclass(HWND hDlg, MYSUBCLASSPROC p
   try
   {
     if (pRemoveWindowSubclass != NULL)
-    {
-      unsigned id = (unsigned)uIdSubclass;
-      bRet = pRemoveWindowSubclass(hDlg, pfnSubclass, &id);
-    }
+      bRet = pRemoveWindowSubclass(hDlg, pfnSubclass, (LPUINT)uIdSubclass);
   }
   catch(...) {}
 
@@ -1143,14 +1244,18 @@ bool __fastcall TOFMSDlgForm::MyDefSubclassProc(HWND hDlg, UINT msg, WPARAM wPar
   return bRet;
 }
 //---------------------------------------------------------------------------
-LRESULT CALLBACK TOFMSDlgForm::OpenFileSubClass(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam, LPUINT uIdSubclass, LPDWORD dwRefData)
+LRESULT CALLBACK TOFMSDlgForm::OpenFileSubClass(HWND hDlg, UINT uMsg,
+            WPARAM wParam, LPARAM lParam, LPUINT uIdSubclass, LPDWORD dwRefData)
 {
-  // WM_PARENTNOTIFY When the child window is being created, the system sends WM_PARENTNOTIFY just before the CreateWindow
-  // or CreateWindowEx function that creates the window returns. When the child window is being destroyed, the system sends
-  // the message before any processing to destroy the window takes place.
+  // WM_PARENTNOTIFY When the child window is being created, the system sends
+  // WM_PARENTNOTIFY just before the CreateWindow or CreateWindowEx function
+  // that creates the window returns. When the child window is being destroyed,
+  // the system sends the message before any processing to destroy the window
+  // takes place.
   //
   // LOWORD(wParam) == WM_CREATE
-  // The child window is being created. HIWORD(wParam) is the identifier of the child window. lParam is a handle to the child window.
+  // The child window is being created. HIWORD(wParam) is the identifier of the
+  // child window. lParam is a handle to the child window.
   TOFMSDlgForm* p = (TOFMSDlgForm*)dwRefData;
   if (p == NULL) return NULL;
 
@@ -1265,28 +1370,26 @@ LRESULT CALLBACK TOFMSDlgForm::OpenFileSubClass(HWND hDlg, UINT uMsg, WPARAM wPa
         // NOTE: ListView's handle changes when you open a folder!
         int id = HIWORD(wParam);
 
-        if ((id == ID_LISTVIEW_SUBCLASS_PROC || id == ID_FILEEDIT_SUBCLASS_PROC || id == ID_FILE_SUBCLASS_PROC))
+        if ((id == ID_LISTVIEW_SUBCLASS_PROC ||
+               id == ID_FILEEDIT_SUBCLASS_PROC || id == ID_FILE_SUBCLASS_PROC))
         {
-          if (!p->MySetWindowSubclass((HWND)lParam, DefViewSubClass, ID_LISTVIEW_SUBCLASS_PROC))
-          {
+          if (p->MySetWindowSubclass((HWND)lParam, DefViewSubClass,
+                                               ID_LISTVIEW_SUBCLASS_PROC))
+            ShowWindow(GetParent(hDlg), SW_HIDE); // Hide the old window so it wont briefly show!
 #if DEBUG_ON
+          else
             OFDbg->CWrite("\r\nFailed to set list-view subclass...\r\n");
 #endif
-          }
-          else
-          {
-            ShowWindow(GetParent(hDlg), SW_HIDE); // Hide the old window so it wont briefly show!
 
-            p->m_hChildWindow = (HWND)lParam;
-            p->m_hListView = GetDlgItem(hDlg, ID_FileList); // this works here... but the handle changes!
+          p->m_hListView = GetDlgItem(hDlg, ID_FileList); // this works here... but the handle changes!
 
-            // get the file-edit-box handle
-            p->m_hMyFileName = GetDlgItem(hDlg, ID_MyFileName);
+          // get the file-edit-box handle
 #if !IS_OLD_BORLAND_CPP_BUILDER
-            p->m_hMyFileName = (HWND)SendMessageW(p->m_hMyFileName, CBEM_GETEDITCONTROL, 0, 0);
+          p->m_hMyFileName = (HWND)SendMessageW(p->m_hMyFileName,
+                                            CBEM_GETEDITCONTROL, 0, 0);
+#else
+          p->m_hMyFileName = GetDlgItem(hDlg, ID_MyFileName);
 #endif
-
-          }
         }
       }
     }
@@ -1303,7 +1406,8 @@ LRESULT CALLBACK TOFMSDlgForm::OpenFileSubClass(HWND hDlg, UINT uMsg, WPARAM wPa
 #endif
 }
 //---------------------------------------------------------------------------
-LRESULT CALLBACK TOFMSDlgForm::DefViewSubClass(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam, LPUINT uIdSubclass, LPDWORD dwRefData)
+LRESULT CALLBACK TOFMSDlgForm::DefViewSubClass(HWND hDlg, UINT uMsg,
+       WPARAM wParam, LPARAM lParam, LPUINT uIdSubclass, LPDWORD dwRefData)
 {
   try
   {
@@ -1312,6 +1416,20 @@ LRESULT CALLBACK TOFMSDlgForm::DefViewSubClass(HWND hDlg, UINT uMsg, WPARAM wPar
 
     switch (uMsg)
     {
+      case WM_DESTROY:
+        // remove our hook to the ListView control...
+    #if DEBUG_ON
+        if (!p->MyRemoveWindowSubclass(hDlg, DefViewSubClass,
+                                                ID_LISTVIEW_SUBCLASS_PROC))
+          OFDbg->CWrite( "\r\nRemove DefViewSubClass failed!\r\n");
+        else
+          OFDbg->CWrite( "\r\nRemove DefViewSubClass success!\r\n");
+    #else
+        p->MyRemoveWindowSubclass(hDlg, DefViewSubClass,
+                                       ID_LISTVIEW_SUBCLASS_PROC);
+    #endif
+      break;
+
       case WM_NOTIFY:
       {
         LPOFNOTIFY ofNotify = (LPOFNOTIFY)lParam;
@@ -1390,21 +1508,28 @@ LRESULT CALLBACK TOFMSDlgForm::DefViewSubClass(HWND hDlg, UINT uMsg, WPARAM wPar
 // } NMHDR;
 //
 // code is:
-//   CDN_FILEOK
-//   CDN_FOLDERCHANGE
-//   CDN_HELP
-//   CDN_INCLUDEITEM
-//     The dialog box sends a CDN_INCLUDEITEM notification for each item in the folder. The dialog box sends this
-//     notification only if the OFN_ENABLEINCLUDENOTIFY flag was set when the dialog box was created.
-//   CDN_INITDONE
-//   CDN_SELCHANGE
-//   CDN_SHAREVIOLATION
-//   CDN_TYPECHANGE
+//  CDN_FILEOK The user clicked the OK button; the dialog box is about to close.
+//  CDN_FOLDERCHANGE The user opened a new folder or directory.
+//  CDN_HELP The user clicked the Help button.
+//  CDN_INCLUDEITEM Determines whether an item should be displayed. When the user
+//    opens a new folder or directory, the system sends this notification for
+//    each item in the folder or directory. The system sends this notification
+//    only if the OFN_ENABLEINCLUDENOTIFY flag was set.
+//  CDN_INITDONE The system has finished initializing the dialog box, and the
+//    dialog box has finished processing the WM_INITDIALOG message. Also, the
+//    system has finished arranging controls in the common dialog box to make
+//    room for the controls of the child dialog box (if any).
+//  CDN_SELCHANGE The user selected a new file or folder from the file list.
+//  CDN_SHAREVIOLATION The common dialog box encountered a sharing violation on
+//    the file about to be returned.
+//  CDN_TYPECHANGE The user selected a new file type from the list of file types.
 //
-// If the hook procedure returns zero, the dialog box accepts the specified file name and closes.
+// If the hook procedure returns zero, the dialog box accepts the specified file
+// name and closes.
 //
-// To reject the specified file name and force the dialog box to remain open, return a nonzero value
-//  from the hook procedure and call the SetWindowLong function to set a nonzero DWL_MSGRESULT value.
+// To reject the specified file name and force the dialog box to remain open,
+// return a nonzero value from the hook procedure and call the SetWindowLong
+// function to set a nonzero DWL_MSGRESULT value.
 //
 // messages:
 // CDM_GETFILEPATH
@@ -1430,7 +1555,15 @@ LRESULT CALLBACK TOFMSDlgForm::DefViewSubClass(HWND hDlg, UINT uMsg, WPARAM wPar
 // If the hook procedure returns a nonzero value, the default dialog box procedure ignores the message.
 // For the CDN_SHAREVIOLATION and CDN_FILEOK notification messages, the hook procedure should return a nonzero
 // value to indicate that it has used the SetWindowLong function to set a nonzero DWL_MSGRESULT value.
-UINT CALLBACK TOFMSDlgForm::OFNHookProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
+//
+// UINT_PTR CALLBACK OFNHookProcOldStyle(
+//   _In_ HWND   hdlg,
+//   _In_ UINT   uiMsg,
+//   _In_ WPARAM wParam,
+//   _In_ LPARAM lParam
+// );
+UINT CALLBACK TOFMSDlgForm::OFNHookProc(HWND hDlg, UINT msg, WPARAM wParam,
+                                                                LPARAM lParam)
 {
   switch (msg)
   {
@@ -1499,11 +1632,14 @@ UINT CALLBACK TOFMSDlgForm::OFNHookProc(HWND hDlg, UINT msg, WPARAM wParam, LPAR
       TOFMSDlgForm* p = (TOFMSDlgForm*)p_ofn->lCustData;
       if (p == NULL) break;
 
-      try { p->MyRemoveWindowSubclass(hDlg, OpenFileSubClass, ID_FILE_SUBCLASS_PROC); } catch(...) {}
-      try { p->MyRemoveWindowSubclass(hDlg, DefViewSubClass, ID_LISTVIEW_SUBCLASS_PROC); } catch(...) {}
-      RemoveProp(GetParent(hDlg), OFNPROP);
 #if DEBUG_ON
+      if (p->UninitDialog(hDlg))
+        OFDbg->CWrite("\r\nUninitDialog(hDlg) success!\r\n");
+      else
+        OFDbg->CWrite("\r\nUninitDialog(hDlg) failed!\r\n");
       OFDbg->CWrite("\r\nWM_DESTROY in OFNHookProc()\r\n");
+#else
+      p->UninitDialog(hDlg);
 #endif
     }
     break;
@@ -1714,6 +1850,41 @@ UINT CALLBACK TOFMSDlgForm::OFNHookProc(HWND hDlg, UINT msg, WPARAM wParam, LPAR
   return FALSE; // Calls default if you return 0
 }
 //---------------------------------------------------------------------------
+bool __fastcall TOFMSDlgForm::UninitDialog(HWND hDlg)
+{
+  if (hDlg == NULL) return false;
+
+  bool bRet = true;
+
+  try
+  {
+    HWND hParent = GetParent(hDlg);
+
+    if (!MyRemoveWindowSubclass(hParent, OpenFileSubClass, ID_FILE_SUBCLASS_PROC))
+    {
+#if DEBUG_ON
+      OFDbg->CWrite( "\r\nRemove OpenFileSubClass failed!\r\n");
+#endif
+      bRet = false;
+    }
+    if (RemoveProp(hParent, OFNPROP) == NULL)
+    {
+#if DEBUG_ON
+      OFDbg->CWrite( "\r\nRemove RemoveProp failed!\r\n");
+#endif
+      bRet = false;
+    }
+  }
+  catch(...)
+  {
+#if DEBUG_ON
+    OFDbg->CWrite( "\r\nException thrown in: UninitDialog(HWND hDlg)\r\n");
+#endif
+    bRet = false;
+  }
+  return bRet;
+}
+//---------------------------------------------------------------------------
 bool __fastcall TOFMSDlgForm::ParseComplexPath(WideString wPath, TStringList* sl)
 {
   // NOTE: found another quirk in the dialog... if you select multiple files
@@ -1893,8 +2064,7 @@ int __fastcall TOFMSDlgForm::ProcessNotifyMessage(HWND hDlg, LPOFNOTIFY p_notify
       HWND hParent = GetParent(hDlg);
 
       // Show current folder path in window-title-bar and in the file edit-box
-      WideString newFolder =
-                this->GetTextFromCommonDialog(hParent, CDM_GETFOLDERPATH);
+      WideString newFolder = this->GetFolderPath(hParent);
 
       if (!newFolder.IsEmpty() && this->FCurrentFolder != newFolder)
       {
@@ -2010,7 +2180,7 @@ bool __fastcall TOFMSDlgForm::NewFileSelected(HWND hDlg)
   bool bRet = false;
 
   // Show current folder path in window-title-bar and in the file edit-box
-  WideString newFile = this->GetTextFromCommonDialog(hParent, CDM_GETFILEPATH);
+  WideString newFile = this->GetFilePath(hParent);
 
 #if DEBUG_ON
   OFDbg->CWrite("\r\n" + String(newFile) + "\r\n");
@@ -2044,33 +2214,33 @@ bool __fastcall TOFMSDlgForm::NewFileSelected(HWND hDlg)
   return bRet;
 }
 //---------------------------------------------------------------------------
-WideString __fastcall TOFMSDlgForm::GetListViewItemText(HWND hListView, int selectedIndex)
-{
-  LVITEMW lvitem = {0};
-  lvitem.mask = LVIF_TEXT;
-  WideChar* nativeBuffer = NULL;
-
-  WideString wName;
-
-  try
-  {
-    nativeBuffer = new WideChar[OF_BUFSIZE];
-    if (nativeBuffer != NULL)
-    {
-      lvitem.pszText = nativeBuffer;
-      lvitem.cchTextMax = OF_BUFSIZE;
-      int length = SendMessageW(hListView, LVM_GETITEMTEXTW, selectedIndex, (LPARAM)&lvitem);
-      wName = WideString(lvitem.pszText, length);
-    }
-  }
-  __finally
-  {
-    if (nativeBuffer != NULL)
-      try { delete [] nativeBuffer; } catch(...) {}
-  }
-
-  return wName;
-}
+//WideString __fastcall TOFMSDlgForm::GetListViewItemText(HWND hListView, int selectedIndex)
+//{
+//  LVITEMW lvitem = {0};
+//  lvitem.mask = LVIF_TEXT;
+//  WideChar* nativeBuffer = NULL;
+//
+//  WideString wName;
+//
+//  try
+//  {
+//    nativeBuffer = new WideChar[OF_BUFSIZE];
+//    if (nativeBuffer != NULL)
+//    {
+//      lvitem.pszText = nativeBuffer;
+//      lvitem.cchTextMax = OF_BUFSIZE;
+//      int length = SendMessageW(hListView, LVM_GETITEMTEXTW, selectedIndex, (LPARAM)&lvitem);
+//      wName = WideString(lvitem.pszText, length);
+//    }
+//  }
+//  __finally
+//  {
+//    if (nativeBuffer != NULL)
+//      try { delete [] nativeBuffer; } catch(...) {}
+//  }
+//
+//  return wName;
+//}
 //-------------------- FileSaveDlg function -------------------
 /*
 //---------------------------------------------------------------------------
@@ -2089,6 +2259,116 @@ bool __fastcall TOFMSDlgForm::FileSaveDlg(WideString szDefExt, WideString szDlgT
   return GetSaveFileNameW(&m_ofn);
 }
 //---------------------------------------------------------------------------
+// NOTE: TODO: Ideally, above, we should use the OFN_NODEREFERENCELINKS option
+// and manually process shrotcuts (.lnk files). I found the example below:
+//
+// https://docs.microsoft.com/en-us/windows/win32/shell/links#resolving-a-shortcut
+//
+//The ResolveIt function calls the CoCreateInstance function and assumes that the
+//CoInitialize function has already been called. Note that ResolveIt needs to use
+//the IPersistFile interface to store the link information. IPersistFile is
+//implemented by the IShellLink object. The link information must be loaded before
+//the path information is retrieved, which is shown later in the example. Failing
+//to load the link information causes the calls to the IShellLink::GetPath and
+//IShellLink::GetDescription member functions to fail.
+
+
+// ResolveIt - Uses the Shell's IShellLink and IPersistFile interfaces
+//             to retrieve the path and description from an existing shortcut.
+//
+// Returns the result of calling the member functions of the interfaces.
+//
+// Parameters:
+// hwnd         - A handle to the parent window. The Shell uses this window to
+//                display a dialog box if it needs to prompt the user for more
+//                information while resolving the link.
+// lpszLinkFile - Address of a buffer that contains the path of the link,
+//                including the file name.
+// lpszPath     - Address of a buffer that receives the path of the link
+                  target, including the file name.
+// lpszDesc     - Address of a buffer that receives the description of the
+//                Shell link, stored in the Comment field of the link
+//                properties.
+
+#include "stdafx.h"
+#include "windows.h"
+#include "shobjidl.h"
+#include "shlguid.h"
+#include "strsafe.h"
+
+HRESULT ResolveIt(HWND hwnd, LPCSTR lpszLinkFile, LPWSTR lpszPath, int iPathBufferSize)
+{
+    HRESULT hres;
+    IShellLink* psl;
+    WCHAR szGotPath[MAX_PATH];
+    WCHAR szDescription[MAX_PATH];
+    WIN32_FIND_DATA wfd;
+
+    *lpszPath = 0; // Assume failure
+
+    // Get a pointer to the IShellLink interface. It is assumed that CoInitialize
+    // has already been called.
+    hres = CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLink, (LPVOID*)&psl);
+    if (SUCCEEDED(hres))
+    {
+        IPersistFile* ppf;
+
+        // Get a pointer to the IPersistFile interface.
+        hres = psl->QueryInterface(IID_IPersistFile, (void**)&ppf);
+
+        if (SUCCEEDED(hres))
+        {
+            WCHAR wsz[MAX_PATH];
+
+            // Ensure that the string is Unicode.
+            MultiByteToWideChar(CP_ACP, 0, lpszLinkFile, -1, wsz, MAX_PATH);
+
+            // Add code here to check return value from MultiByteWideChar
+            // for success.
+
+            // Load the shortcut.
+            hres = ppf->Load(wsz, STGM_READ);
+
+            if (SUCCEEDED(hres))
+            {
+                // Resolve the link.
+                hres = psl->Resolve(hwnd, 0);
+
+                if (SUCCEEDED(hres))
+                {
+                    // Get the path to the link target.
+                    hres = psl->GetPath(szGotPath, MAX_PATH, (WIN32_FIND_DATA*)&wfd, SLGP_SHORTPATH);
+
+                    if (SUCCEEDED(hres))
+                    {
+                        // Get the description of the target.
+                        hres = psl->GetDescription(szDescription, MAX_PATH);
+
+                        if (SUCCEEDED(hres))
+                        {
+                            hres = StringCbCopy(lpszPath, iPathBufferSize, szGotPath);
+                            if (SUCCEEDED(hres))
+                            {
+                                // Handle success
+                            }
+                            else
+                            {
+                                // Handle the error
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Release the pointer to the IPersistFile interface.
+            ppf->Release();
+        }
+
+        // Release the pointer to the IShellLink interface.
+        psl->Release();
+    }
+    return hres;
+}
 */
 //---------------------------------------------------------------------------
 void __fastcall TOFMSDlgForm::FormActivate(TObject *Sender)

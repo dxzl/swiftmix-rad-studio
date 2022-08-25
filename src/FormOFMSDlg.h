@@ -154,11 +154,15 @@ __published:  // IDE-managed Components
   void __fastcall FormActivate(TObject *Sender);
 
 private:
+  bool __fastcall InitDialog(HWND hDlg);
+  bool __fastcall UninitDialog(HWND hDlg);
   WideString __fastcall WTrim(WideString wIn);
   bool __fastcall ParseComplexPath(WideString wPath, TStringList* sl);
   bool __fastcall SetFileName(HWND hEdit, WideString wName);
-  WideString __fastcall GetListViewItemText(HWND hListView, int selectedIndex);
-  WideString __fastcall GetTextFromCommonDialog(HWND hWnd, UINT msg);
+  //WideString __fastcall GetListViewItemText(HWND hListView, int selectedIndex);
+  String __fastcall GetTextFromDialog(HWND hDlg, int msg);
+  String __fastcall GetFolderPath(HWND hDlg);
+  String __fastcall GetFilePath(HWND hDlg);
   bool __fastcall NewFileSelected(HWND hDlg);
   WideChar* __fastcall SetFilter(void);
   wchar_t* __fastcall GetFilter(wchar_t* pFilterBuf, int iFilter, int iMax);
@@ -171,19 +175,19 @@ private:
   bool __fastcall GetShortcut(WideString &sPath, bool &bIsDirectory);
   bool __fastcall AddWideItem(WideString sPath, bool bIsDirectory);
   bool __fastcall GetSelectedItems(void);
-  bool __fastcall InitDialog(HWND hDlg);
   WideString __fastcall GetNextFileName(void);
   bool __fastcall DeleteFileNameObjects();
   int __fastcall ProcessNotifyMessage(HWND hDlg, LPOFNOTIFY p_notify);
   bool __fastcall MyDefSubclassProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
   bool __fastcall MyRemoveWindowSubclass(HWND hWnd, MYSUBCLASSPROC pfnSubclass, int uIdSubclass);
   bool __fastcall MySetWindowSubclass(HWND hWnd, MYSUBCLASSPROC pfnSubclass, int uIdSubclass);
+//  ::ULONG_PTR __fastcall EnableVisualStyles(void);
 
   WideChar* p_szFileName;
   WideChar* p_szTitleName;
 
   OPENFILENAMEW m_ofn;
-  HWND m_hListView, m_hCustomOpenButton, m_hChildWindow, m_hMyFileName;
+  HWND m_hListView, m_hCustomOpenButton, m_hMyFileName;
 
   bool FFolderIsSelected, FSingleSelect, FDisplayFullPath;
 
@@ -203,6 +207,9 @@ private:
 
   HWND FDlgHandle;
 
+  UINT m_buttonWidth, m_buttonHeight;
+  HMODULE m_hComCtl32;
+
 protected:
   bool __fastcall GetMultiSelect(void);
   WideString __fastcall GetFileName(void);
@@ -214,10 +221,10 @@ protected:
                                                               LPARAM lParam);
 
   static LRESULT CALLBACK OpenFileSubClass(HWND hDlg, UINT uMsg, WPARAM wParam,
-                     LPARAM lParam, UINT* uIdSubclass, DWORD* dwRefData);
+                     LPARAM lParam, LPUINT uIdSubclass, DWORD* dwRefData);
 
   static LRESULT CALLBACK DefViewSubClass(HWND hDlg, UINT uMsg, WPARAM wParam,
-                           LPARAM lParam, UINT* uIdSubclass, DWORD* dwRefData);
+                           LPARAM lParam, LPUINT uIdSubclass, DWORD* dwRefData);
 
 public:    // User declarations
   __fastcall TOFMSDlgForm(TComponent* Owner);
