@@ -51,20 +51,22 @@ int __fastcall TExportForm::Dialog(TPlaylistForm* f, String d, String t)
 
   int Count = -1;
 
-  TSFDlgForm* pSFDlg = NULL;
+  TSaveDialog* pSFDlg = NULL;
   TExportModeForm* pExpModeDlg = NULL;
 
   try
   {
     try
     {
-      Application->CreateForm(__classid(TSFDlgForm), &pSFDlg);
+      pSFDlg = new TSaveDialog(this);
       Application->CreateForm(__classid(TExportModeForm), &pExpModeDlg);
 
       if (pSFDlg == NULL || pExpModeDlg == NULL)
         return -2;
 
-      pSFDlg->Filters = String("All Files (*.*)|*.*|"
+      pSFDlg->Options << ofHideReadOnly << ofEnableSizing;
+      pSFDlg->Title = "Song-list Export (choose type of list at bottom)";
+      pSFDlg->Filter = "All Files (*.*)|*.*|"
                     "Windows Media (wpl)|*.wpl|"
                     "MPEG UTF-8 (m3u8)|*.m3u8|"
                     "MPEG ANSI (m3u)|*.m3u|"
@@ -72,17 +74,21 @@ int __fastcall TExportForm::Dialog(TPlaylistForm* f, String d, String t)
                     "XML Shareable (xspf)|*.xspf|"
                     "Win Audio XML (wax)|*.wax|"
                     "Windows XML (wmx)|*.wmx|"
-          "Winamp (pls)|*.pls|"
-                    "Text (txt)|*.txt");
+                    "Winamp (pls)|*.pls|"
+                    "Text (txt)|*.txt";
+      pSFDlg->FilterIndex = 2; // .wpl
+      pSFDlg->DefaultExt = String(EXPORT_EXT);
+      String sPlayer = (f == ListA) ? "A" : "B";
+      pSFDlg->FileName = String(EXPORT_FILE) + sPlayer;
 
       // Run the TSaveDialog and get a file name...
-      String sPlayer = (f == ListA) ? "A" : "B";
-      String sDefFile = String(EXPORT_FILE) + sPlayer + "." + String(EXPORT_EXT);
-
-      if (pSFDlg->Execute(sDefFile, d, t) == FALSE)
+      if (!pSFDlg->Execute())
         return -1; // -1 will suppress an error-message
 
       String sName = pSFDlg->FileName; // Get UTF-8 filepath
+
+      pSFDlg->Free();
+      pSFDlg = NULL;
 
       if (sName.IsEmpty())
         return -1;
@@ -120,11 +126,11 @@ int __fastcall TExportForm::Dialog(TPlaylistForm* f, String d, String t)
   }
   __finally
   {
-  if (pExpModeDlg != NULL)
-    pExpModeDlg->Release();
+    if (pExpModeDlg != NULL)
+      pExpModeDlg->Release();
 
-  if (pSFDlg != NULL)
-    pSFDlg->Release();
+    if (pSFDlg != NULL)
+      pSFDlg->Free();
   }
 
   return Count;

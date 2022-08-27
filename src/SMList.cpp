@@ -2995,7 +2995,7 @@ TOFMSDlgForm* __fastcall TPlaylistForm::CreateFileDialog(void)
 //---------------------------------------------------------------------------
 void __fastcall TPlaylistForm::DestroyFileDialog(void)
 {
-  if (MainForm->ReleaseForm((TForm*)pOFMSDlg))
+  if (MainForm->ReleaseFormNoClose((TForm*)pOFMSDlg))
     pOFMSDlg = NULL;
 }
 //---------------------------------------------------------------------------

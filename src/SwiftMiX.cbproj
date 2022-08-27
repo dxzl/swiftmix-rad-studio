@@ -154,7 +154,7 @@
         <Icon_MainIcon>SwiftMiX.ico</Icon_MainIcon>
         <LinkPackageStatics>rtl.lib;vcl.lib;vclx.lib;MyControls.lib</LinkPackageStatics>
         <_TCHARMapping>wchar_t</_TCHARMapping>
-        <VerInfo_Keys>CompanyName=Discrete-Time Systems;FileDescription=$(MSBuildProjectName);FileVersion=2.3.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=SwiftMiX.exe;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=2.3.0.0;Comments=https://github.com/dxzl/swiftmix-rad-studio/releases</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=Discrete-Time Systems;FileDescription=$(MSBuildProjectName);FileVersion=2.4.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=SwiftMiX.exe;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=2.4.0.0;Comments=https://github.com/dxzl/swiftmix-rad-studio/releases</VerInfo_Keys>
         <BRCC_IncludePath>$(BDSINCLUDE)\windows\sdk;$(BRCC_IncludePath)</BRCC_IncludePath>
         <AppDPIAwarenessMode>PerMonitor</AppDPIAwarenessMode>
         <ILINK_LibraryPath>..\MyControls\;$(ILINK_LibraryPath)</ILINK_LibraryPath>
@@ -162,7 +162,7 @@
         <BCC_OutputDir>OBJ</BCC_OutputDir>
         <DCC_UnitSearchPath>Z_TagLibSource;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
         <VerInfo_MajorVer>2</VerInfo_MajorVer>
-        <VerInfo_MinorVer>3</VerInfo_MinorVer>
+        <VerInfo_MinorVer>4</VerInfo_MinorVer>
         <Manifest_File>Swiftmixer.manifest</Manifest_File>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2_Win64)'!=''">
@@ -193,12 +193,6 @@
         <CppCompile Include="DefaultStrings.cpp">
             <DependentOn>DefaultStrings.h</DependentOn>
             <BuildOrder>13</BuildOrder>
-        </CppCompile>
-        <CppCompile Include="FormDirDlg.cpp">
-            <Form>DirDlgForm</Form>
-            <FormType>dfm</FormType>
-            <DependentOn>FormDirDlg.h</DependentOn>
-            <BuildOrder>3</BuildOrder>
         </CppCompile>
         <CppCompile Include="FormExport.cpp">
             <Form>ExportForm</Form>
@@ -235,12 +229,6 @@
             <FormType>dfm</FormType>
             <DependentOn>FormSearchUncheck.h</DependentOn>
             <BuildOrder>17</BuildOrder>
-        </CppCompile>
-        <CppCompile Include="FormSFDlg.cpp">
-            <Form>SFDlgForm</Form>
-            <FormType>dfm</FormType>
-            <DependentOn>FormSFDlg.h</DependentOn>
-            <BuildOrder>8</BuildOrder>
         </CppCompile>
         <CppCompile Include="Help.cpp">
             <DependentOn>Help.h</DependentOn>
@@ -358,18 +346,16 @@
         <DelphiCompile Include="Z_TagLibSource\WmaFiles.pas">
             <BuildOrder>43</BuildOrder>
         </DelphiCompile>
-        <FormResources Include="FormExport.dfm"/>
         <FormResources Include="FormExportMode.dfm"/>
         <FormResources Include="FormImport.dfm"/>
         <FormResources Include="FormImportMode.dfm"/>
         <FormResources Include="FormOFMSDlg.dfm"/>
-        <FormResources Include="FormDirDlg.dfm"/>
+        <FormResources Include="FormSearchUncheck.dfm"/>
+        <FormResources Include="FormExport.dfm"/>
         <FormResources Include="About.dfm"/>
         <FormResources Include="AutoSize.dfm"/>
-        <FormResources Include="FormSearchUncheck.dfm"/>
-        <FormResources Include="SMList.dfm"/>
         <FormResources Include="TagEditForm.dfm"/>
-        <FormResources Include="FormSFDlg.dfm"/>
+        <FormResources Include="SMList.dfm"/>
         <FormResources Include="Main.dfm"/>
         <FormResources Include="Progress.dfm"/>
         <BuildConfiguration Include="Release">
@@ -421,7 +407,7 @@
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
-                <DeployFile Condition="'$(DynamicRTL)'=='true' And '$(Multithreaded)'=='true'" LocalName="$(BDS)\bin\cc32c270mt.dll" Class="DependencyModule">
+                <DeployFile Condition="'$(DynamicRTL)'=='true' And '$(Multithreaded)'!='true'" LocalName="$(BDS)\bin\cc32c270.dll" Class="DependencyModule">
                     <Platform Name="Win32">
                         <Overwrite>true</Overwrite>
                     </Platform>
@@ -502,7 +488,7 @@
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
-                <DeployFile Condition="'$(DynamicRTL)'=='true' And '$(Multithreaded)'!='true'" LocalName="$(BDS)\bin\cc32c270.dll" Class="DependencyModule">
+                <DeployFile Condition="'$(DynamicRTL)'=='true' And '$(Multithreaded)'=='true'" LocalName="$(BDS)\bin\cc32c270mt.dll" Class="DependencyModule">
                     <Platform Name="Win32">
                         <Overwrite>true</Overwrite>
                     </Platform>

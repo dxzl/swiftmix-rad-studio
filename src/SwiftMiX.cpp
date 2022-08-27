@@ -6,18 +6,16 @@
 //---------------------------------------------------------------------------
 #include <Vcl.Styles.hpp>
 #include <Vcl.Themes.hpp>
-USEFORM("FormExport.cpp", ExportForm);
 USEFORM("FormExportMode.cpp", ExportModeForm);
 USEFORM("FormImport.cpp", ImportForm);
 USEFORM("FormImportMode.cpp", ImportModeForm);
 USEFORM("FormOFMSDlg.cpp", OFMSDlgForm);
-USEFORM("FormDirDlg.cpp", DirDlgForm);
+USEFORM("FormSearchUncheck.cpp", SearchUncheckForm);
+USEFORM("FormExport.cpp", ExportForm);
 USEFORM("About.cpp", AboutForm);
 USEFORM("AutoSize.cpp", AutoSizeForm);
-USEFORM("FormSearchUncheck.cpp", SearchUncheckForm);
 USEFORM("SMList.cpp", PlaylistForm);
 USEFORM("TagEditForm.cpp", FormTags);
-USEFORM("FormSFDlg.cpp", SFDlgForm);
 USEFORM("Main.cpp", MainForm);
 USEFORM("Progress.cpp", ProgressForm);
 //---------------------------------------------------------------------------

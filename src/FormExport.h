@@ -2,13 +2,13 @@
 #ifndef FormExportH
 #define FormExportH
 //---------------------------------------------------------------------------
-#include <Classes.hpp>
-#include <Controls.hpp>
-#include <StdCtrls.hpp>
-#include <Forms.hpp>
+#include <System.Classes.hpp>
+#include <Vcl.Controls.hpp>
+#include <Vcl.StdCtrls.hpp>
+#include <Vcl.Forms.hpp>
+#include <Vcl.Dialogs.hpp>
 //---------------------------------------------------------------------------
 // Forward class references...
-class TSFDlgForm;
 class TExportModeForm;
 class TPlaylistForm;
 //---------------------------------------------------------------------------

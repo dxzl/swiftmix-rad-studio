@@ -2,7 +2,7 @@
 #ifndef MainH
 #define MainH
 //---------------------------------------------------------------------------
-#define VERSION "2.03"
+#define VERSION "2.04"
 #define FREEWARE_EDITION true
 #define DEBUG_ON false // Include a debug console, use MainForm->CWrite("")
 //---------------------------------------------------------------------------
@@ -30,6 +30,8 @@
 #include <Vcl.Menus.hpp>
 #include <Vcl.OleCtrls.hpp>
 #include <Vcl.StdCtrls.hpp>
+#include <Vcl.FileCtrl.hpp>
+#include "WMPLib_OCX.h"
 
 #include "Resource.h"
 #include "DefaultStrings.h"
@@ -43,12 +45,10 @@
 //#include "LicenseKey.h"
 #include "AutoSize.h"
 #include "About.h"
-#include "FormDirDlg.h"
 #include "FormImportMode.h"
 #include "FormExportMode.h"
 #include "FormSearchUncheck.h"
 #include "SMList.h"
-#include "FormSFDlg.h"
 #include "FormOFMSDlg.h"
 #include "FormImport.h" // include FormOFDlg.h and SMList.h before this
 #include "FormExport.h"
@@ -442,6 +442,7 @@ public:    // User declarations
   bool __fastcall DeleteCacheFile(TPlaylistForm* f, long cacheNumber=0);
   String __fastcall GetURL(TCheckListBox* l, int idx);
   bool __fastcall ReleaseForm(TForm* f);
+  bool __fastcall ReleaseFormNoClose(TForm* f);
 
   int RWM_SwiftMixPlay, RWM_SwiftMixTime, RWM_SwiftMixState;
   bool bFadeRight, bAutoSizePrompt;

@@ -58,6 +58,9 @@
 #include <vcl.h>
 #include "Main.h"
 #pragma hdrstop
+//---------------------------------------------------------------------------
+#pragma package(smart_init)
+#pragma resource "*.dfm"
 
 #include "FormOFMSDlg.h"
 
@@ -75,10 +78,6 @@ tRemoveWindowSubclass pRemoveWindowSubclass;
 tDefSubclassProc pDefSubclassProc;
 tInitCommonControlsEx pInitCommonControlsEx;
 
-//---------------------------------------------------------------------------
-#pragma package(smart_init)
-#pragma resource "*.dfm"
-TOFMSDlgForm *OFMSDlgForm;
 //---------------------------------------------------------------------------
 //  typedef struct tagOFN {
 //    DWORD         lStructSize;

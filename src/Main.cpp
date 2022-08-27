@@ -9,6 +9,7 @@
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
 #pragma link "WMPLib_OCX"
+#pragma link "WMPLib_OCX"
 #pragma resource "*.dfm"
 
 TMainForm* MainForm;
@@ -23,6 +24,22 @@ bool __fastcall TMainForm::ReleaseForm(TForm* f)
   {
     try{
       f->Close();
+      Application->ProcessMessages();
+      f->Release();
+      Application->ProcessMessages();
+    }
+    catch(...){
+      return false;
+    }
+  }
+  return true;
+}
+//---------------------------------------------------------------------------
+bool __fastcall TMainForm::ReleaseFormNoClose(TForm* f)
+{
+  if (f != NULL)
+  {
+    try{
       f->Release();
       Application->ProcessMessages();
     }
@@ -328,11 +345,6 @@ void __fastcall TMainForm::FormCloseQuery(TObject *Sender, bool &CanClose)
 //---------------------------------------------------------------------------
 void __fastcall TMainForm::FormClose(TObject* Sender, TCloseAction &Action)
 {
-  if (ReleaseForm((TForm*)SFDlgForm))
-    SFDlgForm = NULL;
-  if (ReleaseForm((TForm*)OFMSDlgForm))
-    OFMSDlgForm = NULL;
-
   TRegHelper* pReg = NULL;
 
   try
@@ -2131,9 +2143,9 @@ void __fastcall TMainForm::ImportPlaylist1Click(TObject* Sender)
   if (ListA == NULL || ListA->IsImportDlg)
     return;
 
-  TImportForm* id = ListA->CreateImportDialog();
+  TImportForm* pTemp = ListA->CreateImportDialog();
 
-  int Count = id->Dialog(ListA, FsDeskDir, "Import PlayerA Playlist");
+  int Count = pTemp->Dialog(ListA, FsDeskDir, "Import PlayerA Playlist");
 
   if (Count > 0)
   {
@@ -2144,19 +2156,20 @@ void __fastcall TMainForm::ImportPlaylist1Click(TObject* Sender)
     ShowPlaylist(ListA);
   }
   else if (Count == 0)
-    ShowMessage("Unable to load playlist (is it empty?)\nIs your music drive plugged in?");
+    ShowMessage("Unable to load playlist (is it empty?)\n"
+                           "Is your music drive plugged in?");
 
   ListA->DestroyImportDialog();
 }
 
 void __fastcall TMainForm::ImportPlaylist2Click(TObject* Sender)
 {
-  if (ListB == NULL)
+  if (ListB == NULL || ListB->IsImportDlg)
     return;
 
-  Application->CreateForm(__classid(TImportForm), &ImportForm);
+  TImportForm* pTemp = ListB->CreateImportDialog();
 
-  int Count = ImportForm->Dialog(ListB, FsDeskDir, "Import PlayerB Playlist");
+  int Count = pTemp->Dialog(ListB, FsDeskDir, "Import PlayerB Playlist");
 
   if (Count > 0)
   {
@@ -2167,47 +2180,43 @@ void __fastcall TMainForm::ImportPlaylist2Click(TObject* Sender)
     ShowPlaylist(ListB);
   }
   else if (Count == 0)
-    ShowMessage("Unable to load playlist (is it empty?)\nIs your music drive plugged in?");
+    ShowMessage("Unable to load playlist (is it empty?)\n"
+                           "Is your music drive plugged in?");
 
-  if (ReleaseForm((TForm*)ImportForm))
-    ImportForm = NULL;
+  ListB->DestroyImportDialog();
 }
 //---------------------------------------------------------------------------
 void __fastcall TMainForm::ExportPlaylist1Click(TObject* Sender)
 {
-  TExportForm* pExportForm = NULL;
-
   try
   {
-    Application->CreateForm(__classid(TExportForm), &pExportForm);
+    TExportForm* pTemp = ListA->CreateExportDialog();
 
-    int Count = pExportForm->Dialog(ListA, FsDeskDir, "Export PlayerA Playlist");
+    int Count = pTemp->Dialog(ListA, FsDeskDir, "Export PlayerA Playlist");
 
     if (Count == 0)
       ShowMessage("Unable to export list or list empty...");
   }
   __finally
   {
-    ReleaseForm((TForm*)pExportForm);
+    ListA->DestroyExportDialog();
   }
 }
 
 void __fastcall TMainForm::ExportPlaylist2Click(TObject* Sender)
 {
-  TExportForm* pExportForm = NULL;
-
   try
   {
-    Application->CreateForm(__classid(TExportForm), &pExportForm);
+    TExportForm* pTemp = ListB->CreateExportDialog();
 
-    int Count = pExportForm->Dialog(ListB, FsDeskDir, "Export PlayerB Playlist");
+    int Count = pTemp->Dialog(ListB, FsDeskDir, "Export PlayerB Playlist");
 
     if (Count == 0)
       ShowMessage("Unable to export list or list empty...");
   }
   __finally
   {
-    ReleaseForm((TForm*)pExportForm);
+    ListB->DestroyExportDialog();
   }
 }
 //---------------------------------------------------------------------------
@@ -2419,7 +2428,6 @@ void __fastcall TMainForm::MenuExportSongFilesandListsClick(TObject* Sender)
     return;
   }
 
-  TDirDlgForm* pDirDlgForm = NULL;
   TExportForm* pExportForm = NULL;
 
   ClearFailedToCopyList();
@@ -2438,28 +2446,20 @@ void __fastcall TMainForm::MenuExportSongFilesandListsClick(TObject* Sender)
       if (AutoFitToDVD(lBytesNeeded) < 0)
         return;
 
-      Application->CreateForm(__classid(TDirDlgForm), &pDirDlgForm);
-
-      if (pDirDlgForm == NULL)
+      String sDir = FsDeskDir;
+      if (!SelectDirectory("Choose destination folder:", "", sDir))
         return;
 
-      pDirDlgForm->AutoScroll = false; // turn off autoscroll
-
-      // Setting CSIDL_MYMUSIC works but the user can't go up from there!
-      String sRootDir = pDirDlgForm->Execute(CSIDL_DESKTOPDIRECTORY);
-
-      pDirDlgForm->Close();
-
-      int len = sRootDir.Length();
+      int len = sDir.Length();
 
       // detect Cancel
       if (!len)
         return;
 
-      if (sRootDir[len] != '\\')
-        sRootDir += '\\'; // add trailing backslash!
+      if (sDir[len] != '\\')
+        sDir += '\\'; // add trailing backslash!
 
-      String sExportDir = sRootDir + String(EXPORT_DIR);
+      String sExportDir = sDir + String(EXPORT_DIR);
 
       if (DirectoryExists(sExportDir))
       {
@@ -2522,9 +2522,9 @@ void __fastcall TMainForm::MenuExportSongFilesandListsClick(TObject* Sender)
 //      ExportForm->NoDialog(ListA, wFile, EXPORT_PATH_NONE, EXPORT_MODE_UTF8, false, false);
 //      wFile = wUserDir + "\\SwiftMiXB." + EXPORT_EXT;
 //      ExportForm->NoDialog(ListB, wFile,  EXPORT_PATH_NONE, EXPORT_MODE_UTF8, false, false);
-      String sFile = sRootDir + String(EXPORT_FILE) + "A." + String(EXPORT_EXT);
+      String sFile = sDir + String(EXPORT_FILE) + "A." + String(EXPORT_EXT);
       pExportForm->NoDialog(ListA, sFile, EXPORT_PATH_SWIFTMIX, EXPORT_MODE_UTF8, false, false, false);
-      sFile = sRootDir + String(EXPORT_FILE) + "B." + String(EXPORT_EXT);
+      sFile = sDir + String(EXPORT_FILE) + "B." + String(EXPORT_EXT);
       pExportForm->NoDialog(ListB, sFile,  EXPORT_PATH_SWIFTMIX, EXPORT_MODE_UTF8, false, false, false);
     }
     catch(...)
@@ -2534,7 +2534,7 @@ void __fastcall TMainForm::MenuExportSongFilesandListsClick(TObject* Sender)
   __finally
   {
     ReleaseForm((TForm*)pExportForm);
-    ReleaseForm((TForm*)pDirDlgForm);
+//    ReleaseForm((TForm*)pDirDlgForm);
     ClearFailedToCopyList();
     ListA->Progress->UnInit(true);
     ListB->Progress->UnInit(true);
