@@ -637,7 +637,7 @@ void __fastcall TPlaylistForm::FlashTimerEvent(TObject* Sender)
 
   if (CheckBox->Focused())
   {
-    if (CheckBox->ItemIndex != FTargetIdx)
+    if (CheckBox->ItemIndex != FTargetIdx && IsItemVisible(CheckBox, FTargetIdx))
       CheckBox->ItemIndex = FTargetIdx;
   }
   // if no items, or the player's index is -1, or player is in an unknown state, turn off selection
@@ -664,14 +664,14 @@ void __fastcall TPlaylistForm::FlashTimerEvent(TObject* Sender)
         CheckBox->ItemIndex = -1;
       bFlashOn = false;
     }
-    else
+    else if (IsItemVisible(CheckBox, FPlayIdx))
     {
       CheckBox->ItemIndex = FPlayIdx;
       bFlashOn = true;
     }
   }
   // if player is in stop or ready mode
-  else if (CheckBox->ItemIndex != FPlayIdx)
+  else if (CheckBox->ItemIndex != FPlayIdx && IsItemVisible(CheckBox, FPlayIdx))
     CheckBox->ItemIndex = FPlayIdx;
 }
 //---------------------------------------------------------------------------
@@ -900,7 +900,7 @@ void __fastcall TPlaylistForm::MyMoveSelected(TCheckListBox* DestList, TCheckLis
       }
       else
       {
-    ShowMessage("Error: Missing TPlayerURL object! (" + String(ii) + ")");
+        ShowMessage("Error: Missing TPlayerURL object! (" + String(ii) + ")");
         return; // __ finally will clean up...
       }
     }
@@ -987,6 +987,17 @@ void __fastcall TPlaylistForm::MyMoveSelected(TCheckListBox* DestList, TCheckLis
   }
 }
 //---------------------------------------------------------------------------
+bool __fastcall TPlaylistForm::IsItemVisible(TCheckListBox* clb, int idx)
+{
+  if (clb->Count == 0 || idx < 0)
+    return false;
+
+  int topIndex = clb->TopIndex;
+  int numItemsVisible = clb->ClientHeight/clb->ItemHeight;
+  int bottomIndex = topIndex + numItemsVisible;
+  return idx >= topIndex && idx < bottomIndex;
+}
+//---------------------------------------------------------------------------
 // bAllowDequeue defaults true
 void __fastcall TPlaylistForm::DeleteListItem(int idx, bool bDeleteFromCache)
 {
@@ -1051,7 +1062,7 @@ void __fastcall TPlaylistForm::DeleteListItem(int idx, bool bDeleteFromCache)
   catch(...) { ShowMessage("Error deleting list index: " + String(idx)); }
 }
 //---------------------------------------------------------------------------
-// overloaded...
+// overloaded... (called from Main.cpp AddFileToListBox()
 
 void __fastcall TPlaylistForm::AddListItem(String s)
 {
@@ -2307,7 +2318,7 @@ void __fastcall TPlaylistForm::SetTitle(void)
     }
 
     // Set listbox selection to match title
-    if (CheckBox->ItemIndex != SelectIdx)
+    if (CheckBox->ItemIndex != SelectIdx && IsItemVisible(CheckBox, SelectIdx))
       CheckBox->ItemIndex = SelectIdx;
 
     // Buttons and icon
@@ -2369,8 +2380,6 @@ void __fastcall TPlaylistForm::StartPlayPreview(void)
         // Handle "play preview" feature when Ctrl key is held down...
         if (!S.IsEmpty()){
           FPlayPreview = true;
-          CheckBox->ItemIndex = -1;
-          Application->ProcessMessages();
           Wmp->URL = S;
           Wmp->controls->set_currentPosition(PLAY_PREVIEW_START_TIME);
           if (PlayerA){
@@ -2398,11 +2407,6 @@ void __fastcall TPlaylistForm::StopPlayPreview(void)
   if (FPlayPreview){
     StopPlayer();
     FPlayPreview = false;
-// remove... 8/16/2022
-//    CheckBox->ItemIndex = FTargetIdx;
-// add...
-    QueueToIndex(FOldMouseItemIndex);
-
     Application->ProcessMessages();
   }
 }
@@ -2518,6 +2522,11 @@ void __fastcall TPlaylistForm::ExitEditModeClick(TObject* Sender)
   SetTitle(); // Start flashing again, etc.
 }
 //---------------------------------------------------------------------------
+void __fastcall TPlaylistForm::MenuScrollSelectedIntoViewClick(TObject *Sender)
+{
+  CheckBox->TopIndex = FTargetIdx;
+}
+//---------------------------------------------------------------------------
 void __fastcall TPlaylistForm::ClearListClick(TObject* Sender)
 // PopupMenu1 F4
 {
@@ -2541,9 +2550,20 @@ void __fastcall TPlaylistForm::CheckAllClick(TObject* Sender)
 void __fastcall TPlaylistForm::UncheckAllClick(TObject* Sender)
 // PopupMenu1 F6
 {
-  for (int ii = 0 ; ii < CheckBox->Count ; ii++)
-    if (ii != FPlayIdx && ii != FTargetIdx)
+  if (IsPlayOrPause())
+  {
+    for (int ii = 0 ; ii < CheckBox->Count ; ii++)
+      if (ii != FPlayIdx && ii != FTargetIdx)
+        ClearCheckState(ii, false);
+  }
+  else
+  {
+    FPlayIdx = -1;
+    FTargetIdx = -1;
+    CheckBox->ItemIndex = -1;
+    for (int ii = 0 ; ii < CheckBox->Count ; ii++)
       ClearCheckState(ii, false);
+  }
 }
 //---------------------------------------------------------------------------
 void __fastcall TPlaylistForm::DeleteSelected1Click(TObject* Sender)
@@ -2616,6 +2636,16 @@ void __fastcall TPlaylistForm::MenuDeleteOddIndiciesClick(TObject *Sender)
   catch(...) {}
 }
 //---------------------------------------------------------------------------
+// Ok, so what's this for? Good question. Because I wrote it and need to
+// remember what it does myself :-)
+// It's for the case where the songs from an album(s) were ripped and
+// assigned a name followed by a number for the filename. The order of the songs
+// in the playlist will not be as you expect to see them. You want see
+// path.MySongs1, path.MySongs2, path.MySongs3 - in numerical order. But
+// the built-in list sorting sorts from the beginning of a string, not by
+// the numbers at the end of the string - so - if any songs are like I've
+// described, this function fixes their order so that a complete album plays
+// as expected and not out of sequence.
 void __fastcall TPlaylistForm::MenuFixOrderofTrailingNumbersClick(TObject *Sender)
 {
   // Return if no items or a song is playing
@@ -2636,7 +2666,7 @@ void __fastcall TPlaylistForm::MenuFixOrderofTrailingNumbersClick(TObject *Sende
     slTemp = new TStringList(); // holds interim songs with same base name
 
     // iterate through songs in list, grouping songs with the same
-  // filename except for trailing digits.
+    // filename except for trailing digits.
     for (int ii = 0; ii < ct; ii++)
     {
       TPlayerURL* p = (TPlayerURL*)CheckBox->Items->Objects[ii];
@@ -2700,9 +2730,12 @@ void __fastcall TPlaylistForm::MenuFixOrderofTrailingNumbersClick(TObject *Sende
 
     // now clear the main songlist and move new songs to it from sl
     CheckBox->Clear();
-    for (int ii = 0; ii < sl->Count; ii++)
-      AddListItem(sl->Strings[ii], (TPlayerURL*)sl->Objects[ii]);
-  this->QueueFirst();
+    for (int ii = 0; ii < sl->Count; ii++){
+      CheckBox->Items->AddObject(sl->Strings[ii], (TObject*)sl->Objects[ii]);
+      CheckBox->State[ii] = cbGrayed;
+    }
+
+    this->QueueFirst();
   }
   __finally
   {
@@ -2763,12 +2796,126 @@ int __fastcall TPlaylistForm::GetTrailingDigits(String s, String &sNamePart, Str
   return (sDigits.Length() > 0) ? sDigits.ToIntDef(-1) : -1;
 }
 //---------------------------------------------------------------------------
-void __fastcall TPlaylistForm::RemoveDuplicates1Click(TObject* Sender)
+void __fastcall TPlaylistForm::SubmenuSortArtistClick(TObject *Sender)
+{
+  MySort(SORTBY_ARTIST);
+}
+//---------------------------------------------------------------------------
+void __fastcall TPlaylistForm::SubmenuSortAlbumClick(TObject *Sender)
+{
+  MySort(SORTBY_ALBUM);
+}
+//---------------------------------------------------------------------------
+void __fastcall TPlaylistForm::SubmenuSortTitleClick(TObject *Sender)
+{
+  MySort(SORTBY_TITLE);
+}
+//---------------------------------------------------------------------------
+void __fastcall TPlaylistForm::MySort(int iSortType)
 {
   // Return if no items or a song is playing
   if (Wmp == NULL || CheckBox->Count == 0 || Wmp->playState == WMPPlayState::wmppsPlaying)
   {
-  ShowMessage(STR[3]);
+    ShowMessage(STR[3]);
+    return;
+  }
+
+  int ct = CheckBox->Count;
+  if (ct < 2)
+    return;
+  TStringList* sl = NULL;
+  TStringList* slTemp = NULL;
+  TStringList* slNoTag = NULL;
+  try
+  {
+    // slTemp will hold sorted list of artist names with Object field of
+    // each item holding the original list-index into CheckBox
+    if ((slTemp = new TStringList()) == NULL)
+      return;
+    if ((sl = new TStringList()) == NULL)
+      return;
+    if ((slNoTag = new TStringList()) == NULL)
+      return;
+
+    // iterate through songs in CheckBox, adding their MP3 tag artist-names
+    // to slTemp, then set the Sort flag to sort slTemp by Artist.
+    TGeneralAudioFile* f = NULL;
+    String sSortStr;
+    TPlayerURL* p;
+    for (int ii = 0; ii < ct; ii++)
+    {
+      p = (TPlayerURL*)CheckBox->Items->Objects[ii];
+      if (!p) continue;
+
+      sSortStr = "";
+      f = NULL;
+
+      try{
+        if ((f = new TGeneralAudioFile(p->path)) != NULL){
+          if (iSortType == SORTBY_ARTIST)
+            sSortStr = f->Artist;
+          else if (iSortType == SORTBY_ALBUM)
+            sSortStr = f->Album;
+          else
+            sSortStr = f->Title;
+          slTemp->AddObject(sSortStr, (TObject*)ii);
+        }
+        else // no tag available... use file-path
+          // NOTE: could write function to break file-path into artist, album, Etc.
+          slNoTag->AddObject(p->path, (TObject*)ii);
+      }
+      __finally{
+       if (f)
+         delete f;
+      }
+    }
+
+    slTemp->Sorted = true; // sort the list
+    Application->ProcessMessages();
+
+    // add entries with no MP3 tag-info to end of list...
+    slTemp->AddStrings(slNoTag);
+
+    // pluck entries from CheckBox and add them to sl
+    ct = slTemp->Count;
+    for (int ii = 0; ii < ct; ii++)
+    {
+      int idx = (int)slTemp->Objects[ii];
+      p = (TPlayerURL*)CheckBox->Items->Objects[idx];
+      if (!p) continue;
+      if (p->cacheNumber > 0)
+        MainForm->DeleteCacheFile(this, p->cacheNumber);
+      p->listIndex = ii;
+      p->cachePath = p->path;
+      p->state = cbGrayed;
+      sl->AddObject(CheckBox->Items->Strings[idx], (TObject*)p);
+      Application->ProcessMessages();
+    }
+
+    // now clear the main songlist and move new songs to it from sl
+    CheckBox->Clear();
+    for (int ii = 0; ii < sl->Count; ii++){
+      CheckBox->Items->AddObject(sl->Strings[ii], (TObject*)sl->Objects[ii]);
+      CheckBox->State[ii] = cbGrayed;
+    }
+
+    this->QueueFirst();
+  }
+  __finally
+  {
+    if (sl) delete sl;
+    if (slTemp) delete slTemp;
+    if (slNoTag) delete slNoTag;
+  }
+  CheckBox->Update();
+}
+//---------------------------------------------------------------------------
+void __fastcall TPlaylistForm::DeleteDuplicates1Click(TObject* Sender)
+{
+  // Return if no items or a song is playing
+  if (Wmp == NULL || CheckBox->Count == 0 || Wmp->playState == WMPPlayState::wmppsPlaying)
+  {
+    ShowMessage(STR[3]);
     return;
   }
 
@@ -3381,4 +3528,5 @@ void __fastcall TPlaylistForm::WMWindowPosChanging(TWMWindowPosChanging &msg)
 //  HRESULT put_currentPosition(double dCurrentPosition); // returns S_OK
 //stop
 //---------------------------------------------------------------------------
+
 

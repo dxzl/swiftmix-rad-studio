@@ -18,6 +18,11 @@
 
 #define PLAY_PREVIEW_START_TIME 5.0 // start time into song for play-preview
 
+// Sort constants
+#define SORTBY_ARTIST 0
+#define SORTBY_ALBUM  1
+#define SORTBY_TITLE  2
+
 // Timer times
 #define TIME_2000 1000  // used to exit edit mode after up/down/left/right scroll-keys were pressed
 #define TIME_300  300  // used to sort out what kind of check-box click we got
@@ -103,7 +108,7 @@ __published:  // IDE-managed Components
   TMenuItem *N2;
   TMenuItem *MoveSelected;
   TMenuItem *DeleteSelected;
-  TMenuItem *RemoveDuplicates1;
+  TMenuItem *DeleteDuplicates1;
   TMenuItem *RandomizeList1;
   TMenuItem *CopySelected;
   TMenuItem *CopyTagsToClipboard;
@@ -115,6 +120,11 @@ __published:  // IDE-managed Components
   TMenuItem *MenuDeleteOddIndicies;
   TCheckListBox *CheckBox;
   TTimer *MouseMoveDebounceTimer;
+  TMenuItem *MenuScrollSelectedIntoView;
+  TMenuItem *MenuSort;
+  TMenuItem *SubmenuSortAlbum;
+  TMenuItem *SubmenuSortArtist;
+  TMenuItem *SubmenuSortTitle;
   void __fastcall GeneralPurposeTimerEvent(TObject *Sender);
   void __fastcall FlashTimerEvent(TObject *Sender);
   void __fastcall FormHide(TObject *Sender);
@@ -137,7 +147,7 @@ __published:  // IDE-managed Components
   void __fastcall EditModeClick(TObject *Sender);
   void __fastcall ExitEditModeClick(TObject *Sender);
   void __fastcall DeleteSelectedClick(TObject *Sender);
-  void __fastcall RemoveDuplicates1Click(TObject *Sender);
+  void __fastcall DeleteDuplicates1Click(TObject *Sender);
   void __fastcall RandomizeList1Click(TObject *Sender);
   void __fastcall CopySelectedClick(TObject *Sender);
   void __fastcall CopyTagsToClipboardClick(TObject *Sender);
@@ -159,10 +169,16 @@ __published:  // IDE-managed Components
   void __fastcall CheckBoxMouseMove(TObject *Sender, TShiftState Shift, int X, int Y);
   void __fastcall FormKeyUp(TObject *Sender, WORD &Key, TShiftState Shift);
   void __fastcall CheckBoxKeyDown(TObject *Sender, WORD &Key, TShiftState Shift);
+  void __fastcall MenuScrollSelectedIntoViewClick(TObject *Sender);
+  void __fastcall SubmenuSortAlbumClick(TObject *Sender);
+  void __fastcall SubmenuSortArtistClick(TObject *Sender);
+  void __fastcall SubmenuSortTitleClick(TObject *Sender);
 
 
 private:  // User declarations
 
+  void __fastcall MySort(int iSortType);
+  bool __fastcall IsItemVisible(TCheckListBox* clb, int idx);
   void __fastcall StartPlayPreview(void);
   bool __fastcall QueueToIndex(int idx);
   String __fastcall GetTags(TPlayerURL* p);

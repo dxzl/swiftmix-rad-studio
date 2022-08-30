@@ -2,7 +2,7 @@
 #ifndef MainH
 #define MainH
 //---------------------------------------------------------------------------
-#define VERSION "2.04"
+#define VERSION "2.05"
 #define FREEWARE_EDITION true
 #define DEBUG_ON false // Include a debug console, use MainForm->CWrite("")
 //---------------------------------------------------------------------------
@@ -67,7 +67,7 @@
 #include <Vcl.StdCtrls.hpp>
 //---------------------------------------------------------------------------
 
-#define WEBSITE L"http://www.yahcolorize.com/swiftmix/index.htm"
+#define WEBSITE L"https://github.com/dxzl/swiftmix-rad-studio/releases/"
 #define EMAIL L"dxzl@live.com"
 #define REGISTRY_KEY L"Software\\Discrete-Time Systems\\MusicMixer\\"
 #define FILE_CACHE_PATH1 L"\\Discrete-Time Systems"
