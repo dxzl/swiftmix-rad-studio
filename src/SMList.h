@@ -100,24 +100,19 @@ __published:  // IDE-managed Components
   TMenuItem *ClearList;
   TMenuItem *CheckAll;
   TMenuItem *UncheckAll;
-  TMenuItem *DeleteSelected1;
   TPopupMenu *PopupMenu2;
   TMenuItem *EditMode1;
   TMenuItem *N1;
   TMenuItem *ExitEditMode1;
   TMenuItem *N2;
   TMenuItem *MoveSelected;
-  TMenuItem *DeleteSelected;
-  TMenuItem *DeleteDuplicates1;
+  TMenuItem *DeleteAllSelected;
   TMenuItem *RandomizeList1;
   TMenuItem *CopySelected;
   TMenuItem *CopyTagsToClipboard;
   TMenuItem *SelectAllItems;
   TMenuItem *CopyLinkToClipboard;
   TMenuItem *SearchandUncheck1;
-  TMenuItem *MenuFixOrderofTrailingNumbers;
-  TMenuItem *MenuDeleteEvenIndices;
-  TMenuItem *MenuDeleteOddIndicies;
   TCheckListBox *CheckBox;
   TTimer *MouseMoveDebounceTimer;
   TMenuItem *MenuScrollSelectedIntoView;
@@ -125,6 +120,13 @@ __published:  // IDE-managed Components
   TMenuItem *SubmenuSortAlbum;
   TMenuItem *SubmenuSortArtist;
   TMenuItem *SubmenuSortTitle;
+  TMenuItem *SubmenuSortByTrailingNumbers;
+  TMenuItem *MenuScrollPlayingIntoView;
+  TMenuItem *Delete1;
+  TMenuItem *SubmenuDeleteEven;
+  TMenuItem *SubmenuDeleteOdd;
+  TMenuItem *SubmenuDeleteSelected;
+  TMenuItem *SubmenuDeleteDups;
   void __fastcall GeneralPurposeTimerEvent(TObject *Sender);
   void __fastcall FlashTimerEvent(TObject *Sender);
   void __fastcall FormHide(TObject *Sender);
@@ -143,11 +145,9 @@ __published:  // IDE-managed Components
   void __fastcall ClearListClick(TObject *Sender);
   void __fastcall CheckAllClick(TObject *Sender);
   void __fastcall UncheckAllClick(TObject *Sender);
-  void __fastcall DeleteSelected1Click(TObject *Sender);
   void __fastcall EditModeClick(TObject *Sender);
   void __fastcall ExitEditModeClick(TObject *Sender);
-  void __fastcall DeleteSelectedClick(TObject *Sender);
-  void __fastcall DeleteDuplicates1Click(TObject *Sender);
+  void __fastcall DeleteAllSelectedClick(TObject *Sender);
   void __fastcall RandomizeList1Click(TObject *Sender);
   void __fastcall CopySelectedClick(TObject *Sender);
   void __fastcall CopyTagsToClipboardClick(TObject *Sender);
@@ -162,9 +162,6 @@ __published:  // IDE-managed Components
   void __fastcall FormClose(TObject *Sender, TCloseAction &Action);
   void __fastcall FormCloseQuery(TObject *Sender, bool &CanClose);
   void __fastcall SearchandUncheckClick(TObject *Sender);
-  void __fastcall MenuFixOrderofTrailingNumbersClick(TObject *Sender);
-  void __fastcall MenuDeleteEvenIndicesClick(TObject *Sender);
-  void __fastcall MenuDeleteOddIndiciesClick(TObject *Sender);
   void __fastcall MouseMoveDebounceTimerEvent(TObject *Sender);
   void __fastcall CheckBoxMouseMove(TObject *Sender, TShiftState Shift, int X, int Y);
   void __fastcall FormKeyUp(TObject *Sender, WORD &Key, TShiftState Shift);
@@ -173,16 +170,22 @@ __published:  // IDE-managed Components
   void __fastcall SubmenuSortAlbumClick(TObject *Sender);
   void __fastcall SubmenuSortArtistClick(TObject *Sender);
   void __fastcall SubmenuSortTitleClick(TObject *Sender);
+  void __fastcall SubmenuSortByTrailingNumbersClick(TObject *Sender);
+  void __fastcall SubmenuDeleteEvenClick(TObject *Sender);
+  void __fastcall SubmenuDeleteOddClick(TObject *Sender);
+  void __fastcall SubmenuDeleteSelectedClick(TObject *Sender);
+  void __fastcall SubmenuDeleteDupsClick(TObject *Sender);
+  void __fastcall MenuScrollPlayingIntoViewClick(TObject *Sender);
 
 
 private:  // User declarations
 
   void __fastcall MySort(int iSortType);
-  bool __fastcall IsItemVisible(TCheckListBox* clb, int idx);
+  bool __fastcall IsItemVisible(int idx);
   void __fastcall StartPlayPreview(void);
   bool __fastcall QueueToIndex(int idx);
   String __fastcall GetTags(TPlayerURL* p);
-  int __fastcall GetTrailingDigits(String s, String &sNamePart, String &sExt);
+  int __fastcall GetTrailingDigits(String s, String &sLeadingPath, String &sExt);
   int __fastcall IndexOfSmallestNumber(TStringList* sl);
   String __fastcall GetMediaTags(void);
   void __fastcall MyMoveSelected(TCheckListBox* DestList, TCheckListBox* SourceList, int x=-1, int y=-1);

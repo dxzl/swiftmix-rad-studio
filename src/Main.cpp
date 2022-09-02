@@ -1593,7 +1593,7 @@ void __fastcall TMainForm::AutoFadeTimerEvent(TObject* Sender)
 //          ListA->Wmp->URL = ListA->GetNext();
         }
 
-        if (ListA->TargetIndex < 0)
+        if (!ListA->Progress->Visible && ListA->TargetIndex < 0)
           if (FileDialog(ListA, SaveDirA, ADD_A_TITLE))
             ListA->QueueFirst();
       }
@@ -1635,7 +1635,7 @@ void __fastcall TMainForm::AutoFadeTimerEvent(TObject* Sender)
 //          ListB->Wmp->URL = ListB->GetNext();
         }
 
-        if (ListB->TargetIndex < 0)
+        if (!ListB->Progress->Visible && ListB->TargetIndex < 0)
           if (FileDialog(ListB, SaveDirB, ADD_B_TITLE))
             ListB->QueueFirst();
       }
