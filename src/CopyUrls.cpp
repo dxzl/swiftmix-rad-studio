@@ -376,7 +376,7 @@ void __fastcall TMyUrlCopy::TimerEvent(TObject* Sender)
           // was this a cache-write?
           if (p->cacheNumber == -1 && m_plForm)
           {
-          // set the calling TPlaylistForm's
+            // set the calling TPlaylistForm's
             p->cachePath = m_sDest;
             p->cacheNumber = m_plForm->CacheCount+1; // all cache #s must be non-zero!
 

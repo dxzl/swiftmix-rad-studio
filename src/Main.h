@@ -2,7 +2,7 @@
 #ifndef MainH
 #define MainH
 //---------------------------------------------------------------------------
-#define VERSION "2.07"
+#define VERSION "2.08"
 #define FREEWARE_EDITION true
 #define DEBUG_ON false // Include a debug console, use MainForm->CWrite("")
 //---------------------------------------------------------------------------
@@ -354,7 +354,7 @@ private:  // User declarations
   int FvolA, FvolB;
   int FcurrentVolA, FcurrentVolB; // volume as it transitions during a fade
 
-  int FMaxCacheFiles; // volumes set in registry
+  int FMaxCacheFiles;
 
   // Flags for registry settings
   bool bTypeCenterFade, bModeManualFade, bSendTiming;

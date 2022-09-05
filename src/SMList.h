@@ -85,9 +85,12 @@ class TPlayerURL
     String path, cachePath;
     TColor color;
     bool bDownloaded, bIsUri;
-    long cacheNumber; // has the current count of m_NumCachedFiles from FormMain
+    // has the current count of m_NumCachedFiles from FormMain
+    // -1 = pending cache-write
+    // 0 = nothing cached
+    long cacheNumber;
     TCheckBoxState state; // cbChecked indicates a playing song
-    int listIndex;
+    int temp;
 };
 //---------------------------------------------------------------------------
 class TPlaylistForm : public TForm
@@ -282,6 +285,7 @@ public:  // User declarations
   TOFMSDlgForm* __fastcall CreateFileDialog(void);
   void __fastcall AddListItem(String s);
   TPlayerURL* __fastcall InitTPlayerURL(String s);
+  TPlayerURL* __fastcall InitTPlayerURL(TPlayerURL* p);
   void __fastcall DeleteListItem(int idx, bool bDeleteFromCache=true);
   bool __fastcall RestoreCache(void);
   bool __fastcall IsPlayOrPause(void);

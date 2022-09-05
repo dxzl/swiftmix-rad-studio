@@ -848,10 +848,7 @@ void __fastcall TPlaylistForm::MyMoveSelected(TCheckListBox* DestList, TCheckLis
 
         TPlayerURL* p = (TPlayerURL*)SourceList->Items->Objects[ii];
         if (p)
-        {
           p->state = SourceList->State[ii]; // cbChecked indicates a playing song
-          p->listIndex = ii;
-        }
 
         sl->AddObject(SourceList->Items->Strings[ii], (TObject*)p);
         SourceList->Items->Delete(ii);
@@ -1065,7 +1062,6 @@ void __fastcall TPlaylistForm::DeleteListItem(int idx, bool bDeleteFromCache)
 void __fastcall TPlaylistForm::AddListItem(String s)
 {
   TPlayerURL* p = InitTPlayerURL(s);
-  p->listIndex = CheckBox->Count;
   AddListItem(s, p);
 }
 
@@ -1087,18 +1083,10 @@ bool __fastcall TPlaylistForm::RestoreCache(void)
   // reset/restore all song-file TPlayerURL structs
   for (int ii = 0; ii < CheckBox->Count; ii++)
   {
-    TPlayerURL* pOld = (TPlayerURL*)CheckBox->Items->Objects[ii];
-    if (pOld)
+    TPlayerURL* p = (TPlayerURL*)CheckBox->Items->Objects[ii];
+    if (p)
     {
-      String sPath = pOld->path;
-
-      // delete old object
-      try{ delete pOld; }
-      catch(...){}
-
-      TPlayerURL* p = InitTPlayerURL(sPath);
-      p->listIndex = ii;
-      CheckBox->Items->Objects[ii] = (TObject*)p;
+      InitTPlayerURL(p);
       CheckBox->Items->Strings[ii] = GetTags(p);
     }
   }
@@ -1156,14 +1144,21 @@ String __fastcall TPlaylistForm::GetTags(TPlayerURL* p)
 TPlayerURL* __fastcall TPlaylistForm::InitTPlayerURL(String s)
 {
   TPlayerURL* p = new TPlayerURL();
+  if (!p) return p;
+  p->path = s;
+  return InitTPlayerURL(p);
+}
+
+TPlayerURL* __fastcall TPlaylistForm::InitTPlayerURL(TPlayerURL* p)
+{
+  if (!p) return p;
   p->color = this->TextColor;
   p->bDownloaded = false;
-  p->bIsUri = MainForm->IsUri(s);
+  p->bIsUri = MainForm->IsUri(p->path);
   p->cacheNumber = 0; // 0 = not yet cached
-  // NOTE: p->URL will eventually be changed to the path of the temporary file after
-  // the file is moved to the temp area in GetNext().
-  p->path = s;
-  p->cachePath = s;
+  // NOTE: p->cachePath will eventually be changed to the path of the temporary
+  // file after the file is moved to the temp area in GetNext().
+  p->cachePath = p->path;
   p->state = cbGrayed;
   return p;
 }
@@ -1729,11 +1724,11 @@ void __fastcall TPlaylistForm::MediaError(LPDISPATCH Item)
         CheckBox->State[FPlayIdx] = cbUnchecked;
         TPlayerURL* p = (TPlayerURL*)CheckBox->Items->Objects[FPlayIdx];
         if (p){
-          if (MainForm->CacheEnabled && p->cacheNumber > 0 && FileExists(p->cachePath))
+          if (MainForm->CacheEnabled && p->cacheNumber > 0 && FileExists(p->cachePath)){
             MainForm->DeleteCacheFile(this, p->cacheNumber);
-
+            p->cacheNumber = 0;
+          }
           p->cachePath = p->path;
-          p->cacheNumber = 0;
           p->state = cbUnchecked;
         }
       }
@@ -2689,16 +2684,17 @@ void __fastcall TPlaylistForm::SubmenuSortByTrailingNumbersClick(TObject *Sender
       int iDigits = GetTrailingDigits(p->path, sLeadingPath1, sExt1);
       if (iDigits < 0)
       {
-        p->listIndex = sl->Count; // return this to normal-use!
         sl->AddObject(CheckBox->Items->Strings[ii], (TObject*)p);
         continue;
       }
       // add song at ii
-      if (p->cacheNumber > 0)
+      if (p->cacheNumber > 0){
         MainForm->DeleteCacheFile(this, p->cacheNumber);
-      p->listIndex = iDigits; // use this field to hold trailing number
+        p->cacheNumber = 0;
+      }
       p->cachePath = p->path;
       p->state = cbGrayed;
+      p->temp = iDigits; // use this field to hold trailing number
       slTemp->AddObject(CheckBox->Items->Strings[ii], (TObject*)p);
       for (int jj = ii+1; jj < ct; jj++)
       {
@@ -2709,11 +2705,13 @@ void __fastcall TPlaylistForm::SubmenuSortByTrailingNumbersClick(TObject *Sender
         if (iDigits < 0 || sLeadingPath1 != sLeadingPath2 || sExt1 != sExt2)
           continue;
         // add song at jj
-        if (p->cacheNumber > 0)
+        if (p->cacheNumber > 0){
           MainForm->DeleteCacheFile(this, p->cacheNumber);
-        p->listIndex = iDigits; // use this field to hold trailing number
+          p->cacheNumber = 0;
+        }
         p->cachePath = p->path;
         p->state = cbGrayed;
+        p->temp = iDigits; // use this field to hold trailing number
         slTemp->AddObject(CheckBox->Items->Strings[jj], (TObject*)p);
         CheckBox->Items->Objects[jj] = NULL; // mark it as processed
       }
@@ -2728,10 +2726,7 @@ void __fastcall TPlaylistForm::SubmenuSortByTrailingNumbersClick(TObject *Sender
           {
             p = (TPlayerURL*)slTemp->Objects[idx];
             if (p)
-            {
-              p->listIndex = sl->Count; // return this to normal-use!
               sl->AddObject(slTemp->Strings[idx], (TObject*)p);
-            }
             slTemp->Delete(idx);
           }
           else
@@ -2764,9 +2759,9 @@ int __fastcall TPlaylistForm::IndexOfSmallestNumber(TStringList* sl)
   for (int ii=0; ii<sl->Count; ii++)
   {
     TPlayerURL* p = (TPlayerURL*)sl->Objects[ii];
-    if (p && p->listIndex < iSmallest)
+    if (p && p->temp < iSmallest)
     {
-      iSmallest = p->listIndex;
+      iSmallest = p->temp;
       idx = ii;
     }
   }
@@ -2896,9 +2891,10 @@ void __fastcall TPlaylistForm::MySort(int iSortType)
       int idx = (int)slTemp->Objects[ii];
       p = (TPlayerURL*)CheckBox->Items->Objects[idx];
       if (!p) continue;
-      if (p->cacheNumber > 0)
+      if (p->cacheNumber > 0){
         MainForm->DeleteCacheFile(this, p->cacheNumber);
-      p->listIndex = ii;
+        p->cacheNumber = 0;
+      }
       p->cachePath = p->path;
       p->state = cbGrayed;
       sl->AddObject(CheckBox->Items->Strings[idx], (TObject*)p);
