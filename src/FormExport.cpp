@@ -197,7 +197,7 @@ int __fastcall TExportForm::NoDialog(TPlaylistForm* f, String sListPath,
       // <meta name="Generator" content="Microsoft Windows Media Player -- 12.0.9600.17415"/>
       // <meta name="ItemCount" content="85"/>
       sl->Add("   <meta name=\"Generator\" content=\"SwiftMiX Player -- " + String(VERSION) + "\"/>");
-      sl->Add("   <title>" + ExtractFileName(sListPath) + "</title>");
+      sl->Add("   <title>" + MainForm->MyExtractFileName(sListPath) + "</title>");
       sl->Add(" </head>");
       sl->Add(" <body>");
       sl->Add("   <seq>");
@@ -289,7 +289,7 @@ int __fastcall TExportForm::NoDialog(TPlaylistForm* f, String sListPath,
     {
       sl->Add("<ASX version = \"3.0\">");
       sl->Add("   <PARAM name = \"encoding\" value = " + sEnc + " />");
-      sl->Add("   <TITLE>" + ExtractFileName(sListPath) + "</TITLE>");
+      sl->Add("   <TITLE>" + MainForm->MyExtractFileName(sListPath) + "</TITLE>");
 
       for (int ii = 0 ; ii < len ; ii++)
       {
@@ -358,7 +358,7 @@ int __fastcall TExportForm::NoDialog(TPlaylistForm* f, String sListPath,
 
             String sCount = String(TotalCount+1) + "=";
             sl->Add("File" + sCount + sTemp);
-            sl->Add("Title" + sCount + UniversalExtractFileName(sTemp));
+            sl->Add("Title" + sCount + MainForm->MyExtractFileName(sTemp));
             sl->Add("Length" + sCount + "-1"); // ignore length (usually for streaming)
             TotalCount++;
           }
@@ -446,7 +446,7 @@ String __fastcall TExportForm::ProcessFileName(String sListPath,
     String sSongPath = sName;
 
     // Return the title (filename) in reference-variable sName
-    sName = UniversalExtractFileName(sSongPath);
+    sName = MainForm->MyExtractFileName(sSongPath);
 
     // If it's a non-file URL like HTTP://, just return it as-is...
     if (MainForm->IsUri(sSongPath) && !MainForm->IsFileUri(sSongPath))
@@ -527,7 +527,7 @@ String __fastcall TExportForm::GetFileString(String sListPath,
       try
       {
         String sListDir = ExtractFilePath(sListPath); // this function adds a trailing backslash!
-        String sNewSongPath = sListDir + String(EXPORT_DIR) + ExtractFileName(sSongPath);
+        String sNewSongPath = sListDir + String(EXPORT_DIR) + MainForm->MyExtractFileName(sSongPath);
 
         // this gives us a path relative to the new (possibly yet to be written) file's destination...
         sTemp = ExtractRelativePath(sListDir, sNewSongPath);
@@ -536,7 +536,7 @@ String __fastcall TExportForm::GetFileString(String sListPath,
 
     }
     else if (Mode == EXPORT_PATH_NONE)
-      sTemp = ExtractFileName(sSongPath); // filename only
+      sTemp = MainForm->MyExtractFileName(sSongPath); // filename only
     else if (Mode == EXPORT_PATH_ROOTED)
     {
       String sDrive = ExtractFileDrive(sSongPath);
@@ -608,26 +608,6 @@ String __fastcall TExportForm::StripFileUriPrefixIfAny(String &sIn)
     return sTemp;
   }
   catch(...) { return ""; }
-}
-//---------------------------------------------------------------------------
-String __fastcall TExportForm::UniversalExtractFileName(String sIn)
-{
-  int len = sIn.Length();
-  int idx = len;
-  WideChar c;
-
-  for(;;)
-  {
-    if (idx == 0) break;
-    c = sIn[idx];
-    if (c == '\\' || c == '/') break;
-    idx--;
-  }
-
-  if (idx != 0)
-    return sIn.SubString(idx+1, len-(idx+1)+1);
-
-  return sIn;
 }
 //---------------------------------------------------------------------------
 String __fastcall TExportForm::PercentEncode(String sIn,

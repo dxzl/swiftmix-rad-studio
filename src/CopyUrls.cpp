@@ -5,6 +5,7 @@
 
 #include "CopyUrls.h"
 #include "SMList.h"
+#include "PlaylistHelper.h"
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
 //---------------------------------------------------------------------------
@@ -48,7 +49,7 @@ __fastcall TMyUrlCopy::TMyUrlCopy(TComponent* Owner, String sSource, String sDes
   }
 
   m_plForm = (TPlaylistForm*)Owner;
-  m_list = (m_plForm == ListA) ? 0 : 1;
+  m_listId = (m_plForm == ListA) ? PLAYER_A_ID : PLAYER_B_ID;
 
   m_sSource = sSource;
   m_sDest = sDest;
@@ -70,7 +71,7 @@ __fastcall TMyUrlCopy::TMyUrlCopy(TComponent* Owner, String sSource, String sDes
   pTimer->Interval = m_timerInterval;
   pTimer->OnTimer = this->TimerEvent;
 
-  // add ourself's object-pointer to TList in the parent form (TProgress)
+  // add this instance of TMyUrlCopy to MainForm->MyFileCopyList
   MainForm->MyFileCopyList->Add(this);
 
   pTimer->Enabled = true; // 50ms and we start copy
@@ -315,7 +316,7 @@ void __fastcall TMyUrlCopy::TimerEvent(TObject* Sender)
     if (m_retCode != -1 && m_retCode != 0)
     {
       if (MainForm->FailedToCopyList)
-        MainForm->AddFailure(this->m_sSource, this->m_sDest, this->m_idx, this->m_list);
+        MainForm->AddFailure(this->m_sSource, this->m_sDest, this->m_idx, this->m_listId);
 
 #if DEBUG_ON
       String sErr = "TMyUrlCopy::TimerEvent():retCode:" + String(m_retCode) + ":";
@@ -367,36 +368,19 @@ void __fastcall TMyUrlCopy::TimerEvent(TObject* Sender)
     }
     else // we're done! - set up to delete ourself!
     {
-      // handle a cache-file write's special considerations...
-      if (m_idx >= 0 && m_idx < m_plForm->Count)
+      // need to add entry to a playlist's CacheList if the
+      // cacheNumber is -1 (a flag indicating this is a cache-file write)
+      if (m_plForm && m_idx >= 0 && m_idx < m_plForm->Count)
       {
         TPlayerURL* p = (TPlayerURL*)m_plForm->CheckBox->Items->Objects[m_idx];
-        if (p)
+        // check cachNumber for flag of "-1" which indicates a cache-
+        // write is in-progress...
+        if (p && p->cacheNumber == -1)
         {
-          // was this a cache-write?
-          if (p->cacheNumber == -1 && m_plForm)
-          {
-            // set the calling TPlaylistForm's
-            p->cachePath = m_sDest;
-            p->cacheNumber = m_plForm->CacheCount+1; // all cache #s must be non-zero!
-
-            // delete the oldest file in the cache...
-            MainForm->DeleteCacheFile(m_plForm);
-
-            m_plForm->CacheCount++;
-
-            // if count is 0 (unlikely) - we've exceeded the # files in a 32 bit int
-            // of continuous playback... if so, just turn off caching and the files
-            // (up to MAX_CACHE_FILES) will be deleted on exit along with the directory
-            // containing them.
-            if (m_plForm->CacheCount == 0)
-               MainForm->CacheEnabled = false;
-    #if DEBUG_ON
-            MainForm->CWrite( "\r\nCopyUrls cache-write success! \"" + m_sDest + "\"\r\n");
-    #endif
-          }
+          if (pFC->AddCacheEntry(m_plForm, m_sDest, m_idx))
+            p->cacheNumber = m_plForm->CacheList->Count;
           else
-            p->cacheNumber = 0; // make sure we clear this from -1 (cache write in-progress)
+            p->cacheNumber = 0;
         }
       }
     }

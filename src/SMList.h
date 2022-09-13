@@ -82,13 +82,13 @@ struct STRUCT_B
 class TPlayerURL
 {
   public:
-    String path, cachePath;
+    String path;
     TColor color;
     bool bDownloaded, bIsUri;
     // has the current count of m_NumCachedFiles from FormMain
     // -1 = pending cache-write
     // 0 = nothing cached
-    long cacheNumber;
+    int cacheNumber;
     TCheckBoxState state; // cbChecked indicates a playing song
     int temp;
 };
@@ -137,7 +137,7 @@ __published:  // IDE-managed Components
   void __fastcall FormDeactivate(TObject *Sender);
   void __fastcall FormKeyDown(TObject *Sender, WORD &Key, TShiftState Shift);
   void __fastcall PositionTimerEvent(TObject *Sender);
-  void __fastcall CheckBoxClick(TObject* Sender);
+  void __fastcall CheckBoxClick(TObject *Sender);
   void __fastcall CheckBoxClickCheck(TObject *Sender);
   void __fastcall CheckBoxDblClick(TObject *Sender);
   void __fastcall CheckBoxMouseDown(TObject *Sender, TMouseButton Button, TShiftState Shift, int X, int Y);
@@ -179,38 +179,48 @@ __published:  // IDE-managed Components
   void __fastcall SubmenuDeleteSelectedClick(TObject *Sender);
   void __fastcall SubmenuDeleteDupsClick(TObject *Sender);
   void __fastcall MenuScrollPlayingIntoViewClick(TObject *Sender);
+  void __fastcall FormShow(TObject *Sender);
+// NOTE: owner-draw of color text used to work - but the visual styles
+// after Windows Vista borked it...  key event-hooks are OnMeasureItem
+// and OnDrawItem and the Style property should be lbOwnerDrawVariable -
+// but - at present, an exception is thrown - due to Visual Styles I think...
+  void __fastcall CheckBoxDrawItem(TWinControl *Control, int Index, TRect &Rect,
+          TOwnerDrawState State);
+//  void __fastcall CheckBoxMeasureItem(TWinControl *Control, int Index, int &Height);
+
 
 
 private:  // User declarations
 
+//  void __fastcall DrawFocusRect(TCanvas* c, HPEN hpen, TRect &r);
   void __fastcall MySort(int iSortType);
   bool __fastcall IsItemVisible(int idx);
   void __fastcall StartPlayPreview(void);
   bool __fastcall QueueToIndex(int idx);
-  String __fastcall GetTags(TPlayerURL* p);
+  String __fastcall GetTags(TPlayerURL *p);
   int __fastcall GetTrailingDigits(String s, String &sLeadingPath, String &sExt);
-  int __fastcall IndexOfSmallestNumber(TStringList* sl);
+  int __fastcall IndexOfSmallestNumber(TStringList *sl);
   String __fastcall GetMediaTags(void);
-  void __fastcall MyMoveSelected(TCheckListBox* DestList, TCheckListBox* SourceList, int x=-1, int y=-1);
-//  bool __fastcall InsertNewDeleteOld(TCheckListBox* SourceList,
-//                TCheckListBox* DestList, int SourceIndex, int &DestIndex );
-  bool __fastcall IsStateUnchecked(TCheckListBox* clb, int idx);
-  bool __fastcall IsStateChecked(TCheckListBox* clb, int idx);
-  bool __fastcall IsStateGrayed(TCheckListBox* clb, int idx);
+  void __fastcall MyMoveSelected(TCheckListBox *DestList, TCheckListBox *SourceList, int x=-1, int y=-1);
+//  bool __fastcall InsertNewDeleteOld(TCheckListBox *SourceList,
+//                TCheckListBox *DestList, int SourceIndex, int &DestIndex );
+  bool __fastcall IsStateUnchecked(TCheckListBox *clb, int idx);
+  bool __fastcall IsStateChecked(TCheckListBox *clb, int idx);
+  bool __fastcall IsStateGrayed(TCheckListBox *clb, int idx);
   void __fastcall SetGrayedState(int idx);
   void __fastcall SetCheckedState(int idx);
   void __fastcall SetItemState(int idx);
   void __fastcall ClearCheckState(int idx, bool bRequeueIfRepeatMode=true);
   void __fastcall UpdatePlayerStatus(void);
-  bool __fastcall SendToSwiftMix(void * sms, int size, int msg);
-  void __fastcall SetTimer(int mode, int time=TIME_50);
+  bool __fastcall SendToSwiftMix(void  *sms, int size, int msg);
+  bool __fastcall SetTimer(int mode, int time=TIME_50);
   void __fastcall CheckAllItems(void);
   void __fastcall WMListDropFile(TWMDropFiles &Msg);
 //  void __fastcall WMVListScroll(TWMScroll &Msg);
   void __fastcall WMSetText(TWMSetText &Msg);
 
-  void __fastcall AddListItem(String s, TPlayerURL* p);
-  void __fastcall InsertListItem(int idx, String s, TPlayerURL* p);
+  void __fastcall AddListItem(String s, TPlayerURL *p);
+  void __fastcall InsertListItem(int idx, String s, TPlayerURL *p);
   void __fastcall ClearListItems(void);
 
   int m_TimerMode, m_failSafeCounter;
@@ -220,19 +230,22 @@ private:  // User declarations
   bool m_bSkipFilePrompt, m_bOpening;
 
   // Properties
-  TCheckListBox* FCheckBox;
-  TPlaylistForm* FOtherForm;
+  TStringList *pCacheList;
+  TCheckListBox *FCheckBox;
+  TPlaylistForm *FOtherForm;
   TWindowsMediaPlayer *FWmp, *FOtherWmp;
-  int FNextIdx, FTargetIdx, FPlayIdx, FTempIdx, FOldMouseItemIndex;
   TColor FTextColor;
+  int FNextIdx, FTargetIdx, FPlayIdx, FTempIdx, FOldMouseItemIndex;
+  UInt16 FuniqueNumber;
+  String FCachePath; // must have trailing backslash!
+  int FPlayerId;
   bool FEditMode, FPlayPreview;
-  bool FPlayerA, FKeySpaceDisable;
-  long FCacheCount;
+  bool FKeySpaceDisable;
 
-  TOFMSDlgForm* pOFMSDlg;
-  TExportForm* pExportDlg;
-  TImportForm* pImportDlg;
-  TProgressForm* pProgress;
+  TOFMSDlgForm *pOFMSDlg;
+  TExportForm *pExportDlg;
+  TImportForm *pImportDlg;
+  TProgressForm *pProgress;
 
   // Added to intercept a WM_SETTEXT and set unicode window captions
 //  Controls::TWndMethod OldWinProc;
@@ -280,14 +293,14 @@ public:  // User declarations
   void __fastcall GetSongInfo(STRUCT_A &sms);
   void __fastcall SetTitle(void);
   String __fastcall GetNext(bool bNoSet = false, bool bEnableRandom = false);
-  TImportForm* __fastcall CreateImportDialog(void);
-  TExportForm* __fastcall CreateExportDialog(void);
-  TOFMSDlgForm* __fastcall CreateFileDialog(void);
+  TImportForm *__fastcall CreateImportDialog(void);
+  TExportForm *__fastcall CreateExportDialog(void);
+  TOFMSDlgForm *__fastcall CreateFileDialog(void);
   void __fastcall AddListItem(String s);
-  TPlayerURL* __fastcall InitTPlayerURL(String s);
-  TPlayerURL* __fastcall InitTPlayerURL(TPlayerURL* p);
+  TPlayerURL *__fastcall InitTPlayerURL(String s);
+  TPlayerURL *__fastcall InitTPlayerURL(TPlayerURL *p);
   void __fastcall DeleteListItem(int idx, bool bDeleteFromCache=true);
-  bool __fastcall RestoreCache(void);
+  bool __fastcall RestoreCache(String sCachePath);
   bool __fastcall IsPlayOrPause(void);
   void __fastcall StopPlayer(void);
   void __fastcall StartPlayer(void);
@@ -295,23 +308,26 @@ public:  // User declarations
 
   STRUCT_A MediaInfo;
 
-//  __property TCheckListBox* CheckBox = {read = FCheckBox};
+//  __property TCheckListBox *CheckBox = {read = FCheckBox};
   __property int Count = {read = GetCount};
+  __property UInt16 UniqueNumber = {read = FuniqueNumber, write = FuniqueNumber};
   __property int PlayIdx = {read = FPlayIdx, write = FPlayIdx};
-  __property TPlaylistForm* OtherForm = {read = FOtherForm, write = FOtherForm};
-  __property TWindowsMediaPlayer* Wmp = {read = FWmp, write = FWmp};
-  __property TWindowsMediaPlayer* OtherWmp = {read = FOtherWmp, write = FOtherWmp};
+  __property TPlaylistForm *OtherForm = {read = FOtherForm, write = FOtherForm};
+  __property TWindowsMediaPlayer *Wmp = {read = FWmp, write = FWmp};
+  __property TWindowsMediaPlayer *OtherWmp = {read = FOtherWmp, write = FOtherWmp};
+  __property int TempIndex = {read = FTempIdx, write = FTempIdx};
   __property int NextIndex = {read = FNextIdx, write = FNextIdx};
+  __property TColor TextColor = {read = FTextColor, write = FTextColor};
   __property int TargetIndex = {read = FTargetIdx, write = FTargetIdx};
-  __property bool PlayerA = {read = FPlayerA, write = FPlayerA};
+  __property int PlayerID = {read = FPlayerId, write = FPlayerId};
   __property bool InEditMode = {read = FEditMode};
   __property bool InPlayPreview = {read = FPlayPreview};
   __property bool IsImportDlg = {read = GetIsImportDlg};
   __property bool IsExportDlg = {read = GetIsExportDlg};
   __property bool IsOpenDlg = {read = GetIsOpenDlg};
-  __property TColor TextColor = {read = FTextColor};
-  __property long CacheCount = {read = FCacheCount, write = FCacheCount};
-  __property TProgressForm* Progress = {read = pProgress};
+  __property TProgressForm *Progress = {read = pProgress};
+  __property String CachePath = {read = FCachePath, write = FCachePath};
+  __property TStringList *CacheList = {read = pCacheList, write = pCacheList};
 };
 //---------------------------------------------------------------------------
 extern PACKAGE TPlaylistForm *ListA;

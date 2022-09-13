@@ -27,7 +27,7 @@ class TMyFileCopy
     long m_lTotalWritten;
     long m_fr, m_fw; // file handles
     String m_sSource, m_sDest;
-    int m_retCode, m_idx, m_list;
+    int m_retCode, m_idx, m_listId;
     int m_timerInterval;
     bool m_bCancel, m_bTimeout;
     TPlaylistForm* m_plForm;
@@ -45,6 +45,7 @@ class TMyFileCopy
     int __fastcall MyFileCopy(void);
 
   __property int RetCode = {read = m_retCode};
+  __property int ListID = {read = m_listId};
   __property bool Cancel = {read = m_bCancel, write = m_bCancel};
 };
 //---------------------------------------------------------------------------

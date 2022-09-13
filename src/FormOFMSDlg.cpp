@@ -2201,7 +2201,7 @@ bool __fastcall TOFMSDlgForm::NewFileSelected(HWND hDlg)
     if (hWndEdit != NULL)
     {
       if (!FDisplayFullPath)
-        newFile = ExtractFileName(newFile);
+        newFile = MainForm->MyExtractFileName(newFile);
 
       SetWindowTextW(hWndEdit, newFile.c_bstr());
       bRet = true;

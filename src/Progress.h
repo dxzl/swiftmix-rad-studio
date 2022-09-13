@@ -39,15 +39,17 @@ protected:
   void __fastcall SetProgressPosition(int Value);
   bool __fastcall GetShowCancelButton(void);
   void __fastcall SetShowCancelButton(int Value);
+  String __fastcall GetLabelText(void);
+  void __fastcall SetLabelText(String Value);
 
 private:  // User declarations
 
   int FTotalExpectedIterations, FCumulativeIterations, FProgressMode;
   bool FCanceled;
-  TList* pTProgressVarsList;
+  TList *pTProgressVarsList;
 
 public:    // User declarations
-  __fastcall TProgressForm(TComponent* Owner);
+  __fastcall TProgressForm(TComponent *Owner);
 
   int __fastcall Init(int maxIterations);
   int __fastcall Init(int maxIterations, int minLimit);
@@ -56,6 +58,7 @@ public:    // User declarations
 
   __property int ProgressMode = {read = FProgressMode, write = FProgressMode};
   __property int Position = {read = GetProgressPosition, write = SetProgressPosition};
+  __property String Text = {read = GetLabelText, write = SetLabelText};
   __property int ExpectedIterations = {read = GetExpectedIterations};
   __property int Count = {read = GetProgressCount};
   __property int Depth = {read = GetDepth};

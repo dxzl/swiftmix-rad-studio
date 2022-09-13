@@ -11,21 +11,21 @@
 // TProgressForm class methods - TMyFileCopy class methods are at the end...
 // We create a TProgressForm for each playlist, ListA and ListB!
 //---------------------------------------------------------------------------
-__fastcall TProgressForm::TProgressForm(TComponent* Owner)
+__fastcall TProgressForm::TProgressForm(TComponent *Owner)
   : TForm(Owner)
 {
 }
 //---------------------------------------------------------------------------
 void __fastcall TProgressForm::FormCreate(TObject *Sender)
 {
+  // TProgressForm::Init() will creates a new copy of TProgressVars and stores its
+  // object pointer TProgressVarsList
+  pTProgressVarsList = new TList();
+
   this->Color = TColor(0xF5CFB8);
   FTotalExpectedIterations = 1;
   FCumulativeIterations = 0;
   FProgressMode = PROGRESS_MODE_NORMAL; // other option is PROGRESS_MODE_CUMULATIVE
-
-  // TProgressForm::Init() will creates a new copy of TProgressVars and stores its
-  // object pointer TProgressVarsList
-  pTProgressVarsList = new TList();
 
   ProgressBar->Min = 0;
   ProgressBar->Max = 100; // 100 percent complete
@@ -34,22 +34,29 @@ void __fastcall TProgressForm::FormCreate(TObject *Sender)
 //---------------------------------------------------------------------------
 void __fastcall TProgressForm::FormDestroy(TObject *Sender)
 {
-  if (pTProgressVarsList)
+  if (!pTProgressVarsList)
+    return;
+
+  try
   {
     if (pTProgressVarsList->Count)
     {
       // have to go backward...
-      while(pTProgressVarsList->Count)
+      for (int ii = pTProgressVarsList->Count-1; ii >= 0; ii--)
       {
-        TProgressVars* p = (TProgressVars*)pTProgressVarsList->Items[0];
+        TProgressVars *pv = (TProgressVars*)pTProgressVarsList->Items[ii];
 
-        if (p)
-          delete p;
+        if (pv)
+          delete pv;
 
-        pTProgressVarsList->Delete(0);
+        pTProgressVarsList->Delete(ii);
       }
     }
+  }
+  __finally
+  {
     delete pTProgressVarsList;
+    pTProgressVarsList = NULL;
   }
 }
 //---------------------------------------------------------------------------
@@ -87,13 +94,25 @@ void __fastcall TProgressForm::SetShowCancelButton(int Value)
   this->ButtonCancel->Visible = Value;
 }
 //---------------------------------------------------------------------------
+// property getter
+String __fastcall TProgressForm::GetLabelText(void)
+{
+  return this->Label->Caption;
+}
+//---------------------------------------------------------------------------
+// property setter
+void __fastcall TProgressForm::SetLabelText(String Value)
+{
+  this->Label->Caption = Value;
+}
+//---------------------------------------------------------------------------
 // return 1 id error to avoid divide by zero error in Move
 int __fastcall TProgressForm::GetExpectedIterations(void)
 {
   if (!pTProgressVarsList || !pTProgressVarsList->Count)
     return 1;
 
-  TProgressVars* p = (TProgressVars*)pTProgressVarsList->Items[pTProgressVarsList->Count-1];
+  TProgressVars *p = (TProgressVars*)pTProgressVarsList->Items[pTProgressVarsList->Count-1];
 
   int mi = p->ExpectedIterations;
 
@@ -160,7 +179,7 @@ int __fastcall TProgressForm::Init(int maxIterations, int minLimit)
   if (maxIterations > 0)
   {
     // save previous values in list
-    TProgressVars* p = new TProgressVars();
+    TProgressVars *p = new TProgressVars();
     p->Position = ProgressBar->Position;
     p->ExpectedIterations = maxIterations;
     FCumulativeIterations = 0;
@@ -187,7 +206,7 @@ void __fastcall TProgressForm::UnInit(bool bReset)
     if (pTProgressVarsList->Count)
     {
       // restore position from previous level
-      TProgressVars* p = (TProgressVars*)pTProgressVarsList->Items[pTProgressVarsList->Count-1];
+      TProgressVars *p = (TProgressVars*)pTProgressVarsList->Items[pTProgressVarsList->Count-1];
 
       if (p)
       {
@@ -203,7 +222,7 @@ void __fastcall TProgressForm::UnInit(bool bReset)
         int iMin = bReset ? 0 : pTProgressVarsList->Count-1;
         for(int ii = pTProgressVarsList->Count-1; ii >= iMin; ii--)
         {
-          TProgressVars* p = (TProgressVars*)pTProgressVarsList->Items[ii];
+          TProgressVars *p = (TProgressVars*)pTProgressVarsList->Items[ii];
           if (p)
             delete p;
           pTProgressVarsList->Delete(ii);

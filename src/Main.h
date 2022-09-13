@@ -2,7 +2,7 @@
 #ifndef MainH
 #define MainH
 //---------------------------------------------------------------------------
-#define VERSION "2.08"
+#define VERSION "2.10"
 #define FREEWARE_EDITION true
 #define DEBUG_ON false // Include a debug console, use MainForm->CWrite("")
 //---------------------------------------------------------------------------
@@ -31,7 +31,6 @@
 #include <Vcl.OleCtrls.hpp>
 #include <Vcl.StdCtrls.hpp>
 #include <Vcl.FileCtrl.hpp>
-#include "WMPLib_OCX.h"
 
 #include "Resource.h"
 #include "DefaultStrings.h"
@@ -55,25 +54,36 @@
 #include "Z_TagLibSource\AudioFiles.hpp"
 #include "TagEditForm.h"
 #include "Help.h"
-//#include "..\..\20.0\Imports\MediaPlayer_OCX.h"
-#include "..\..\21.0\Imports\MediaPlayer_TLB.h"
-#include "..\..\21.0\Imports\WMPLib_OCX.h"
-#include <System.Classes.hpp>
-#include <Vcl.ComCtrls.hpp>
-#include <Vcl.Controls.hpp>
-#include <Vcl.ExtCtrls.hpp>
-#include <Vcl.Menus.hpp>
-#include <Vcl.OleCtrls.hpp>
-#include <Vcl.StdCtrls.hpp>
+#include "PlaylistHelper.h"
+#include "FileCache.h"
+#include "WMPLib_OCX.h"
 //---------------------------------------------------------------------------
 
 #define WEBSITE L"https://github.com/dxzl/swiftmix-rad-studio/releases/"
 #define EMAIL L"dxzl@live.com"
 #define REGISTRY_KEY L"Software\\Discrete-Time Systems\\MusicMixer\\"
-#define FILE_CACHE_PATH1 L"\\Discrete-Time Systems"
-#define FILE_CACHE_PATH2 L"\\MusicMixer"
 
-#define MAX_CACHE_FILES 4 // max disk-cache files to keep for each player (so 8 total)
+// each playlist has its own cache folder
+#define FILE_CACHE_PATH L"\\Discrete-Time Systems\\MusicMixer"
+#define FILE_CACHE_PATH_A L"\\Discrete-Time Systems\\MusicMixer\\ListA"
+#define FILE_CACHE_PATH_B L"\\Discrete-Time Systems\\MusicMixer\\ListB"
+
+// a playlist's TextColor property is set to this - items are "owner-drawn"
+// via CheckBoxDrawItem()
+#define PLAYLIST_TEXT_COLOR clWhite // can also set to TColor(0x4477bb), Etc.
+
+// this only applies if visual styles are turned off in RAD Studio
+// Project->Options->Application->Apperance
+#define DEFAULT_PLAYLIST_COLOR TColor(0xF5CFB8)
+
+// differentiate PlayerA from PlayerB
+#define PLAYER_A_ID 0
+#define PLAYER_B_ID 1
+
+// PlayListHelper.cpp - max # disk-cache files to keep
+// Currently 8 songs for each player (you can increase if needed...)!
+#define MAX_CACHE_FILES 8
+
 #define DEF_FADE_POINT 5
 #define DEF_FADE_RATE 0
 
@@ -234,8 +244,8 @@ __published:  // IDE-managed Components
   TMenuItem *MenuShuffleModeB;
   TMenuItem *MenuViewDiscSpaceRequired;
   TMenuItem *MenuAutoFitToDVDCD;
-    TPanel *Panel1;
-    TPanel *Panel2;
+  TPanel *Panel1;
+  TPanel *Panel2;
   TUpDown *FRUpDown;
   TEdit *EditFadeRate;
   TUpDown *FPUpDown;
@@ -316,24 +326,16 @@ private:  // User declarations
 #if DEBUG_ON
   void __fastcall CInit(void);
 #endif
-  void __fastcall ProcessFileItem(TPlaylistForm* f, String s);
   String __fastcall GetShortcutTarget(String file);
   bool __fastcall UriIsDirectory(String sUri);
-  int __fastcall MyFileCopy(TPlaylistForm* f, String &sDestDir, int idx);
   void __fastcall PromptRetry(void);
-  int __fastcall CopyMusicFiles(TPlaylistForm* f, String sUserDir);
   long __fastcall MyGFS(String sPath); // MyGetFileSize retry-portion
   int __fastcall AutoFitToDVD(__int64 lBytesNeeded);
   String __fastcall DirectoryDialogW(String sInitialDir, String sTitle);
   bool __fastcall IsWinVistaOrHigher(void);
   void __fastcall ErrorCode(int Code);
-  void __fastcall RecurseFileAdd(TPlaylistForm* f, TStringList* slFiles);
-  void __fastcall FindFirstNextToStringLists(TStringList* slFiles, TStringList* slDirs);
-  bool __fastcall IsPlaylistPath(String sSourcePath);
-  bool __fastcall IsAudioFile(String sSourcePath);
   bool __fastcall IsPlaylistExtension(String sExt);
   String __fastcall MyExtractFileExt(String sPath);
-  bool __fastcall SetVolumes(void);
   bool __fastcall SetVolumeA(int v);
   bool __fastcall SetVolumeA(void);
   bool __fastcall SetVolumeB(int v);
@@ -345,11 +347,15 @@ private:  // User declarations
   __int64 __fastcall ComputeDiskSpace(int Mode);
   __int64 __fastcall RandomRemove(__int64 TargetBytes);
   void __fastcall WMDropFile(TWMDropFiles &Msg);
+  void __fastcall DeleteFileCache();
   bool __fastcall DeleteDirAndFiles(String sDir);
+  bool __fastcall ShellCommand(String sVerb, String sFile, String sCmd,
+                                                  bool bWaitForCompletion);
   void __fastcall InitRegistryVars(void);
   bool __fastcall InitFileCaching(void);
 
   // property vars (mostly!)
+  unsigned FFilesAddedCount;
   int FfadePoint, FfadeRate;;
   int FvolA, FvolB;
   int FcurrentVolA, FcurrentVolB; // volume as it transitions during a fade
@@ -361,26 +367,24 @@ private:  // User declarations
   bool bRepeatModeA, bShuffleModeA, bRepeatModeB, bShuffleModeB;
   bool bFileCacheEnabled, bVistaOrHigher;
 
-  // Globals for Trial-Version
-  bool bTrialFeaturesEnabled;
   int CurrentPlayer;
 
-  TPlaylistForm* GPlaylistForm;
-
-  String FsDeskDir, FsCacheDir;
+  String FsDeskDir, FCachePathA, FCachePathB;
   String FsImportExt, FsExportExt; // Import/Export file-extension (UTF-8)
   String FsSaveDirA, FsSaveDirB; // open/save directory (UTF-8)
 
   bool FBypassFilters;
-  unsigned FFilesAddedCount;
 
   // used for MoveFiles.cpp
-  TList* pTMyFileCopyList; // list of TMyFileCopyList objects currently active
-  TList* pTFailedToCopyList; // list of TMyFileCopyList objects that failed to copy
+  TList *pTMyFileCopyList; // list of TMyFileCopyList objects currently active
+  TList *pTFailedToCopyList; // list of TMyFileCopyList objects that failed to copy
 
-//  CWindowDock* FDock;
+  //  CWindowDock *FDock;
 
 protected:
+
+  // property getters/setters
+  int __fastcall GetCopylistCount(void);
 
 //  void __fastcall WMMove(TWMMove &Msg);
 
@@ -388,7 +392,7 @@ protected:
 
 BEGIN_MESSAGE_MAP
   //add message handler for WM_DROPFILES
-  // NOTE: All of the TWM* types are in messages.hpp!
+  // NOTE: All of the TWM *types are in messages.hpp!
   VCL_MESSAGE_HANDLER(WM_DROPFILES, TWMDropFiles, WMDropFile)
 //  VCL_MESSAGE_HANDLER(WM_NOTIFY, TOFNotify, WMOFNotify)
   //add message handler for WM_MOVE
@@ -397,31 +401,33 @@ END_MESSAGE_MAP(TForm)
 
 public:    // User declarations
 
-  __fastcall TMainForm(TComponent* Owner);
+//---------------------------------------------------------------------------
+  __fastcall TMainForm(TComponent *Owner);
 
 #if DEBUG_ON
   void __fastcall CWrite(String S);
 #endif
 
+  void __fastcall CancelFileAndUrlCopyInstances(int listId=-1);
   bool __fastcall GetShortcut(String &sPath, bool &bIsDirectory);
+  bool __fastcall SetVolumes(void);
+  void __fastcall FindFirstNextToStringLists(TStringList *slFiles, TStringList *slDirs);
+  bool __fastcall IsPlaylistPath(String sSourcePath);
+  bool __fastcall IsAudioFile(String sSourcePath);
+  String __fastcall MyExtractFileName(String sSourcePath);
   FARPROC __fastcall LoadProcAddr(HINSTANCE hDll, String entry);
   long __fastcall MyGetFileSize(String sPath);
   int __fastcall ShowFailures(void);
   void __fastcall ClearFailedToCopyList(void);
   void __fastcall AddFailure(String sPath, int iIndex);
-  void __fastcall AddFailure(String sSource, String sDest, int iSource, int iList);
+  void __fastcall AddFailure(String sSource, String sDest, int iSource, int iListId);
   bool __fastcall IsSourcePathUri(String sIn);
   bool __fastcall IsUri(String sIn);
   bool __fastcall IsFileUri(String sIn);
-  void __fastcall ShowPlaylist(TPlaylistForm* f);
   String __fastcall SetFlag(String S, int f);
   bool __fastcall ForceFade(void);
   bool __fastcall SetCurrentPlayer(void);
   void __fastcall RestoreFocus(void);
-  bool __fastcall FileDialog(TPlaylistForm* f, String &d, String t);
-  void __fastcall LoadListWithDroppedFiles(TPlaylistForm* f, TWMDropFiles &Msg);
-  bool __fastcall AddFileToListBox(TPlaylistForm* f, String sFile);
-  int __fastcall AddDirToListBox(TPlaylistForm* f, String sPath);
 //  String __fastcall WideToUtf8U(WideString wIn);
 //  WideString __fastcall Utf8ToWide(String sIn);
 
@@ -437,24 +443,21 @@ public:    // User declarations
 
   bool __fastcall WriteStringToFile(String sPath, String sInfo);
   String __fastcall GetSpecialFolder(int csidl);
-  bool __fastcall ShellCommand(String sVerb, String sFile, String sCmd, bool bWaitForCompletion);
-  bool __fastcall CopyFileToCache(TPlaylistForm* f, int idx);
-  bool __fastcall DeleteCacheFile(TPlaylistForm* f, long cacheNumber=0);
-  String __fastcall GetURL(TCheckListBox* l, int idx);
-  bool __fastcall ReleaseForm(TForm* f);
-  bool __fastcall ReleaseFormNoClose(TForm* f);
+  bool __fastcall ReleaseForm(TForm *f);
+  bool __fastcall ReleaseFormNoClose(TForm *f);
 
   int RWM_SwiftMixPlay, RWM_SwiftMixTime, RWM_SwiftMixState;
   bool bFadeRight, bAutoSizePrompt;
 
   // properties
-//  __property CWindowDock* GDock = {read = FDock, write = FDock};
+//  __property CWindowDock *GDock = {read = FDock, write = FDock};
   __property String ImportExt = {read = FsImportExt, write = FsImportExt};
   __property String ExportExt = {read = FsExportExt, write = FsExportExt};
   __property String SaveDirA = {read = FsSaveDirA, write = FsSaveDirA};
   __property String SaveDirB = {read = FsSaveDirB, write = FsSaveDirB};
-  __property String CacheDir = {read = FsCacheDir};
   __property String DeskDir = {read = FsDeskDir};
+  __property String CachePathA = {read = FCachePathA};
+  __property String CachePathB = {read = FCachePathB};
   __property bool GBypassFilters = {read = FBypassFilters, write = FBypassFilters, default =  false};
   __property bool VistaOrHigher = {read = bVistaOrHigher};
   __property bool ManualFade = {read = bModeManualFade};
@@ -469,10 +472,11 @@ public:    // User declarations
   __property int VolB = {read = FvolB};
   __property int FadePoint = {read = FfadePoint};
   __property int FadeRate = {read = FfadeRate};
-  __property unsigned FilesAddedCount = {read = FFilesAddedCount};
+  __property int CopylistCount = {read = GetCopylistCount};
+  __property unsigned FilesAddedCount = {read = FFilesAddedCount, write = FFilesAddedCount};
   __property int MaxCacheFiles = {read = FMaxCacheFiles};
-  __property TList* MyFileCopyList = {read = pTMyFileCopyList};
-  __property TList* FailedToCopyList = {read = pTFailedToCopyList};
+  __property TList *MyFileCopyList = {read = pTMyFileCopyList};
+  __property TList *FailedToCopyList = {read = pTFailedToCopyList};
 };
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
@@ -480,7 +484,7 @@ class TFailVars
 {
   public:
     String m_sSource, m_sDest;
-    int m_iSource, m_iList;
+    int m_iSource, m_iListId;
     int m_iRetryCount;
 };
 //---------------------------------------------------------------------------

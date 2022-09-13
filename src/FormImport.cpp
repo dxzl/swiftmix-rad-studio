@@ -269,9 +269,9 @@ int __fastcall TImportForm::NoDialog(TPlaylistForm* f, String sPath, int Mode)
             String Ext = ExtractFileExt(sFile).LowerCase();
 
             if (Ext.IsEmpty() && DirectoryExists(sFile))
-              MainForm->AddDirToListBox(f, sFile); // recurse add folder and sub-folder's songs to list
+              pPH->AddDirToListBox(f, sFile); // recurse add folder and sub-folder's songs to list
             else if (ReplaceRelativePath(sFile, sPath)) // returns sFile as an absolute path...
-              MainForm->AddFileToListBox(f, sFile);
+              pPH->AddFileToListBox(f, sFile);
 
             if (f->Progress->Move(ii))
               break;
@@ -303,9 +303,9 @@ int __fastcall TImportForm::NoDialog(TPlaylistForm* f, String sPath, int Mode)
               String Ext = ExtractFileExt(sFile).LowerCase();
 
               if (Ext.IsEmpty() && DirectoryExists(sFile))
-                MainForm->AddDirToListBox(f, sFile); // recurse add folder and sub-folder's songs to list
+                pPH->AddDirToListBox(f, sFile); // recurse add folder and sub-folder's songs to list
               else if (ReplaceRelativePath(sFile, sPath)) // returns sFile as an absolute path...
-                MainForm->AddFileToListBox(f, sFile);
+                pPH->AddFileToListBox(f, sFile);
 
               if (f->Progress->Move(ii))
                 break;
@@ -459,9 +459,9 @@ int __fastcall TImportForm::XmlParser(TPlaylistForm* f, String sExt, String sIn,
           String Ext = ExtractFileExt(sUrl).LowerCase();
 
           if (Ext.IsEmpty() && DirectoryExists(sUrl))
-            MainForm->AddDirToListBox(f, sUrl); // recurse add folder and sub-folder's songs to list
+            pPH->AddDirToListBox(f, sUrl); // recurse add folder and sub-folder's songs to list
           else if (ReplaceRelativePath(sUrl, sPath)) // returns sUrl as an absolute path...
-            MainForm->AddFileToListBox(f, sUrl);
+            pPH->AddFileToListBox(f, sUrl);
 
           if (f->Progress->Move(ii))
             break;

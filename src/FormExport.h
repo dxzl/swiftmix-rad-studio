@@ -26,7 +26,6 @@ private:  // User declarations
   String __fastcall GetFileString(String sListFullPath,
                                       String sSongFullPath, int Mode);
   String __fastcall StripFileUriPrefixIfAny(String &sIn);
-  String __fastcall UniversalExtractFileName(String sIn);
   bool __fastcall IsUri(String sIn);
   String __fastcall ProcessFileName(String sListFullPath, String &sName,
                             int Mode, bool bUncPathFormat);
