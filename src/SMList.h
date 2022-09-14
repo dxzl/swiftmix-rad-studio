@@ -169,7 +169,7 @@ __published:  // IDE-managed Components
   void __fastcall CheckBoxMouseMove(TObject *Sender, TShiftState Shift, int X, int Y);
   void __fastcall FormKeyUp(TObject *Sender, WORD &Key, TShiftState Shift);
   void __fastcall CheckBoxKeyDown(TObject *Sender, WORD &Key, TShiftState Shift);
-  void __fastcall MenuScrollSelectedIntoViewClick(TObject *Sender);
+  void __fastcall MenuScrollQueuedIntoViewClick(TObject *Sender);
   void __fastcall SubmenuSortAlbumClick(TObject *Sender);
   void __fastcall SubmenuSortArtistClick(TObject *Sender);
   void __fastcall SubmenuSortTitleClick(TObject *Sender);

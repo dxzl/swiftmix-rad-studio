@@ -738,6 +738,10 @@ void __fastcall TPlaylistForm::FormActivate(TObject *Sender)
 {
   // disable highlight-scroll and flasher
   SetTitle();
+
+  // when this playlist gains focus, we want the other playlist to
+  // stop flashing a playing selection...
+  OtherForm->SetTitle();
 }
 //---------------------------------------------------------------------------
 void __fastcall TPlaylistForm::FormDeactivate(TObject *Sender)
@@ -749,6 +753,10 @@ void __fastcall TPlaylistForm::FormDeactivate(TObject *Sender)
 
   if (Visible)
     SetTitle();
+
+  // other playlist needs to start flashing a playing selection...
+  if (OtherForm->Visible)
+    OtherForm->SetTitle();
 }
 //---------------------------------------------------------------------------
 void __fastcall TPlaylistForm::FormHide(TObject *Sender)
@@ -2344,6 +2352,16 @@ void __fastcall TPlaylistForm::SetTitle(void)
           }
         }
       }
+      else // other playlist-form is active
+      {
+        S1 += "(Q) ";
+
+        if (bTargetOk)
+        {
+          S2 = pPH->GetURL(this, FTargetIdx);
+          SelectIdx = FTargetIdx;
+        }
+      }
     }
 
     // Set listbox selection to match title
@@ -2557,7 +2575,7 @@ void __fastcall TPlaylistForm::ExitEditModeClick(TObject *Sender)
   SetTitle(); // Start flashing again, etc.
 }
 //---------------------------------------------------------------------------
-void __fastcall TPlaylistForm::MenuScrollSelectedIntoViewClick(TObject *Sender)
+void __fastcall TPlaylistForm::MenuScrollQueuedIntoViewClick(TObject *Sender)
 {
   CheckBox->TopIndex = FTargetIdx;
 }
