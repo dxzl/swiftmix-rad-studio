@@ -235,7 +235,7 @@ private:  // User declarations
   TPlaylistForm *FOtherForm;
   TWindowsMediaPlayer *FWmp, *FOtherWmp;
   TColor FTextColor;
-  int FNextIdx, FTargetIdx, FPlayIdx, FTempIdx, FOldMouseItemIndex;
+  int FTargetIdx, FPlayIdx, FTempIdx, FOldMouseItemIndex;
   UInt16 FuniqueNumber;
   String FCachePath; // must have trailing backslash!
   int FPlayerId;
@@ -292,7 +292,7 @@ public:  // User declarations
   void __fastcall GetSongInfo(void);
   void __fastcall GetSongInfo(STRUCT_A &sms);
   void __fastcall SetTitle(void);
-  String __fastcall GetNext(bool bNoSet = false, bool bEnableRandom = false);
+  String __fastcall GetNext(int iNext=-1, bool bNoSet = false, bool bEnableRandom = false);
   TImportForm *__fastcall CreateImportDialog(void);
   TExportForm *__fastcall CreateExportDialog(void);
   TOFMSDlgForm *__fastcall CreateFileDialog(void);
@@ -316,7 +316,6 @@ public:  // User declarations
   __property TWindowsMediaPlayer *Wmp = {read = FWmp, write = FWmp};
   __property TWindowsMediaPlayer *OtherWmp = {read = FOtherWmp, write = FOtherWmp};
   __property int TempIndex = {read = FTempIdx, write = FTempIdx};
-  __property int NextIndex = {read = FNextIdx, write = FNextIdx};
   __property TColor TextColor = {read = FTextColor, write = FTextColor};
   __property int TargetIndex = {read = FTargetIdx, write = FTargetIdx};
   __property int PlayerID = {read = FPlayerId, write = FPlayerId};

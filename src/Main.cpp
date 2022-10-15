@@ -1170,10 +1170,8 @@ void __fastcall TMainForm::VB_100Click(TObject *Sender)
 //---------------------------------------------------------------------------
 void __fastcall TMainForm::Player1Next1Click(TObject *Sender)
 {
-  if (ListA->IsPlayOrPause()){
-    ListA->NextIndex = ListA->TargetIndex;
+  if (ListA->IsPlayOrPause())
     ListA->NextSong();
-  }
   else if (ListA->Count > 0)
     ShowMessage("Click the play button or double-click a song to start Player A!");
   else
@@ -1182,10 +1180,8 @@ void __fastcall TMainForm::Player1Next1Click(TObject *Sender)
 //---------------------------------------------------------------------------
 void __fastcall TMainForm::Player2Next1Click(TObject *Sender)
 {
-  if (ListB->IsPlayOrPause()){
-    ListB->NextIndex = ListB->TargetIndex;
+  if (ListB->IsPlayOrPause())
     ListB->NextSong();
-  }
   else if (ListB->Count > 0)
     ShowMessage("Click the play button or double-click a song to start Player B!");
   else
@@ -1207,15 +1203,26 @@ bool __fastcall TMainForm::ForceFade()
   {
     try
     {
+#if DEBUG_ON
+      CWrite( "\r\nTMainForm: ForceFade() called!\r\n");
+#endif
       // this is the case where we are fading and user unchecks a song that's
       // playing... reverse
       if (AutoFadeTimer->Enabled)
       {
         bFadeRight = !bFadeRight; // reverse
-        if (bFadeRight)
+        if (bFadeRight){
+#if DEBUG_ON
+          CWrite( "\r\nTMainForm: ForceFade() calling ListB->NextSong()!\r\n");
+#endif
           ListB->NextSong();
-        else
+        }
+        else{
+#if DEBUG_ON
+          CWrite( "\r\nTMainForm: ForceFade() calling ListA->NextSong()!\r\n");
+#endif
           ListA->NextSong();
+        }
         return true;
       }
 
@@ -1226,6 +1233,9 @@ bool __fastcall TMainForm::ForceFade()
       {
        if (FaderTrackBar->Position >= (FaderTrackBar->Max-FaderTrackBar->Min)/2)
        {
+#if DEBUG_ON
+         CWrite( "\r\nTMainForm: ForceFade() setting FaderTrackBar->Min!\r\n");
+#endif
          FaderTrackBar->Position = FaderTrackBar->Min;
          bFadeRight = false;
          if (ListB->IsPlayOrPause())
@@ -1235,6 +1245,9 @@ bool __fastcall TMainForm::ForceFade()
        }
        else // fader leans toward Player A...
        {
+#if DEBUG_ON
+         CWrite( "\r\nTMainForm: ForceFade() setting FaderTrackBar->Max!\r\n");
+#endif
          FaderTrackBar->Position = FaderTrackBar->Max;
          bFadeRight = true;
          if (ListA->IsPlayOrPause())
@@ -1247,6 +1260,9 @@ bool __fastcall TMainForm::ForceFade()
 
       if (ListA->IsPlayOrPause() && ListB->PlayIdx >= 0)
       {
+#if DEBUG_ON
+        CWrite( "\r\nTMainForm: ForceFade() bFadeRight set true!\r\n");
+#endif
         // Start Player 2
         if (!ListB->IsPlayOrPause())
           ListB->StartPlayer();
@@ -1259,6 +1275,9 @@ bool __fastcall TMainForm::ForceFade()
       // player 2 on now?
       if (ListB->IsPlayOrPause() && ListA->PlayIdx >= 0)
       {
+#if DEBUG_ON
+        CWrite( "\r\nTMainForm: ForceFade() bFadeRight set false!\r\n");
+#endif
         // Start Player 1
         if (!ListA->IsPlayOrPause())
           ListA->StartPlayer();
