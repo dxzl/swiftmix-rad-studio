@@ -358,7 +358,10 @@ bool __fastcall TPlaylistHelper::FileDialog(TPlaylistForm *f, String &d, String 
                     "Windows Media (*.wma)|*.wma|"
                     "MP3 (*.mp3)|*.mp3|"
                     "WAV (*.wav)|*.wav|"
-                    "OGG (*.ogg)|*.ogg"; // need codecs from xiph.org
+                    "OGG (*.ogg)|*.ogg"
+                    "FLAC (*.flac)|*.flac|"
+                    "AAC (*.aac)|*.aac|"
+                    "ALAC (*.alac)|*.alac|"; // need codecs from xiph.org
 
         MainForm->FilesAddedCount = 0;
 

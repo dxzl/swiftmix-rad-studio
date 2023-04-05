@@ -76,8 +76,8 @@
         <Icon_MainIcon>$(BDS)\bin\cbuilder_PROJECTICON.ico</Icon_MainIcon>
         <UWP_CppLogo44>$(BDS)\bin\Artwork\Windows\UWP\cppreg_UwpDefault_44.png</UWP_CppLogo44>
         <UWP_CppLogo150>$(BDS)\bin\Artwork\Windows\UWP\cppreg_UwpDefault_150.png</UWP_CppLogo150>
-        <IncludePath>Z_TagLibSource\;..\..\20.0\Imports\;Swiftmixer\;$(IncludePath)</IncludePath>
-        <ILINK_LibraryPath>Z_TagLibSource\;..\..\20.0\Imports\;Swiftmixer\;$(ILINK_LibraryPath)</ILINK_LibraryPath>
+        <IncludePath>Z_TagLibSource\;..\..\21.0\Imports\;Swiftmixer\;$(IncludePath)</IncludePath>
+        <ILINK_LibraryPath>Z_TagLibSource\;..\..\21.0\Imports\;Swiftmixer\;$(ILINK_LibraryPath)</ILINK_LibraryPath>
         <SanitizedProjectName>SwiftMiX</SanitizedProjectName>
         <Custom_Styles>&quot;Golden Graphite|VCLSTYLE|$(BDSCOMMONDIR)\Styles\GoldenGraphite.vsf&quot;</Custom_Styles>
     </PropertyGroup>
@@ -154,7 +154,7 @@
         <Icon_MainIcon>SwiftMiX.ico</Icon_MainIcon>
         <LinkPackageStatics>rtl.lib;vcl.lib;vclx.lib;MyControls.lib</LinkPackageStatics>
         <_TCHARMapping>wchar_t</_TCHARMapping>
-        <VerInfo_Keys>CompanyName=Discrete-Time Systems;FileDescription=$(MSBuildProjectName);FileVersion=2.11.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=SwiftMiX.exe;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=2.11.0.0;Comments=https://github.com/dxzl/swiftmix-rad-studio/releases</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=Discrete-Time Systems;FileDescription=$(MSBuildProjectName);FileVersion=2.12.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=SwiftMiX.exe;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=2.12.0.0;Comments=https://github.com/dxzl/swiftmix-rad-studio/releases</VerInfo_Keys>
         <BRCC_IncludePath>$(BDSINCLUDE)\windows\sdk;$(BRCC_IncludePath)</BRCC_IncludePath>
         <AppDPIAwarenessMode>PerMonitor</AppDPIAwarenessMode>
         <ILINK_LibraryPath>..\MyControls\;$(ILINK_LibraryPath)</ILINK_LibraryPath>
@@ -162,7 +162,7 @@
         <BCC_OutputDir>OBJ</BCC_OutputDir>
         <DCC_UnitSearchPath>Z_TagLibSource;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
         <VerInfo_MajorVer>2</VerInfo_MajorVer>
-        <VerInfo_MinorVer>11</VerInfo_MinorVer>
+        <VerInfo_MinorVer>12</VerInfo_MinorVer>
         <Manifest_File>Swiftmixer.manifest</Manifest_File>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2_Win64)'!=''">
@@ -397,7 +397,7 @@
                     <Excluded_Packages Name="$(BDSBIN)\bcbofficexp270.bpl">Embarcadero C++Builder Office XP Servers Package</Excluded_Packages>
                 </Excluded_Packages>
                 <Folders>
-                    <Folder Path="C:\Users\Scott\Documents\Embarcadero\Studio\Projects\Swiftmixer\Z_TagLibSource" Masks="*.*" ShowSubdirectories="false"/>
+                    <Folder Path=".\Z_TagLibSource" Masks="*.*" ShowSubdirectories="false"/>
                 </Folders>
             </CPlusPlusBuilder.Personality>
             <Platforms>
@@ -415,7 +415,7 @@
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
-                <DeployFile Condition="'$(DynamicRTL)'=='true' And '$(Multithreaded)'!='true'" LocalName="$(BDS)\bin\cc32c270.dll" Class="DependencyModule">
+                <DeployFile Condition="'$(DynamicRTL)'=='true' And '$(Multithreaded)'=='true'" LocalName="$(BDS)\bin\cc32c270mt.dll" Class="DependencyModule">
                     <Platform Name="Win32">
                         <Overwrite>true</Overwrite>
                     </Platform>
@@ -496,7 +496,7 @@
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
-                <DeployFile Condition="'$(DynamicRTL)'=='true' And '$(Multithreaded)'=='true'" LocalName="$(BDS)\bin\cc32c270mt.dll" Class="DependencyModule">
+                <DeployFile Condition="'$(DynamicRTL)'=='true' And '$(Multithreaded)'!='true'" LocalName="$(BDS)\bin\cc32c270.dll" Class="DependencyModule">
                     <Platform Name="Win32">
                         <Overwrite>true</Overwrite>
                     </Platform>

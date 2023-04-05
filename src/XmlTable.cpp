@@ -19,7 +19,7 @@ const WideChar* XMLCODES[XMLCODESLEN] =
 //---------------------------------------------------------------------------
 // The index of the char in this string looks up its HTML replacement
 // string in the table above.
-const WideChar XMLCHARS[XMLCODESLEN] = L"\"\'><&";
+const WideChar XMLCHARS[XMLCODESLEN+1] = L"\"\'><&";
 //---------------------------------------------------------------------------
 // Windows URI percent-encoding
 // For the UNC Windows file path: \\laptop\My Documents\FileSchemeURIs.doc

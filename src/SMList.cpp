@@ -796,6 +796,9 @@ void __fastcall TPlaylistForm::CheckBoxMouseDown(TObject *Sender,
       {
         FTempIdx = Index;
 
+#if DEBUG_ON
+        MainForm->CWrite("\r\nTPlayListForm:CheckBoxMouseDown():FTempIdx: " + String(FTempIdx) + "\r\n");
+#endif
         // MyMoveSelected() needs a selected item!
 // don't like forcing select...
 //        CheckBox->Selected[FTempIdx] = true;
@@ -892,7 +895,7 @@ void __fastcall TPlaylistForm::MyMoveSelected(TCheckListBox *DestList, TCheckLis
       int idx = SourceForm->TempIndex;
 
 #if DEBUG_ON
-      MainForm->CWrite("\r\nFTempIdx: " + String(idx) + "\r\n");
+      MainForm->CWrite("\r\nTPlaylistForm::MyMoveSelected():SourceForm->TempIndex: " + String(idx) + "\r\n");
 #endif
       if (idx < 0 || idx >= SourceForm->Count)
         return;
@@ -906,9 +909,10 @@ void __fastcall TPlaylistForm::MyMoveSelected(TCheckListBox *DestList, TCheckLis
           return; // finally will clean up...
         }
       }
+
       // skip move of playing song to other player's list
       // (cbChecked indicates a playing song)
-      else if (!IsStateChecked(SourceList, idx))
+      if (!IsStateChecked(SourceList, idx))
       {
         TPlayerURL *p = (TPlayerURL*)SourceList->Items->Objects[idx];
         if (p)
