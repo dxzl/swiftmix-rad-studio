@@ -361,6 +361,9 @@ bool __fastcall TPlaylistHelper::FileDialog(TPlaylistForm *f, String &d, String 
                     "OGG (*.ogg)|*.ogg"
                     "FLAC (*.flac)|*.flac|"
                     "AAC (*.aac)|*.aac|"
+                    "MQA (*.mqa)|*.mqa|"
+                    "DSD (*.dsd)|*.dsd|"
+                    "AIFF (*.aiff)|*.aiff|"
                     "ALAC (*.alac)|*.alac|"; // need codecs from xiph.org
 
         MainForm->FilesAddedCount = 0;

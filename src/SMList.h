@@ -18,6 +18,12 @@
 
 #define PLAY_PREVIEW_START_TIME 5.0 // start time into song for play-preview
 
+// color the song-title changes to after it has played
+#define SONG_HAS_PLAYED_COLOR clLime
+#define MEDIA_ERROR_COLOR clYellow
+#define SONG_FAILED_TO_PLAY_COLOR clRed
+#define NORMAL_SONG_TEXT_COLOR clWhite
+
 // Sort constants
 #define SORTBY_ARTIST 0
 #define SORTBY_ALBUM  1
@@ -207,10 +213,11 @@ private:  // User declarations
   bool __fastcall IsStateUnchecked(TCheckListBox *clb, int idx);
   bool __fastcall IsStateChecked(TCheckListBox *clb, int idx);
   bool __fastcall IsStateGrayed(TCheckListBox *clb, int idx);
-  void __fastcall SetGrayedState(int idx);
-  void __fastcall SetCheckedState(int idx);
-  void __fastcall SetItemState(int idx);
-  void __fastcall ClearCheckState(int idx, bool bRequeueIfRepeatMode=true);
+  void __fastcall SetStateGrayed(int idx);
+  void __fastcall SetStateChecked(int idx);
+  void __fastcall SetStateItem(int idx);
+  void __fastcall SetStateUnchecked(int idx, bool bRequeueIfRepeatMode=true);
+  void __fastcall SetColor(int idx, int color);
   void __fastcall UpdatePlayerStatus(void);
   bool __fastcall SendToSwiftMix(void  *sms, int size, int msg);
   bool __fastcall SetTimer(int mode, int time=TIME_50);
@@ -239,7 +246,7 @@ private:  // User declarations
   UInt16 FuniqueNumber;
   String FCachePath; // must have trailing backslash!
   int FPlayerId;
-  bool FEditMode, FPlayPreview;
+  bool FEditMode, FPlayPreview, FRequeuePlayingSong;
   bool FKeySpaceDisable;
 
   TOFMSDlgForm *pOFMSDlg;
@@ -297,6 +304,7 @@ public:  // User declarations
   TExportForm *__fastcall CreateExportDialog(void);
   TOFMSDlgForm *__fastcall CreateFileDialog(void);
   void __fastcall AddListItem(String s);
+  TPlayerURL *__fastcall InitTPlayerURL(int idx);
   TPlayerURL *__fastcall InitTPlayerURL(String s);
   TPlayerURL *__fastcall InitTPlayerURL(TPlayerURL *p);
   void __fastcall DeleteListItem(int idx, bool bDeleteFromCache=true);

@@ -2,7 +2,7 @@
 #ifndef MainH
 #define MainH
 //---------------------------------------------------------------------------
-#define VERSION "2.12"
+#define VERSION "2.13"
 #define FREEWARE_EDITION true
 #define DEBUG_ON false // Include a debug console, use MainForm->CWrite("")
 //---------------------------------------------------------------------------
@@ -344,6 +344,7 @@ private:  // User declarations
   bool __fastcall SetVolumeAndCheckmarkB(int v);
   bool __fastcall SetCheckmarkA(int v);
   bool __fastcall SetCheckmarkB(int v);
+  unsigned __int32 __fastcall GetDuration(String sPath);
   __int64 __fastcall ComputeDiskSpace(int Mode);
   __int64 __fastcall RandomRemove(__int64 TargetBytes);
   void __fastcall WMDropFile(TWMDropFiles &Msg);

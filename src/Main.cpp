@@ -1031,9 +1031,9 @@ bool __fastcall TMainForm::IsAudioFile(String sSourcePath)
 
   return sExt == "mp3" || sExt == "wma" || sExt == "ogg" ||sExt == "asf" || sExt == "wav" ||
           sExt == "mpa" || sExt == "mpe" || sExt == "m3u" || sExt == "avi" || sExt == "aac" ||
-          sExt == "adt" || sExt == "adts" || sExt == "mp2" || sExt == "cda" ||
-          sExt == "au" || sExt == "snd" || sExt == "aif" || sExt == "aiff" || sExt == "aifc" ||
-          sExt == "mid" || sExt == "midi" || sExt == "rmi" || sExt == "m4a";
+          sExt == "adt" || sExt == "adts" || sExt == "mp2" || sExt == "cda" || sExt == "mqa" ||
+          sExt == "dsd" || sExt == "au" || sExt == "snd" || sExt == "aif" || sExt == "aiff" ||
+          sExt == "aifc" || sExt == "mid" || sExt == "midi" || sExt == "rmi" || sExt == "m4a";
 }
 //---------------------------------------------------------------------------
 bool __fastcall TMainForm::IsPlaylistPath(String sSourcePath)
@@ -2302,6 +2302,23 @@ int __fastcall TMainForm::AutoFitToDVD(__int64 lBytesNeeded)
   return 0;
 }
 //---------------------------------------------------------------------------
+unsigned __int32 __fastcall TMainForm::GetDuration(String sPath)
+{
+  TGeneralAudioFile* f = NULL;
+  unsigned __int32 duration = 0;
+
+  try{
+    f = new TGeneralAudioFile(sPath);
+    if (f)
+      duration = f->Duration;
+  }
+  __finally{
+    if (f) delete (f);
+  }
+
+  return duration;
+}
+//---------------------------------------------------------------------------
 // Add up # bytes needed by songs on both lists
 //
 // Returns -1 if user wants to quit...
@@ -2317,9 +2334,14 @@ __int64 __fastcall TMainForm::ComputeDiskSpace(int Mode)
   __int64 total_size_B = 0;
   __int64 total_size_A = 0;
   __int64 total_size = 0;
-  int cA = ListA->Count;
-  int cB = ListB->Count;
-//  int total = cA + cB;
+  unsigned __int32 total_duration_B = 0;
+  unsigned __int32 total_duration_A = 0;
+  unsigned __int32 no_duration_count_B = 0;
+  unsigned __int32 no_duration_count_A = 0;
+  unsigned __int32 no_duration_count = 0;
+  unsigned __int32 total_duration = 0;
+  unsigned __int32 cA = ListA->Count;
+  unsigned __int32 cB = ListB->Count;
 
   int retCode;
 
@@ -2338,8 +2360,14 @@ __int64 __fastcall TMainForm::ComputeDiskSpace(int Mode)
       {
         long file_size = MyGetFileSize(p->path);
 
-        if (file_size > 0)
+        if (file_size > 0){
+          unsigned __int32 duration = GetDuration(p->path);
+          if (duration)
+            total_duration_A += duration;
+          else
+            no_duration_count_A++;
           total_size_A += file_size;
+        }
         else
           AddFailure(p->path, ii);
       }
@@ -2362,8 +2390,14 @@ __int64 __fastcall TMainForm::ComputeDiskSpace(int Mode)
       {
         long file_size = MyGetFileSize(p->path);
 
-        if (file_size > 0)
+        if (file_size > 0){
+          unsigned __int32 duration = GetDuration(p->path);
+          if (duration)
+            total_duration_B += duration;
+          else
+            no_duration_count_B++;
           total_size_B += file_size;
+        }
         else
           AddFailure(p->path, ii);
       }
@@ -2375,6 +2409,7 @@ __int64 __fastcall TMainForm::ComputeDiskSpace(int Mode)
     ListB->Progress->UnInit();
 
     total_size = total_size_A + total_size_B;
+    total_duration = total_duration_A + total_duration_B;
   }
   __finally
   {
@@ -2485,16 +2520,29 @@ __int64 __fastcall TMainForm::ComputeDiskSpace(int Mode)
   String BBytesStr = FormatFloat("#,#0", total_size_B);
   String TBytesStr = FormatFloat("#,#0", total_size);
 
+  String ADurationStr = FormatFloat("#,#0.0", total_duration_A/60.0) + " min";
+  if (no_duration_count_A)
+    ADurationStr += " (" + String(no_duration_count_A) + " songs with no duration-tag!)";
+  String BDurationStr = FormatFloat("#,#0.0", total_duration_B/60.0) + " min";
+  if (no_duration_count_B)
+    BDurationStr += " (" + String(no_duration_count_B) + " songs with no duration-tag!)";
+  String TDurationStr = FormatFloat("#,#0.0", total_duration/60.0) + " min";
+  if (no_duration_count)
+    TDurationStr += " (a total of " + String(no_duration_count) + " songs with no duration-tag!)";
+
   String s =
             "List A Size: " + ASizeStr + AKbMbGb +
               " (" + ABytesStr + " bytes)(" + cA + " Songs)\n"
+            "List A Duration: " + ADurationStr + "\n\n"
             "List B Size: " + BSizeStr + BKbMbGb +
-              " (" + BBytesStr + " bytes)(" + cB + " Songs)\n\n"
+              " (" + BBytesStr + " bytes)(" + cB + " Songs)\n"
+            "List B Duration: " + BDurationStr + "\n\n"
             "Total Size: " + TSizeStr + TKbMbGb +
-              " (" + TBytesStr + " bytes)\n\n"
+              " (" + TBytesStr + " bytes)\n"
+            "Total Duration: " + TDurationStr + "\n\n"
             "Note: A typical DVD holds 4.38 GiB\n"
             "(A double-layer DVD holds 7.95 GiB)\n"
-            "A typical CD-ROM holds 703.1 MiB";
+            "A typical CD-ROM holds 703.1 MiB (74 min max!)";
 
 
   if (Mode == 1)
