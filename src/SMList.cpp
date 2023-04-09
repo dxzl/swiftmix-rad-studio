@@ -1297,8 +1297,13 @@ bool __fastcall TPlaylistForm::QueueToIndex(int idx)
 
     // Can't Set URL or we stop the player! If player playing or paused... don't set URL
     // because it will stop the current song
-    if (!IsPlayOrPause())
+    if (!IsPlayOrPause()){
       Wmp->URL = GetNext(idx);
+#if DEBUG_ON
+      MainForm->CWrite("\r\nTPlaylistForm::QueueToIndex(" + String(idx) +
+                                     "):Wmp->URL=\"" + String(Wmp->URL) + "\"\r\n");
+#endif
+    }
 
     int ct = CheckBox->Count;
     int iTarg = idx;
@@ -1989,7 +1994,10 @@ void __fastcall TPlaylistForm::PlayStateChange(WMPPlayState NewState)
     else if (NewState == WMPPlayState::wmppsStopped) // stop?
   {
 #if DEBUG_ON
-      MainForm->CWrite( "\r\nWMPPlayState():wmppsStopped " + String(FPlayerId == PLAYER_A_ID ? "A" : "B") + ": FPlayIdx=" + String(FPlayIdx) + "\r\n");
+      MainForm->CWrite( "\r\nWMPPlayState():wmppsStopped " +
+       String(FPlayerId == PLAYER_A_ID ? "A" : "B") +
+        ": FPlayIdx=" + String(FPlayIdx) +
+         ", FTargetIdx=" + String(FTargetIdx) + "\r\n");
 #endif
       PositionTimer->Enabled = false;
       UpdatePlayerStatus();
@@ -2024,8 +2032,8 @@ void __fastcall TPlaylistForm::PlayStateChange(WMPPlayState NewState)
 
       if (!FRequeuePlayingSong)
         SetStateUnchecked(FPlayIdx);
-      else
-        FRequeuePlayingSong = false; // just want to re-queue one time!
+//      else (commented out - this prevents re-queuing of same song from working as expected...
+//        FRequeuePlayingSong = false; // just want to re-queue one time!
 
       if (!MainForm->ManualFade && !MainForm->AutoFadeTimer->Enabled)
       {
