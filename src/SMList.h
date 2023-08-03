@@ -16,13 +16,25 @@
 #include "..\..\21.0\Imports\WMPLib_TLB.h"
 //---------------------------------------------------------------------------
 
-#define PLAY_PREVIEW_START_TIME 5.0 // start time into song for play-preview
+// a playlist's TextColor property is set to this - items are "owner-drawn"
+// via CheckBoxDrawItem()
+#define PLAYLIST_TEXT_COLOR clWhite // can also set to TColor(0x4477bb), Etc.
+
+// this only applies if visual styles are turned off in RAD Studio
+// Project->Options->Application->Apperance
+#define PLAYLIST_BACKGROUND_COLOR TColor(0xF5CFB8)
+
+// differentiate PlayerA from PlayerB
+#define PLAYER_A_ID 0
+#define PLAYER_B_ID 1
 
 // color the song-title changes to after it has played
 #define SONG_HAS_PLAYED_COLOR clLime
 #define MEDIA_ERROR_COLOR clYellow
 #define SONG_FAILED_TO_PLAY_COLOR clRed
-#define NORMAL_SONG_TEXT_COLOR clWhite
+#define URL_STRUCT_MISSING_COLOR clGray
+
+#define PLAY_PREVIEW_START_TIME 5.0 // start time into song for play-preview
 
 // Sort constants
 #define SORTBY_ARTIST 0
@@ -199,6 +211,7 @@ __published:  // IDE-managed Components
 private:  // User declarations
 
 //  void __fastcall DrawFocusRect(TCanvas* c, HPEN hpen, TRect &r);
+  void __fastcall HandleUnresponsiveSong(void);
   void __fastcall MySort(int iSortType);
   bool __fastcall IsItemVisible(int idx);
   void __fastcall StartPlayPreview(void);
@@ -217,7 +230,7 @@ private:  // User declarations
   void __fastcall SetStateChecked(int idx);
   void __fastcall SetStateItem(int idx);
   void __fastcall SetStateUnchecked(int idx, bool bRequeueIfRepeatMode=true);
-  void __fastcall SetColor(int idx, int color);
+  void __fastcall SetColor(int idx, TColor color);
   void __fastcall UpdatePlayerStatus(void);
   bool __fastcall SendToSwiftMix(void  *sms, int size, int msg);
   bool __fastcall SetTimer(int mode, int time=TIME_50);
@@ -225,9 +238,6 @@ private:  // User declarations
   void __fastcall WMListDropFile(TWMDropFiles &Msg);
 //  void __fastcall WMVListScroll(TWMScroll &Msg);
   void __fastcall WMSetText(TWMSetText &Msg);
-
-  void __fastcall AddListItem(String s, TPlayerURL *p);
-  void __fastcall InsertListItem(int idx, String s, TPlayerURL *p);
   void __fastcall ClearListItems(void);
 
   int m_TimerMode, m_failSafeCounter;
@@ -303,10 +313,9 @@ public:  // User declarations
   TImportForm *__fastcall CreateImportDialog(void);
   TExportForm *__fastcall CreateExportDialog(void);
   TOFMSDlgForm *__fastcall CreateFileDialog(void);
-  void __fastcall AddListItem(String s);
+  void __fastcall AddListItem(String sPath);
   TPlayerURL *__fastcall InitTPlayerURL(int idx);
-  TPlayerURL *__fastcall InitTPlayerURL(String s);
-  TPlayerURL *__fastcall InitTPlayerURL(TPlayerURL *p);
+  void __fastcall InitTPlayerURL(TPlayerURL *p);
   void __fastcall DeleteListItem(int idx, bool bDeleteFromCache=true);
   bool __fastcall RestoreCache(String sCachePath);
   bool __fastcall IsPlayOrPause(void);

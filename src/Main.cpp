@@ -2351,7 +2351,7 @@ __int64 __fastcall TMainForm::ComputeDiskSpace(int Mode)
     ClearFailedToCopyList();
 
     // Total size for list A
-    for (int ii = 0; ii < cA; ii++)
+    for (unsigned __int32 ii = 0; ii < cA; ii++)
     {
       TPlayerURL *p = (TPlayerURL*)ListA->CheckBox->Items->Objects[ii];
       if (!p) continue;
@@ -2381,7 +2381,7 @@ __int64 __fastcall TMainForm::ComputeDiskSpace(int Mode)
     ListB->Progress->Init(cB);
 
     // Total size for list B
-    for (int ii = 0; ii < cB; ii++)
+    for (unsigned __int32 ii = 0; ii < cB; ii++)
     {
       TPlayerURL *p = (TPlayerURL*)ListB->CheckBox->Items->Objects[ii];
       if (!p) continue;

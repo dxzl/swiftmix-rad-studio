@@ -2,7 +2,7 @@
 #ifndef MainH
 #define MainH
 //---------------------------------------------------------------------------
-#define VERSION "2.14"
+#define VERSION "2.15"
 #define FREEWARE_EDITION true
 #define DEBUG_ON false // Include a debug console, use MainForm->CWrite("")
 //---------------------------------------------------------------------------
@@ -67,18 +67,6 @@
 #define FILE_CACHE_PATH L"\\Discrete-Time Systems\\MusicMixer"
 #define FILE_CACHE_PATH_A L"\\Discrete-Time Systems\\MusicMixer\\ListA"
 #define FILE_CACHE_PATH_B L"\\Discrete-Time Systems\\MusicMixer\\ListB"
-
-// a playlist's TextColor property is set to this - items are "owner-drawn"
-// via CheckBoxDrawItem()
-#define PLAYLIST_TEXT_COLOR clWhite // can also set to TColor(0x4477bb), Etc.
-
-// this only applies if visual styles are turned off in RAD Studio
-// Project->Options->Application->Apperance
-#define DEFAULT_PLAYLIST_COLOR TColor(0xF5CFB8)
-
-// differentiate PlayerA from PlayerB
-#define PLAYER_A_ID 0
-#define PLAYER_B_ID 1
 
 // PlayListHelper.cpp - max # disk-cache files to keep
 // Currently 8 songs for each player (you can increase if needed...)!
